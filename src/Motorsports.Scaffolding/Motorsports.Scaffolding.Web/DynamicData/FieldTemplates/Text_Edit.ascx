@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" CodeBehind="Text_Edit.ascx.cs" Inherits="Motorsports.Scaffolding.Text_EditField" %>
+﻿<%@ Control Language="C#" CodeBehind="Text_Edit.ascx.cs" Inherits="Motorsports.Scaffolding.Web.DynamicData.FieldTemplates.Text_EditField" %>
 
 <asp:TextBox ID="TextBox1" runat="server" Text='<%# FieldValueEditString %>' CssClass="DDTextBox"></asp:TextBox>
 

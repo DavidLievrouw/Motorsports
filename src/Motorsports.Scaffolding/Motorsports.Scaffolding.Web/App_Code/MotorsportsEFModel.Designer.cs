@@ -12,32 +12,32 @@ using System.ComponentModel;
 using System.Data.EntityClient;
 using System.Data.Objects;
 using System.Data.Objects.DataClasses;
-using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 using System.Xml.Serialization;
+using Motorsports.Scaffolding.Web;
 
-[assembly: EdmSchemaAttribute()]
+[assembly: EdmSchema()]
 #region EDM Relationship Metadata
 
-[assembly: EdmRelationshipAttribute("MotorsportsEFModel", "FK_Country_Participant", "Country", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Motorsports.Scaffolding.Web.App_Code.Country), "Participant", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Motorsports.Scaffolding.Web.App_Code.Participant), true)]
-[assembly: EdmRelationshipAttribute("MotorsportsEFModel", "FK_Country_Team", "Country", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Motorsports.Scaffolding.Web.App_Code.Country), "Team", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Motorsports.Scaffolding.Web.App_Code.Team), true)]
-[assembly: EdmRelationshipAttribute("MotorsportsEFModel", "FK_Country_Venue", "Country", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Motorsports.Scaffolding.Web.App_Code.Country), "Venue", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Motorsports.Scaffolding.Web.App_Code.Venue), true)]
-[assembly: EdmRelationshipAttribute("MotorsportsEFModel", "FK_Participant_RoundWinner", "Participant", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Motorsports.Scaffolding.Web.App_Code.Participant), "RoundWinner", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Motorsports.Scaffolding.Web.App_Code.RoundWinner), true)]
-[assembly: EdmRelationshipAttribute("MotorsportsEFModel", "FK_Participant_SeasonWinner", "Participant", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Motorsports.Scaffolding.Web.App_Code.Participant), "SeasonWinner", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Motorsports.Scaffolding.Web.App_Code.SeasonWinner), true)]
-[assembly: EdmRelationshipAttribute("MotorsportsEFModel", "FK_Round_RoundResult", "Round", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Motorsports.Scaffolding.Web.App_Code.Round), "RoundResult", System.Data.Metadata.Edm.RelationshipMultiplicity.ZeroOrOne, typeof(Motorsports.Scaffolding.Web.App_Code.RoundResult), true)]
-[assembly: EdmRelationshipAttribute("MotorsportsEFModel", "FK_Round_RoundWinner", "Round", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Motorsports.Scaffolding.Web.App_Code.Round), "RoundWinner", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Motorsports.Scaffolding.Web.App_Code.RoundWinner), true)]
-[assembly: EdmRelationshipAttribute("MotorsportsEFModel", "FK_Season_Round", "Season", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Motorsports.Scaffolding.Web.App_Code.Season), "Round", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Motorsports.Scaffolding.Web.App_Code.Round), true)]
-[assembly: EdmRelationshipAttribute("MotorsportsEFModel", "FK_Venue_Round", "Venue", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Motorsports.Scaffolding.Web.App_Code.Venue), "Round", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Motorsports.Scaffolding.Web.App_Code.Round), true)]
-[assembly: EdmRelationshipAttribute("MotorsportsEFModel", "FK_Status_RoundResult", "Status", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Motorsports.Scaffolding.Web.App_Code.Status), "RoundResult", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Motorsports.Scaffolding.Web.App_Code.RoundResult), true)]
-[assembly: EdmRelationshipAttribute("MotorsportsEFModel", "FK_Team_RoundResult", "Team", System.Data.Metadata.Edm.RelationshipMultiplicity.ZeroOrOne, typeof(Motorsports.Scaffolding.Web.App_Code.Team), "RoundResult", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Motorsports.Scaffolding.Web.App_Code.RoundResult), true)]
-[assembly: EdmRelationshipAttribute("MotorsportsEFModel", "FK_Season_SeasonWinner", "Season", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Motorsports.Scaffolding.Web.App_Code.Season), "SeasonWinner", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Motorsports.Scaffolding.Web.App_Code.SeasonWinner), true)]
-[assembly: EdmRelationshipAttribute("MotorsportsEFModel", "FK_Sport_Season", "Sport", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Motorsports.Scaffolding.Web.App_Code.Sport), "Season", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Motorsports.Scaffolding.Web.App_Code.Season), true)]
-[assembly: EdmRelationshipAttribute("MotorsportsEFModel", "FK_Sport_Team", "Sport", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Motorsports.Scaffolding.Web.App_Code.Sport), "Team", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Motorsports.Scaffolding.Web.App_Code.Team), true)]
-[assembly: EdmRelationshipAttribute("MotorsportsEFModel", "SeasonResult", "Season", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Motorsports.Scaffolding.Web.App_Code.Season), "Team", System.Data.Metadata.Edm.RelationshipMultiplicity.ZeroOrOne, typeof(Motorsports.Scaffolding.Web.App_Code.Team))]
+[assembly: EdmRelationship("MotorsportsEFModel", "FK_Country_Participant", "Country", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Country), "Participant", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Participant), true)]
+[assembly: EdmRelationship("MotorsportsEFModel", "FK_Country_Team", "Country", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Country), "Team", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Team), true)]
+[assembly: EdmRelationship("MotorsportsEFModel", "FK_Country_Venue", "Country", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Country), "Venue", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Venue), true)]
+[assembly: EdmRelationship("MotorsportsEFModel", "FK_Participant_RoundWinner", "Participant", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Participant), "RoundWinner", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(RoundWinner), true)]
+[assembly: EdmRelationship("MotorsportsEFModel", "FK_Participant_SeasonWinner", "Participant", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Participant), "SeasonWinner", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SeasonWinner), true)]
+[assembly: EdmRelationship("MotorsportsEFModel", "FK_Round_RoundResult", "Round", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Round), "RoundResult", System.Data.Metadata.Edm.RelationshipMultiplicity.ZeroOrOne, typeof(RoundResult), true)]
+[assembly: EdmRelationship("MotorsportsEFModel", "FK_Round_RoundWinner", "Round", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Round), "RoundWinner", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(RoundWinner), true)]
+[assembly: EdmRelationship("MotorsportsEFModel", "FK_Season_Round", "Season", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Season), "Round", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Round), true)]
+[assembly: EdmRelationship("MotorsportsEFModel", "FK_Venue_Round", "Venue", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Venue), "Round", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Round), true)]
+[assembly: EdmRelationship("MotorsportsEFModel", "FK_Status_RoundResult", "Status", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Status), "RoundResult", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(RoundResult), true)]
+[assembly: EdmRelationship("MotorsportsEFModel", "FK_Team_RoundResult", "Team", System.Data.Metadata.Edm.RelationshipMultiplicity.ZeroOrOne, typeof(Team), "RoundResult", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(RoundResult), true)]
+[assembly: EdmRelationship("MotorsportsEFModel", "FK_Season_SeasonWinner", "Season", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Season), "SeasonWinner", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(SeasonWinner), true)]
+[assembly: EdmRelationship("MotorsportsEFModel", "FK_Sport_Season", "Sport", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Sport), "Season", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Season), true)]
+[assembly: EdmRelationship("MotorsportsEFModel", "FK_Sport_Team", "Sport", System.Data.Metadata.Edm.RelationshipMultiplicity.One, typeof(Sport), "Team", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Team), true)]
+[assembly: EdmRelationship("MotorsportsEFModel", "SeasonResult", "Season", System.Data.Metadata.Edm.RelationshipMultiplicity.Many, typeof(Season), "Team", System.Data.Metadata.Edm.RelationshipMultiplicity.ZeroOrOne, typeof(Team))]
 
 #endregion
 
-namespace Motorsports.Scaffolding.Web.App_Code
+namespace Motorsports.Scaffolding.Web
 {
     #region Contexts
     
@@ -364,9 +364,9 @@ namespace Motorsports.Scaffolding.Web.App_Code
     /// <summary>
     /// No Metadata Documentation available.
     /// </summary>
-    [EdmEntityTypeAttribute(NamespaceName="MotorsportsEFModel", Name="Country")]
+    [EdmEntityType(NamespaceName="MotorsportsEFModel", Name="Country")]
     [Serializable()]
-    [DataContractAttribute(IsReference=true)]
+    [DataContract(IsReference=true)]
     public partial class Country : EntityObject
     {
         #region Factory Method
@@ -389,8 +389,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=true, IsNullable=false)]
+        [DataMember()]
         public global::System.String ISO
         {
             get
@@ -416,8 +416,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=true)]
+        [DataMember()]
         public global::System.String Name
         {
             get
@@ -440,8 +440,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=true)]
+        [DataMember()]
         public global::System.String NiceName
         {
             get
@@ -464,8 +464,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=true)]
+        [DataMember()]
         public global::System.String ISO3
         {
             get
@@ -488,8 +488,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=true)]
+        [DataMember()]
         public Nullable<global::System.Int16> NumCode
         {
             get
@@ -512,8 +512,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=true)]
+        [DataMember()]
         public Nullable<global::System.Int16> PhoneCode
         {
             get
@@ -540,10 +540,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Country_Participant", "Participant")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Country_Participant", "Participant")]
         public EntityCollection<Participant> Participants
         {
             get
@@ -562,10 +562,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Country_Team", "Team")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Country_Team", "Team")]
         public EntityCollection<Team> Teams
         {
             get
@@ -584,10 +584,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Country_Venue", "Venue")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Country_Venue", "Venue")]
         public EntityCollection<Venue> Venues
         {
             get
@@ -610,9 +610,9 @@ namespace Motorsports.Scaffolding.Web.App_Code
     /// <summary>
     /// No Metadata Documentation available.
     /// </summary>
-    [EdmEntityTypeAttribute(NamespaceName="MotorsportsEFModel", Name="Participant")]
+    [EdmEntityType(NamespaceName="MotorsportsEFModel", Name="Participant")]
     [Serializable()]
-    [DataContractAttribute(IsReference=true)]
+    [DataContract(IsReference=true)]
     public partial class Participant : EntityObject
     {
 
@@ -650,8 +650,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=true, IsNullable=false)]
+        [DataMember()]
         public global::System.Int32 Id
         {
             get
@@ -677,8 +677,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.String Title
         {
             get
@@ -701,8 +701,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.String FirstName
         {
             get
@@ -725,8 +725,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.String LastName
         {
             get
@@ -749,8 +749,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.String Country
         {
             get
@@ -777,10 +777,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Country_Participant", "Country")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Country_Participant", "Country")]
         public Country Country1
         {
             get
@@ -795,8 +795,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<Country> Country1Reference
         {
             get
@@ -815,10 +815,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Participant_RoundWinner", "RoundWinner")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Participant_RoundWinner", "RoundWinner")]
         public EntityCollection<RoundWinner> RoundWinners
         {
             get
@@ -837,10 +837,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Participant_SeasonWinner", "SeasonWinner")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Participant_SeasonWinner", "SeasonWinner")]
         public EntityCollection<SeasonWinner> SeasonWinners
         {
             get
@@ -863,9 +863,9 @@ namespace Motorsports.Scaffolding.Web.App_Code
     /// <summary>
     /// No Metadata Documentation available.
     /// </summary>
-    [EdmEntityTypeAttribute(NamespaceName="MotorsportsEFModel", Name="Round")]
+    [EdmEntityType(NamespaceName="MotorsportsEFModel", Name="Round")]
     [Serializable()]
-    [DataContractAttribute(IsReference=true)]
+    [DataContract(IsReference=true)]
     public partial class Round : EntityObject
     {
         #region Factory Method
@@ -896,8 +896,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=true, IsNullable=false)]
+        [DataMember()]
         public global::System.Int32 Id
         {
             get
@@ -923,8 +923,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.DateTime Date
         {
             get
@@ -947,8 +947,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.Int16 Number
         {
             get
@@ -971,8 +971,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=true)]
+        [DataMember()]
         public global::System.String Name
         {
             get
@@ -995,8 +995,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.Int32 Season
         {
             get
@@ -1019,8 +1019,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.String Venue
         {
             get
@@ -1047,10 +1047,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Round_RoundResult", "RoundResult")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Round_RoundResult", "RoundResult")]
         public RoundResult RoundResult
         {
             get
@@ -1065,8 +1065,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<RoundResult> RoundResultReference
         {
             get
@@ -1085,10 +1085,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Round_RoundWinner", "RoundWinner")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Round_RoundWinner", "RoundWinner")]
         public EntityCollection<RoundWinner> RoundWinners
         {
             get
@@ -1107,10 +1107,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Season_Round", "Season")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Season_Round", "Season")]
         public Season Season1
         {
             get
@@ -1125,8 +1125,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<Season> Season1Reference
         {
             get
@@ -1145,10 +1145,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Venue_Round", "Venue")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Venue_Round", "Venue")]
         public Venue Venue1
         {
             get
@@ -1163,8 +1163,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<Venue> Venue1Reference
         {
             get
@@ -1187,9 +1187,9 @@ namespace Motorsports.Scaffolding.Web.App_Code
     /// <summary>
     /// No Metadata Documentation available.
     /// </summary>
-    [EdmEntityTypeAttribute(NamespaceName="MotorsportsEFModel", Name="RoundResult")]
+    [EdmEntityType(NamespaceName="MotorsportsEFModel", Name="RoundResult")]
     [Serializable()]
-    [DataContractAttribute(IsReference=true)]
+    [DataContract(IsReference=true)]
     public partial class RoundResult : EntityObject
     {
         #region Factory Method
@@ -1214,8 +1214,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=true, IsNullable=false)]
+        [DataMember()]
         public global::System.Int32 Round
         {
             get
@@ -1241,8 +1241,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.String Status
         {
             get
@@ -1265,8 +1265,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=true)]
+        [DataMember()]
         public Nullable<global::System.Decimal> Rating
         {
             get
@@ -1289,8 +1289,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=true)]
+        [DataMember()]
         public Nullable<global::System.Decimal> Rain
         {
             get
@@ -1313,8 +1313,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=true)]
+        [DataMember()]
         public Nullable<global::System.Int32> WinningTeam
         {
             get
@@ -1341,10 +1341,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Round_RoundResult", "Round")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Round_RoundResult", "Round")]
         public Round Round1
         {
             get
@@ -1359,8 +1359,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<Round> Round1Reference
         {
             get
@@ -1379,10 +1379,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Status_RoundResult", "Status")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Status_RoundResult", "Status")]
         public Status Status1
         {
             get
@@ -1397,8 +1397,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<Status> Status1Reference
         {
             get
@@ -1417,10 +1417,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Team_RoundResult", "Team")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Team_RoundResult", "Team")]
         public Team Team
         {
             get
@@ -1435,8 +1435,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<Team> TeamReference
         {
             get
@@ -1459,9 +1459,9 @@ namespace Motorsports.Scaffolding.Web.App_Code
     /// <summary>
     /// No Metadata Documentation available.
     /// </summary>
-    [EdmEntityTypeAttribute(NamespaceName="MotorsportsEFModel", Name="RoundWinner")]
+    [EdmEntityType(NamespaceName="MotorsportsEFModel", Name="RoundWinner")]
     [Serializable()]
-    [DataContractAttribute(IsReference=true)]
+    [DataContract(IsReference=true)]
     public partial class RoundWinner : EntityObject
     {
         #region Factory Method
@@ -1488,8 +1488,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=true, IsNullable=false)]
+        [DataMember()]
         public global::System.Int32 Id
         {
             get
@@ -1515,8 +1515,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.Int32 Round
         {
             get
@@ -1539,8 +1539,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.Int32 Participant
         {
             get
@@ -1567,10 +1567,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Participant_RoundWinner", "Participant")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Participant_RoundWinner", "Participant")]
         public Participant Participant1
         {
             get
@@ -1585,8 +1585,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<Participant> Participant1Reference
         {
             get
@@ -1605,10 +1605,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Round_RoundWinner", "Round")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Round_RoundWinner", "Round")]
         public Round Round1
         {
             get
@@ -1623,8 +1623,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<Round> Round1Reference
         {
             get
@@ -1647,9 +1647,9 @@ namespace Motorsports.Scaffolding.Web.App_Code
     /// <summary>
     /// No Metadata Documentation available.
     /// </summary>
-    [EdmEntityTypeAttribute(NamespaceName="MotorsportsEFModel", Name="Season")]
+    [EdmEntityType(NamespaceName="MotorsportsEFModel", Name="Season")]
     [Serializable()]
-    [DataContractAttribute(IsReference=true)]
+    [DataContract(IsReference=true)]
     public partial class Season : EntityObject
     {
         #region Factory Method
@@ -1674,8 +1674,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=true, IsNullable=false)]
+        [DataMember()]
         public global::System.Int32 Id
         {
             get
@@ -1701,8 +1701,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.String Sport
         {
             get
@@ -1725,8 +1725,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=true)]
+        [DataMember()]
         public global::System.String Label
         {
             get
@@ -1753,10 +1753,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Season_Round", "Round")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Season_Round", "Round")]
         public EntityCollection<Round> Rounds
         {
             get
@@ -1775,10 +1775,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Season_SeasonWinner", "SeasonWinner")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Season_SeasonWinner", "SeasonWinner")]
         public EntityCollection<SeasonWinner> SeasonWinners
         {
             get
@@ -1797,10 +1797,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Sport_Season", "Sport")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Sport_Season", "Sport")]
         public Sport Sport1
         {
             get
@@ -1815,8 +1815,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<Sport> Sport1Reference
         {
             get
@@ -1835,10 +1835,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "SeasonResult", "Team")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "SeasonResult", "Team")]
         public Team Team
         {
             get
@@ -1853,8 +1853,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<Team> TeamReference
         {
             get
@@ -1877,9 +1877,9 @@ namespace Motorsports.Scaffolding.Web.App_Code
     /// <summary>
     /// No Metadata Documentation available.
     /// </summary>
-    [EdmEntityTypeAttribute(NamespaceName="MotorsportsEFModel", Name="SeasonWinner")]
+    [EdmEntityType(NamespaceName="MotorsportsEFModel", Name="SeasonWinner")]
     [Serializable()]
-    [DataContractAttribute(IsReference=true)]
+    [DataContract(IsReference=true)]
     public partial class SeasonWinner : EntityObject
     {
         #region Factory Method
@@ -1906,8 +1906,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=true, IsNullable=false)]
+        [DataMember()]
         public global::System.Int32 Id
         {
             get
@@ -1933,8 +1933,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.Int32 Season
         {
             get
@@ -1957,8 +1957,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.Int32 Participant
         {
             get
@@ -1985,10 +1985,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Participant_SeasonWinner", "Participant")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Participant_SeasonWinner", "Participant")]
         public Participant Participant1
         {
             get
@@ -2003,8 +2003,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<Participant> Participant1Reference
         {
             get
@@ -2023,10 +2023,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Season_SeasonWinner", "Season")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Season_SeasonWinner", "Season")]
         public Season Season1
         {
             get
@@ -2041,8 +2041,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<Season> Season1Reference
         {
             get
@@ -2065,9 +2065,9 @@ namespace Motorsports.Scaffolding.Web.App_Code
     /// <summary>
     /// No Metadata Documentation available.
     /// </summary>
-    [EdmEntityTypeAttribute(NamespaceName="MotorsportsEFModel", Name="Sport")]
+    [EdmEntityType(NamespaceName="MotorsportsEFModel", Name="Sport")]
     [Serializable()]
-    [DataContractAttribute(IsReference=true)]
+    [DataContract(IsReference=true)]
     public partial class Sport : EntityObject
     {
         #region Factory Method
@@ -2090,8 +2090,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=true, IsNullable=false)]
+        [DataMember()]
         public global::System.String Name
         {
             get
@@ -2117,8 +2117,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=true)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=true)]
+        [DataMember()]
         public global::System.String FullName
         {
             get
@@ -2145,10 +2145,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Sport_Season", "Season")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Sport_Season", "Season")]
         public EntityCollection<Season> Seasons
         {
             get
@@ -2167,10 +2167,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Sport_Team", "Team")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Sport_Team", "Team")]
         public EntityCollection<Team> Teams
         {
             get
@@ -2193,9 +2193,9 @@ namespace Motorsports.Scaffolding.Web.App_Code
     /// <summary>
     /// No Metadata Documentation available.
     /// </summary>
-    [EdmEntityTypeAttribute(NamespaceName="MotorsportsEFModel", Name="Status")]
+    [EdmEntityType(NamespaceName="MotorsportsEFModel", Name="Status")]
     [Serializable()]
-    [DataContractAttribute(IsReference=true)]
+    [DataContract(IsReference=true)]
     public partial class Status : EntityObject
     {
         #region Factory Method
@@ -2218,8 +2218,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=true, IsNullable=false)]
+        [DataMember()]
         public global::System.String Name
         {
             get
@@ -2249,10 +2249,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Status_RoundResult", "RoundResult")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Status_RoundResult", "RoundResult")]
         public EntityCollection<RoundResult> RoundResults
         {
             get
@@ -2275,9 +2275,9 @@ namespace Motorsports.Scaffolding.Web.App_Code
     /// <summary>
     /// No Metadata Documentation available.
     /// </summary>
-    [EdmEntityTypeAttribute(NamespaceName="MotorsportsEFModel", Name="Team")]
+    [EdmEntityType(NamespaceName="MotorsportsEFModel", Name="Team")]
     [Serializable()]
-    [DataContractAttribute(IsReference=true)]
+    [DataContract(IsReference=true)]
     public partial class Team : EntityObject
     {
         #region Factory Method
@@ -2306,8 +2306,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=true, IsNullable=false)]
+        [DataMember()]
         public global::System.Int32 Id
         {
             get
@@ -2333,8 +2333,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.String Name
         {
             get
@@ -2357,8 +2357,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.String Sport
         {
             get
@@ -2381,8 +2381,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.String Country
         {
             get
@@ -2409,10 +2409,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Country_Team", "Country")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Country_Team", "Country")]
         public Country Country1
         {
             get
@@ -2427,8 +2427,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<Country> Country1Reference
         {
             get
@@ -2447,10 +2447,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Team_RoundResult", "RoundResult")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Team_RoundResult", "RoundResult")]
         public EntityCollection<RoundResult> RoundResults
         {
             get
@@ -2469,10 +2469,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Sport_Team", "Sport")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Sport_Team", "Sport")]
         public Sport Sport1
         {
             get
@@ -2487,8 +2487,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<Sport> Sport1Reference
         {
             get
@@ -2507,10 +2507,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "SeasonResult", "Season")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "SeasonResult", "Season")]
         public EntityCollection<Season> Seasons
         {
             get
@@ -2533,9 +2533,9 @@ namespace Motorsports.Scaffolding.Web.App_Code
     /// <summary>
     /// No Metadata Documentation available.
     /// </summary>
-    [EdmEntityTypeAttribute(NamespaceName="MotorsportsEFModel", Name="Venue")]
+    [EdmEntityType(NamespaceName="MotorsportsEFModel", Name="Venue")]
     [Serializable()]
-    [DataContractAttribute(IsReference=true)]
+    [DataContract(IsReference=true)]
     public partial class Venue : EntityObject
     {
         #region Factory Method
@@ -2560,8 +2560,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=true, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=true, IsNullable=false)]
+        [DataMember()]
         public global::System.String Name
         {
             get
@@ -2587,8 +2587,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [EdmScalarPropertyAttribute(EntityKeyProperty=false, IsNullable=false)]
-        [DataMemberAttribute()]
+        [EdmScalarProperty(EntityKeyProperty=false, IsNullable=false)]
+        [DataMember()]
         public global::System.String Country
         {
             get
@@ -2615,10 +2615,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Country_Venue", "Country")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Country_Venue", "Country")]
         public Country Country1
         {
             get
@@ -2633,8 +2633,8 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [BrowsableAttribute(false)]
-        [DataMemberAttribute()]
+        [Browsable(false)]
+        [DataMember()]
         public EntityReference<Country> Country1Reference
         {
             get
@@ -2653,10 +2653,10 @@ namespace Motorsports.Scaffolding.Web.App_Code
         /// <summary>
         /// No Metadata Documentation available.
         /// </summary>
-        [XmlIgnoreAttribute()]
-        [SoapIgnoreAttribute()]
-        [DataMemberAttribute()]
-        [EdmRelationshipNavigationPropertyAttribute("MotorsportsEFModel", "FK_Venue_Round", "Round")]
+        [XmlIgnore()]
+        [SoapIgnore()]
+        [DataMember()]
+        [EdmRelationshipNavigationProperty("MotorsportsEFModel", "FK_Venue_Round", "Round")]
         public EntityCollection<Round> Rounds
         {
             get

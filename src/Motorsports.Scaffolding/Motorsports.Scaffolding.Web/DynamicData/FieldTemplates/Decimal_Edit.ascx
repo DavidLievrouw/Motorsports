@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" CodeBehind="Decimal_Edit.ascx.cs" Inherits="Motorsports.Scaffolding.Decimal_EditField" %>
+﻿<%@ Control Language="C#" CodeBehind="Decimal_Edit.ascx.cs" Inherits="Motorsports.Scaffolding.Web.DynamicData.FieldTemplates.Decimal_EditField" %>
 
 
 <asp:TextBox ID="TextBox1" runat="server" CssClass="DDTextBox" Text='<%# FieldValueEditString %>' Columns="10" TextMode="Number"></asp:TextBox>

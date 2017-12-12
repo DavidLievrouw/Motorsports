@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" CodeBehind="ForeignKey.ascx.cs" Inherits="Motorsports.Scaffolding.ForeignKeyFilter" %>
+﻿<%@ Control Language="C#" CodeBehind="ForeignKey.ascx.cs" Inherits="Motorsports.Scaffolding.Web.DynamicData.Filters.ForeignKeyFilter" %>
 
 <asp:DropDownList runat="server" ID="DropDownList1" AutoPostBack="True" CssClass="DDFilter"
     OnSelectedIndexChanged="DropDownList1_SelectedIndexChanged">
