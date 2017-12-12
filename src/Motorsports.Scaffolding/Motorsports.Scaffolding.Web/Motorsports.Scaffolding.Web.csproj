@@ -45,12 +45,19 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data.Entity" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
     <Reference Include="System.Web.Entity" />
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Web.Extensions.Design" />
@@ -68,8 +75,66 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="App_Code\MotorsportsModel.Context.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>MotorsportsModel.edmx</DependentUpon>
+      <LastGenOutput>MotorsportsModel.Context.cs</LastGenOutput>
+    </Content>
+    <Content Include="App_Code\MotorsportsModel.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>MotorsportsModel.edmx</DependentUpon>
+      <LastGenOutput>MotorsportsModel.cs</LastGenOutput>
+    </Content>
     <Content Include="CSDynamicDataWebApplication.ico" />
     <Content Include="Default.aspx" />
+    <Content Include="App_Code\Country.cs">
+      <DependentUpon>MotorsportsModel.tt</DependentUpon>
+    </Content>
+    <Content Include="App_Code\MotorsportsModel.Context.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>MotorsportsModel.Context.tt</DependentUpon>
+    </Content>
+    <Content Include="App_Code\MotorsportsModel.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>MotorsportsModel.tt</DependentUpon>
+    </Content>
+    <Content Include="App_Code\MotorsportsModel.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>MotorsportsModel.edmx</DependentUpon>
+    </Content>
+    <Content Include="App_Code\Participant.cs">
+      <DependentUpon>MotorsportsModel.tt</DependentUpon>
+    </Content>
+    <Content Include="App_Code\Round.cs">
+      <DependentUpon>MotorsportsModel.tt</DependentUpon>
+    </Content>
+    <Content Include="App_Code\RoundResult.cs">
+      <DependentUpon>MotorsportsModel.tt</DependentUpon>
+    </Content>
+    <Content Include="App_Code\RoundWinner.cs">
+      <DependentUpon>MotorsportsModel.tt</DependentUpon>
+    </Content>
+    <Content Include="App_Code\Season.cs">
+      <DependentUpon>MotorsportsModel.tt</DependentUpon>
+    </Content>
+    <Content Include="App_Code\SeasonWinner.cs">
+      <DependentUpon>MotorsportsModel.tt</DependentUpon>
+    </Content>
+    <Content Include="App_Code\Sport.cs">
+      <DependentUpon>MotorsportsModel.tt</DependentUpon>
+    </Content>
+    <Content Include="App_Code\Status.cs">
+      <DependentUpon>MotorsportsModel.tt</DependentUpon>
+    </Content>
+    <Content Include="App_Code\Team.cs">
+      <DependentUpon>MotorsportsModel.tt</DependentUpon>
+    </Content>
+    <Content Include="App_Code\Venue.cs">
+      <DependentUpon>MotorsportsModel.tt</DependentUpon>
+    </Content>
     <Compile Include="Default.aspx.cs">
       <DependentUpon>Default.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -90,7 +155,9 @@
     <Compile Include="Site.master.designer.cs">
       <DependentUpon>Site.master</DependentUpon>
     </Compile>
-    <Content Include="web.config" />
+    <Content Include="web.config">
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="DynamicData\web.config" />
     <Content Include="DynamicData\Content\GridViewPager.ascx" />
     <Compile Include="DynamicData\Content\GridViewPager.ascx.cs">
@@ -377,12 +444,24 @@
     <Folder Include="DynamicData\CustomPages\" />
   </ItemGroup>
   <ItemGroup>
+    <EntityDeploy Include="App_Code\MotorsportsModel.edmx">
+      <Generator>EntityModelCodeGenerator</Generator>
+      <LastGenOutput>MotorsportsModel.Designer.cs</LastGenOutput>
+    </EntityDeploy>
+    <Content Include="App_Code\MotorsportsModel.edmx.diagram">
+      <DependentUpon>MotorsportsModel.edmx</DependentUpon>
+    </Content>
+    <Content Include="ConnectionStrings.config" />
+    <None Include="packages.config" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>
     <None Include="web.Release.config">
       <DependentUpon>web.config</DependentUpon>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

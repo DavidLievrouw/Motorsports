@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="d58fca99a8c44adba678f408d9abcd2f" Name="Diagram1">
+        <EntityTypeShape EntityType="MotorsportsModel.Country" Width="1.5" PointX="0.75" PointY="5.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="MotorsportsModel.Participant" Width="1.5" PointX="3" PointY="4.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="MotorsportsModel.Round" Width="1.5" PointX="5.25" PointY="11.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="MotorsportsModel.RoundResult" Width="1.5" PointX="8.25" PointY="10.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="MotorsportsModel.RoundWinner" Width="1.5" PointX="5.25" PointY="5" IsExpanded="true" />
+        <EntityTypeShape EntityType="MotorsportsModel.Season" Width="1.5" PointX="3" PointY="0.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="MotorsportsModel.SeasonWinner" Width="1.5" PointX="5.25" PointY="2" IsExpanded="true" />
+        <EntityTypeShape EntityType="MotorsportsModel.Sport" Width="1.5" PointX="0.75" PointY="1.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="MotorsportsModel.Status" Width="1.5" PointX="6" PointY="15.625" IsExpanded="true" />
+        <EntityTypeShape EntityType="MotorsportsModel.Team" Width="1.5" PointX="6" PointY="8" IsExpanded="true" />
+        <EntityTypeShape EntityType="MotorsportsModel.Venue" Width="1.5" PointX="3" PointY="11.375" IsExpanded="true" />
+        <AssociationConnector Association="MotorsportsModel.FK_Country_Participant" ManuallyRouted="false" />
+        <AssociationConnector Association="MotorsportsModel.FK_Country_Team" ManuallyRouted="false" />
+        <AssociationConnector Association="MotorsportsModel.FK_Country_Venue" ManuallyRouted="false" />
+        <AssociationConnector Association="MotorsportsModel.FK_Participant_RoundWinner" ManuallyRouted="false" />
+        <AssociationConnector Association="MotorsportsModel.FK_Participant_SeasonWinner" ManuallyRouted="false" />
+        <AssociationConnector Association="MotorsportsModel.FK_Round_RoundResult" ManuallyRouted="false" />
+        <AssociationConnector Association="MotorsportsModel.FK_Round_RoundWinner" ManuallyRouted="false" />
+        <AssociationConnector Association="MotorsportsModel.FK_Season_Round" ManuallyRouted="false" />
+        <AssociationConnector Association="MotorsportsModel.FK_Venue_Round" ManuallyRouted="false" />
+        <AssociationConnector Association="MotorsportsModel.FK_Status_RoundResult" ManuallyRouted="false" />
+        <AssociationConnector Association="MotorsportsModel.FK_Team_RoundResult" ManuallyRouted="false" />
+        <AssociationConnector Association="MotorsportsModel.FK_Season_SeasonWinner" ManuallyRouted="false" />
+        <AssociationConnector Association="MotorsportsModel.FK_Sport_Season" ManuallyRouted="false" />
+        <AssociationConnector Association="MotorsportsModel.FK_Sport_Team" ManuallyRouted="false" />
+        <AssociationConnector Association="MotorsportsModel.SeasonResult" ManuallyRouted="false" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>
