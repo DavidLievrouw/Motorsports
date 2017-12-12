@@ -1,4 +1,3 @@
 ﻿<%@ Control Language="C#" CodeBehind="Boolean_Edit.ascx.cs" Inherits="Motorsports.Scaffolding.Web.DynamicData.FieldTemplates.Boolean_EditField" %>
 
-<asp:CheckBox runat="server" ID="CheckBox1" />
-
+<asp:CheckBox runat="server" ID="CheckBox1"/>
