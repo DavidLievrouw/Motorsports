@@ -4,7 +4,7 @@
   <edmx:Runtime>
     <!-- SSDL content -->
     <edmx:StorageModels>
-      <Schema Namespace="MotorsportsModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2008" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+      <Schema Namespace="MotorsportsEFModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2008" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
         <EntityType Name="Country">
           <Key>
             <PropertyRef Name="ISO" />
@@ -309,7 +309,7 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <EntityContainer Name="MotorsportsModelStoreContainer">
+        <EntityContainer Name="MotorsportsEFModelStoreContainer">
           <EntitySet Name="Country" EntityType="Self.Country" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Participant" EntityType="Self.Participant" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Round" EntityType="Self.Round" Schema="dbo" store:Type="Tables" />
@@ -391,7 +391,7 @@
     </edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
-      <Schema Namespace="MotorsportsModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+      <Schema Namespace="MotorsportsEFModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
         <EntityType Name="Country">
           <Key>
             <PropertyRef Name="ISO" />
@@ -402,9 +402,9 @@
           <Property Name="ISO3" Type="String" MaxLength="3" FixedLength="true" Unicode="false" />
           <Property Name="NumCode" Type="Int16" />
           <Property Name="PhoneCode" Type="Int16" />
-          <NavigationProperty Name="RelatedParticipants" Relationship="Self.FK_Country_Participant" FromRole="Country" ToRole="Participant" />
-          <NavigationProperty Name="RelatedTeams" Relationship="Self.FK_Country_Team" FromRole="Country" ToRole="Team" />
-          <NavigationProperty Name="RelatedVenues" Relationship="Self.FK_Country_Venue" FromRole="Country" ToRole="Venue" />
+          <NavigationProperty Name="Participants" Relationship="Self.FK_Country_Participant" FromRole="Country" ToRole="Participant" />
+          <NavigationProperty Name="Teams" Relationship="Self.FK_Country_Team" FromRole="Country" ToRole="Team" />
+          <NavigationProperty Name="Venues" Relationship="Self.FK_Country_Venue" FromRole="Country" ToRole="Venue" />
         </EntityType>
         <EntityType Name="Participant">
           <Key>
@@ -415,7 +415,7 @@
           <Property Name="FirstName" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="LastName" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Country" Type="String" MaxLength="2" FixedLength="true" Unicode="false" Nullable="false" />
-          <NavigationProperty Name="RelatedCountry" Relationship="Self.FK_Country_Participant" FromRole="Participant" ToRole="Country" />
+          <NavigationProperty Name="Country1" Relationship="Self.FK_Country_Participant" FromRole="Participant" ToRole="Country" />
           <NavigationProperty Name="RoundWinners" Relationship="Self.FK_Participant_RoundWinner" FromRole="Participant" ToRole="RoundWinner" />
           <NavigationProperty Name="SeasonWinners" Relationship="Self.FK_Participant_SeasonWinner" FromRole="Participant" ToRole="SeasonWinner" />
         </EntityType>
@@ -431,8 +431,8 @@
           <Property Name="Venue" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
           <NavigationProperty Name="RoundResult" Relationship="Self.FK_Round_RoundResult" FromRole="Round" ToRole="RoundResult" />
           <NavigationProperty Name="RoundWinners" Relationship="Self.FK_Round_RoundWinner" FromRole="Round" ToRole="RoundWinner" />
-          <NavigationProperty Name="RelatedSeason" Relationship="Self.FK_Season_Round" FromRole="Round" ToRole="Season" />
-          <NavigationProperty Name="RelatedVenue" Relationship="Self.FK_Venue_Round" FromRole="Round" ToRole="Venue" />
+          <NavigationProperty Name="Season1" Relationship="Self.FK_Season_Round" FromRole="Round" ToRole="Season" />
+          <NavigationProperty Name="Venue1" Relationship="Self.FK_Venue_Round" FromRole="Round" ToRole="Venue" />
         </EntityType>
         <EntityType Name="RoundResult">
           <Key>
@@ -443,9 +443,9 @@
           <Property Name="Rating" Type="Decimal" Precision="2" Scale="1" />
           <Property Name="Rain" Type="Decimal" Precision="1" Scale="0" />
           <Property Name="WinningTeam" Type="Int32" />
-          <NavigationProperty Name="RelatedRound" Relationship="Self.FK_Round_RoundResult" FromRole="RoundResult" ToRole="Round" />
-          <NavigationProperty Name="RelatedStatus" Relationship="Self.FK_Status_RoundResult" FromRole="RoundResult" ToRole="Status" />
-          <NavigationProperty Name="RelatedTeam" Relationship="Self.FK_Team_RoundResult" FromRole="RoundResult" ToRole="Team" />
+          <NavigationProperty Name="Round1" Relationship="Self.FK_Round_RoundResult" FromRole="RoundResult" ToRole="Round" />
+          <NavigationProperty Name="Status1" Relationship="Self.FK_Status_RoundResult" FromRole="RoundResult" ToRole="Status" />
+          <NavigationProperty Name="Team" Relationship="Self.FK_Team_RoundResult" FromRole="RoundResult" ToRole="Team" />
         </EntityType>
         <EntityType Name="RoundWinner">
           <Key>
@@ -454,8 +454,8 @@
           <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
           <Property Name="Round" Type="Int32" Nullable="false" />
           <Property Name="Participant" Type="Int32" Nullable="false" />
-          <NavigationProperty Name="RelatedParticipant" Relationship="Self.FK_Participant_RoundWinner" FromRole="RoundWinner" ToRole="Participant" />
-          <NavigationProperty Name="RelatedRound" Relationship="Self.FK_Round_RoundWinner" FromRole="RoundWinner" ToRole="Round" />
+          <NavigationProperty Name="Participant1" Relationship="Self.FK_Participant_RoundWinner" FromRole="RoundWinner" ToRole="Participant" />
+          <NavigationProperty Name="Round1" Relationship="Self.FK_Round_RoundWinner" FromRole="RoundWinner" ToRole="Round" />
         </EntityType>
         <EntityType Name="Season">
           <Key>
@@ -464,10 +464,10 @@
           <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
           <Property Name="Sport" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Label" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
-          <NavigationProperty Name="RelatedRounds" Relationship="Self.FK_Season_Round" FromRole="Season" ToRole="Round" />
+          <NavigationProperty Name="Rounds" Relationship="Self.FK_Season_Round" FromRole="Season" ToRole="Round" />
           <NavigationProperty Name="SeasonWinners" Relationship="Self.FK_Season_SeasonWinner" FromRole="Season" ToRole="SeasonWinner" />
-          <NavigationProperty Name="RelatedSport" Relationship="Self.FK_Sport_Season" FromRole="Season" ToRole="Sport" />
-          <NavigationProperty Name="WinningTeam" Relationship="Self.SeasonResult" FromRole="Season" ToRole="Team" />
+          <NavigationProperty Name="Sport1" Relationship="Self.FK_Sport_Season" FromRole="Season" ToRole="Sport" />
+          <NavigationProperty Name="Team" Relationship="Self.SeasonResult" FromRole="Season" ToRole="Team" />
         </EntityType>
         <EntityType Name="SeasonWinner">
           <Key>
@@ -476,8 +476,8 @@
           <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
           <Property Name="Season" Type="Int32" Nullable="false" />
           <Property Name="Participant" Type="Int32" Nullable="false" />
-          <NavigationProperty Name="RelatedParticipant" Relationship="Self.FK_Participant_SeasonWinner" FromRole="SeasonWinner" ToRole="Participant" />
-          <NavigationProperty Name="RelatedSeason" Relationship="Self.FK_Season_SeasonWinner" FromRole="SeasonWinner" ToRole="Season" />
+          <NavigationProperty Name="Participant1" Relationship="Self.FK_Participant_SeasonWinner" FromRole="SeasonWinner" ToRole="Participant" />
+          <NavigationProperty Name="Season1" Relationship="Self.FK_Season_SeasonWinner" FromRole="SeasonWinner" ToRole="Season" />
         </EntityType>
         <EntityType Name="Sport">
           <Key>
@@ -485,8 +485,8 @@
           </Key>
           <Property Name="Name" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="FullName" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
-          <NavigationProperty Name="RelatedSeasons" Relationship="Self.FK_Sport_Season" FromRole="Sport" ToRole="Season" />
-          <NavigationProperty Name="RelatedTeams" Relationship="Self.FK_Sport_Team" FromRole="Sport" ToRole="Team" />
+          <NavigationProperty Name="Seasons" Relationship="Self.FK_Sport_Season" FromRole="Sport" ToRole="Season" />
+          <NavigationProperty Name="Teams" Relationship="Self.FK_Sport_Team" FromRole="Sport" ToRole="Team" />
         </EntityType>
         <EntityType Name="Status">
           <Key>
@@ -503,10 +503,10 @@
           <Property Name="Name" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Sport" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Country" Type="String" MaxLength="2" FixedLength="true" Unicode="false" Nullable="false" />
-          <NavigationProperty Name="RelatedCountry" Relationship="Self.FK_Country_Team" FromRole="Team" ToRole="Country" />
+          <NavigationProperty Name="Country1" Relationship="Self.FK_Country_Team" FromRole="Team" ToRole="Country" />
           <NavigationProperty Name="RoundResults" Relationship="Self.FK_Team_RoundResult" FromRole="Team" ToRole="RoundResult" />
-          <NavigationProperty Name="RelatedSport" Relationship="Self.FK_Sport_Team" FromRole="Team" ToRole="Sport" />
-          <NavigationProperty Name="RelatedSeasons" Relationship="Self.SeasonResult" FromRole="Team" ToRole="Season" />
+          <NavigationProperty Name="Sport1" Relationship="Self.FK_Sport_Team" FromRole="Team" ToRole="Sport" />
+          <NavigationProperty Name="Seasons" Relationship="Self.SeasonResult" FromRole="Team" ToRole="Season" />
         </EntityType>
         <EntityType Name="Venue">
           <Key>
@@ -514,8 +514,8 @@
           </Key>
           <Property Name="Name" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Country" Type="String" MaxLength="2" FixedLength="true" Unicode="false" Nullable="false" />
-          <NavigationProperty Name="RelatedCountry" Relationship="Self.FK_Country_Venue" FromRole="Venue" ToRole="Country" />
-          <NavigationProperty Name="RelatedRounds" Relationship="Self.FK_Venue_Round" FromRole="Venue" ToRole="Round" />
+          <NavigationProperty Name="Country1" Relationship="Self.FK_Country_Venue" FromRole="Venue" ToRole="Country" />
+          <NavigationProperty Name="Rounds" Relationship="Self.FK_Venue_Round" FromRole="Venue" ToRole="Round" />
         </EntityType>
         <Association Name="FK_Country_Participant">
           <End Role="Country" Type="Self.Country" Multiplicity="1" />
@@ -697,7 +697,7 @@
           <End Role="Season" Type="Self.Season" Multiplicity="*" />
           <End Role="Team" Type="Self.Team" Multiplicity="0..1" />
         </Association>
-        <EntityContainer Name="MotorsportsEntities" annotation:LazyLoadingEnabled="true">
+        <EntityContainer Name="Entities" annotation:LazyLoadingEnabled="true">
           <EntitySet Name="Countries" EntityType="Self.Country" />
           <EntitySet Name="Participants" EntityType="Self.Participant" />
           <EntitySet Name="Rounds" EntityType="Self.Round" />
@@ -775,9 +775,9 @@
     <!-- C-S mapping content -->
     <edmx:Mappings>
       <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
-        <EntityContainerMapping StorageEntityContainer="MotorsportsModelStoreContainer" CdmEntityContainer="MotorsportsEntities">
+        <EntityContainerMapping StorageEntityContainer="MotorsportsEFModelStoreContainer" CdmEntityContainer="Entities">
           <EntitySetMapping Name="Countries">
-            <EntityTypeMapping TypeName="MotorsportsModel.Country">
+            <EntityTypeMapping TypeName="MotorsportsEFModel.Country">
               <MappingFragment StoreEntitySet="Country">
                 <ScalarProperty Name="ISO" ColumnName="ISO" />
                 <ScalarProperty Name="Name" ColumnName="Name" />
@@ -789,7 +789,7 @@
             </EntityTypeMapping>
           </EntitySetMapping>
           <EntitySetMapping Name="Participants">
-            <EntityTypeMapping TypeName="MotorsportsModel.Participant">
+            <EntityTypeMapping TypeName="MotorsportsEFModel.Participant">
               <MappingFragment StoreEntitySet="Participant">
                 <ScalarProperty Name="Id" ColumnName="Id" />
                 <ScalarProperty Name="Title" ColumnName="Title" />
@@ -800,7 +800,7 @@
             </EntityTypeMapping>
           </EntitySetMapping>
           <EntitySetMapping Name="Rounds">
-            <EntityTypeMapping TypeName="MotorsportsModel.Round">
+            <EntityTypeMapping TypeName="MotorsportsEFModel.Round">
               <MappingFragment StoreEntitySet="Round">
                 <ScalarProperty Name="Id" ColumnName="Id" />
                 <ScalarProperty Name="Date" ColumnName="Date" />
@@ -812,7 +812,7 @@
             </EntityTypeMapping>
           </EntitySetMapping>
           <EntitySetMapping Name="RoundResults">
-            <EntityTypeMapping TypeName="MotorsportsModel.RoundResult">
+            <EntityTypeMapping TypeName="MotorsportsEFModel.RoundResult">
               <MappingFragment StoreEntitySet="RoundResult">
                 <ScalarProperty Name="Round" ColumnName="Round" />
                 <ScalarProperty Name="Status" ColumnName="Status" />
@@ -823,7 +823,7 @@
             </EntityTypeMapping>
           </EntitySetMapping>
           <EntitySetMapping Name="RoundWinners">
-            <EntityTypeMapping TypeName="MotorsportsModel.RoundWinner">
+            <EntityTypeMapping TypeName="MotorsportsEFModel.RoundWinner">
               <MappingFragment StoreEntitySet="RoundWinner">
                 <ScalarProperty Name="Id" ColumnName="Id" />
                 <ScalarProperty Name="Round" ColumnName="Round" />
@@ -832,7 +832,7 @@
             </EntityTypeMapping>
           </EntitySetMapping>
           <EntitySetMapping Name="Seasons">
-            <EntityTypeMapping TypeName="MotorsportsModel.Season">
+            <EntityTypeMapping TypeName="MotorsportsEFModel.Season">
               <MappingFragment StoreEntitySet="Season">
                 <ScalarProperty Name="Id" ColumnName="Id" />
                 <ScalarProperty Name="Sport" ColumnName="Sport" />
@@ -841,7 +841,7 @@
             </EntityTypeMapping>
           </EntitySetMapping>
           <EntitySetMapping Name="SeasonWinners">
-            <EntityTypeMapping TypeName="MotorsportsModel.SeasonWinner">
+            <EntityTypeMapping TypeName="MotorsportsEFModel.SeasonWinner">
               <MappingFragment StoreEntitySet="SeasonWinner">
                 <ScalarProperty Name="Id" ColumnName="Id" />
                 <ScalarProperty Name="Season" ColumnName="Season" />
@@ -850,7 +850,7 @@
             </EntityTypeMapping>
           </EntitySetMapping>
           <EntitySetMapping Name="Sports">
-            <EntityTypeMapping TypeName="MotorsportsModel.Sport">
+            <EntityTypeMapping TypeName="MotorsportsEFModel.Sport">
               <MappingFragment StoreEntitySet="Sport">
                 <ScalarProperty Name="Name" ColumnName="Name" />
                 <ScalarProperty Name="FullName" ColumnName="FullName" />
@@ -858,14 +858,14 @@
             </EntityTypeMapping>
           </EntitySetMapping>
           <EntitySetMapping Name="Status">
-            <EntityTypeMapping TypeName="MotorsportsModel.Status">
+            <EntityTypeMapping TypeName="MotorsportsEFModel.Status">
               <MappingFragment StoreEntitySet="Status">
                 <ScalarProperty Name="Name" ColumnName="Name" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
           <EntitySetMapping Name="Teams">
-            <EntityTypeMapping TypeName="MotorsportsModel.Team">
+            <EntityTypeMapping TypeName="MotorsportsEFModel.Team">
               <MappingFragment StoreEntitySet="Team">
                 <ScalarProperty Name="Id" ColumnName="Id" />
                 <ScalarProperty Name="Name" ColumnName="Name" />
@@ -875,14 +875,14 @@
             </EntityTypeMapping>
           </EntitySetMapping>
           <EntitySetMapping Name="Venues">
-            <EntityTypeMapping TypeName="MotorsportsModel.Venue">
+            <EntityTypeMapping TypeName="MotorsportsEFModel.Venue">
               <MappingFragment StoreEntitySet="Venue">
                 <ScalarProperty Name="Name" ColumnName="Name" />
                 <ScalarProperty Name="Country" ColumnName="Country" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
-          <AssociationSetMapping Name="SeasonResult" TypeName="MotorsportsModel.SeasonResult" StoreEntitySet="SeasonResult">
+          <AssociationSetMapping Name="SeasonResult" TypeName="MotorsportsEFModel.SeasonResult" StoreEntitySet="SeasonResult">
             <EndProperty Name="Season">
               <ScalarProperty Name="Id" ColumnName="Season" />
             </EndProperty>
@@ -907,7 +907,7 @@
         <DesignerProperty Name="EnablePluralization" Value="true" />
         <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
         <DesignerProperty Name="UseLegacyProvider" Value="true" />
-        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="Default" />
       </DesignerInfoPropertySet>
     </Options>
     <!-- Diagram content (shape and connector positions) -->
