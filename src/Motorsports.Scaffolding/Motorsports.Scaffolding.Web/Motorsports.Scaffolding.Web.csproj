@@ -73,65 +73,12 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="App_Code\MotorsportsModel.Context.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>MotorsportsModel.Context.cs</LastGenOutput>
-      <DependentUpon>MotorsportsModel.edmx</DependentUpon>
-    </Content>
-    <Content Include="App_Code\MotorsportsModel.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <DependentUpon>MotorsportsModel.edmx</DependentUpon>
-      <LastGenOutput>MotorsportsModel.cs</LastGenOutput>
-    </Content>
     <Content Include="CSDynamicDataWebApplication.ico" />
     <Content Include="Default.aspx" />
-    <Compile Include="App_Code\Country.cs">
-      <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="App_Code\MotorsportsModel.Context.cs">
+    <Compile Include="App_Code\MotorsportsEFModel.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>MotorsportsModel.Context.tt</DependentUpon>
-    </Compile>
-    <Compile Include="App_Code\MotorsportsModel.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Compile>
-    <Content Include="App_Code\MotorsportsModel.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>MotorsportsModel.edmx</DependentUpon>
-    </Content>
-    <Compile Include="App_Code\Participant.cs">
-      <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="App_Code\Round.cs">
-      <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="App_Code\RoundResult.cs">
-      <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="App_Code\RoundWinner.cs">
-      <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="App_Code\Season.cs">
-      <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="App_Code\SeasonWinner.cs">
-      <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="App_Code\Sport.cs">
-      <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="App_Code\Status.cs">
-      <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="App_Code\Team.cs">
-      <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="App_Code\Venue.cs">
-      <DependentUpon>MotorsportsModel.tt</DependentUpon>
+      <DependentUpon>MotorsportsEFModel.edmx</DependentUpon>
     </Compile>
     <Compile Include="Default.aspx.cs">
       <DependentUpon>Default.aspx</DependentUpon>
@@ -153,7 +100,9 @@
     <Compile Include="Site.master.designer.cs">
       <DependentUpon>Site.master</DependentUpon>
     </Compile>
-    <Content Include="web.config" />
+    <Content Include="web.config">
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="DynamicData\web.config" />
     <Content Include="DynamicData\Content\GridViewPager.ascx" />
     <Compile Include="DynamicData\Content\GridViewPager.ascx.cs">
@@ -440,14 +389,15 @@
     <Folder Include="DynamicData\CustomPages\" />
   </ItemGroup>
   <ItemGroup>
-    <EntityDeploy Include="App_Code\MotorsportsModel.edmx">
-      <Generator>EntityModelCodeGenerator</Generator>
-      <LastGenOutput>MotorsportsModel.Designer.cs</LastGenOutput>
-    </EntityDeploy>
-    <Content Include="App_Code\MotorsportsModel.edmx.diagram">
-      <DependentUpon>MotorsportsModel.edmx</DependentUpon>
-    </Content>
     <Content Include="ConnectionStrings.config" />
+    <EntityDeploy Include="App_Code\MotorsportsEFModel.edmx">
+      <Generator>EntityModelCodeGenerator</Generator>
+      <LastGenOutput>MotorsportsEFModel.Designer.cs</LastGenOutput>
+    </EntityDeploy>
+    <Content Include="App_Code\MotorsportsEFModel.edmx.diagram">
+      <DependentUpon>MotorsportsEFModel.edmx</DependentUpon>
+    </Content>
+    <None Include="packages.config" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>

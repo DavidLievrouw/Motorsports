@@ -36,7 +36,7 @@ namespace Motorsports.Scaffolding
       // }, new ContextConfiguration() { ScaffoldAllTables = false });
 
       // The following registration should be used if YourDataContextType does not derive from DbContext
-      DefaultModel.RegisterContext(typeof(MotorsportsEntities), new ContextConfiguration() { ScaffoldAllTables = false });
+      DefaultModel.RegisterContext(typeof(Entities), new ContextConfiguration() { ScaffoldAllTables = true });
 
       // The following statement supports separate-page mode, where the List, Detail, Insert, and 
       // Update tasks are performed by using separate pages. To enable this mode, uncomment the following 
