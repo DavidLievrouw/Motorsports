@@ -615,24 +615,17 @@ namespace Motorsports.Scaffolding.Web.App_Code
     [DataContractAttribute(IsReference=true)]
     public partial class Participant : EntityObject
     {
-        public override string ToString()
-        {
-          return string.Format(
-            "{0} {1}",
-            FirstName ?? string.Empty,
-            LastName ?? string.Empty).Trim();
-        }
-    #region Factory Method
-
-    /// <summary>
-    /// Create a new Participant object.
-    /// </summary>
-    /// <param name="id">Initial value of the Id property.</param>
-    /// <param name="title">Initial value of the Title property.</param>
-    /// <param name="firstName">Initial value of the FirstName property.</param>
-    /// <param name="lastName">Initial value of the LastName property.</param>
-    /// <param name="country">Initial value of the Country property.</param>
-    public static Participant CreateParticipant(global::System.Int32 id, global::System.String title, global::System.String firstName, global::System.String lastName, global::System.String country)
+        #region Factory Method
+    
+        /// <summary>
+        /// Create a new Participant object.
+        /// </summary>
+        /// <param name="id">Initial value of the Id property.</param>
+        /// <param name="title">Initial value of the Title property.</param>
+        /// <param name="firstName">Initial value of the FirstName property.</param>
+        /// <param name="lastName">Initial value of the LastName property.</param>
+        /// <param name="country">Initial value of the Country property.</param>
+        public static Participant CreateParticipant(global::System.Int32 id, global::System.String title, global::System.String firstName, global::System.String lastName, global::System.String country)
         {
             Participant participant = new Participant();
             participant.Id = id;
@@ -1013,7 +1006,7 @@ namespace Motorsports.Scaffolding.Web.App_Code
             {
                 return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<RoundResult>("MotorsportsEFModel.FK_Round_RoundResult", "RoundResult").Value;
             }
-            set
+            private set
             {
                 ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<RoundResult>("MotorsportsEFModel.FK_Round_RoundResult", "RoundResult").Value = value;
             }
@@ -1029,7 +1022,7 @@ namespace Motorsports.Scaffolding.Web.App_Code
             {
                 return ((IEntityWithRelationships)this).RelationshipManager.GetRelatedReference<RoundResult>("MotorsportsEFModel.FK_Round_RoundResult", "RoundResult");
             }
-            set
+            private set
             {
                 if ((value != null))
                 {
