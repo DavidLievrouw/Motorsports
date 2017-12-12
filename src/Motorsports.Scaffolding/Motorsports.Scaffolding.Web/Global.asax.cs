@@ -4,6 +4,7 @@ using System.Web;
 using System.Web.DynamicData;
 using System.Web.Routing;
 using System.Web.UI;
+using Motorsports.Scaffolding.Web.App_Code;
 
 namespace Motorsports.Scaffolding
 {
@@ -35,7 +36,7 @@ namespace Motorsports.Scaffolding
       // }, new ContextConfiguration() { ScaffoldAllTables = false });
 
       // The following registration should be used if YourDataContextType does not derive from DbContext
-      // DefaultModel.RegisterContext(typeof(YourDataContextType), new ContextConfiguration() { ScaffoldAllTables = false });
+      DefaultModel.RegisterContext(typeof(MotorsportsEntities), new ContextConfiguration() { ScaffoldAllTables = false });
 
       // The following statement supports separate-page mode, where the List, Detail, Insert, and 
       // Update tasks are performed by using separate pages. To enable this mode, uncomment the following 
