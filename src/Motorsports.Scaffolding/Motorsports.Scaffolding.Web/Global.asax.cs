@@ -3,6 +3,7 @@ using System.Web;
 using System.Web.DynamicData;
 using System.Web.Routing;
 using System.Web.UI;
+using Motorsports.Scaffolding.Web.App_Code;
 
 namespace Motorsports.Scaffolding.Web {
   public class Global : HttpApplication {

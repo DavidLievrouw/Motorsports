@@ -423,12 +423,8 @@
           <Property Name="FirstName" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="LastName" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Country" Type="String" MaxLength="2" FixedLength="true" Unicode="false" Nullable="false" />
-          <NavigationProperty Name="Country1" Relationship="Self.FK_Country_Participant" FromRole="Participant"
+          <NavigationProperty Name="RelatedCountry" Relationship="Self.FK_Country_Participant" FromRole="Participant"
                               ToRole="Country" />
-          <NavigationProperty Name="RoundWinners" Relationship="Self.FK_Participant_RoundWinner" FromRole="Participant"
-                              ToRole="RoundWinner" />
-          <NavigationProperty Name="SeasonWinners" Relationship="Self.FK_Participant_SeasonWinner"
-                              FromRole="Participant" ToRole="SeasonWinner" />
         </EntityType>
         <EntityType Name="Round">
           <Key>
@@ -444,8 +440,8 @@
                               ToRole="RoundResult" />
           <NavigationProperty Name="RoundWinners" Relationship="Self.FK_Round_RoundWinner" FromRole="Round"
                               ToRole="RoundWinner" />
-          <NavigationProperty Name="Season1" Relationship="Self.FK_Season_Round" FromRole="Round" ToRole="Season" />
-          <NavigationProperty Name="Venue1" Relationship="Self.FK_Venue_Round" FromRole="Round" ToRole="Venue" />
+          <NavigationProperty Name="RelatedSeason" Relationship="Self.FK_Season_Round" FromRole="Round" ToRole="Season" />
+          <NavigationProperty Name="RelatedVenue" Relationship="Self.FK_Venue_Round" FromRole="Round" ToRole="Venue" />
         </EntityType>
         <EntityType Name="RoundResult">
           <Key>
@@ -456,11 +452,11 @@
           <Property Name="Rating" Type="Decimal" Precision="2" Scale="1" />
           <Property Name="Rain" Type="Decimal" Precision="1" Scale="0" />
           <Property Name="WinningTeam" Type="Int32" />
-          <NavigationProperty Name="Round1" Relationship="Self.FK_Round_RoundResult" FromRole="RoundResult"
+          <NavigationProperty Name="RelatedRound" Relationship="Self.FK_Round_RoundResult" FromRole="RoundResult"
                               ToRole="Round" />
-          <NavigationProperty Name="Status1" Relationship="Self.FK_Status_RoundResult" FromRole="RoundResult"
+          <NavigationProperty Name="RelatedStatus" Relationship="Self.FK_Status_RoundResult" FromRole="RoundResult"
                               ToRole="Status" />
-          <NavigationProperty Name="Team" Relationship="Self.FK_Team_RoundResult" FromRole="RoundResult" ToRole="Team" />
+          <NavigationProperty Name="RelatedWinningTeam" Relationship="Self.FK_Team_RoundResult" FromRole="RoundResult" ToRole="Team" />
         </EntityType>
         <EntityType Name="RoundWinner">
           <Key>
@@ -469,9 +465,9 @@
           <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
           <Property Name="Round" Type="Int32" Nullable="false" />
           <Property Name="Participant" Type="Int32" Nullable="false" />
-          <NavigationProperty Name="Participant1" Relationship="Self.FK_Participant_RoundWinner" FromRole="RoundWinner"
+          <NavigationProperty Name="RelatedParticipant" Relationship="Self.FK_Participant_RoundWinner" FromRole="RoundWinner"
                               ToRole="Participant" />
-          <NavigationProperty Name="Round1" Relationship="Self.FK_Round_RoundWinner" FromRole="RoundWinner"
+          <NavigationProperty Name="RelatedRound" Relationship="Self.FK_Round_RoundWinner" FromRole="RoundWinner"
                               ToRole="Round" />
         </EntityType>
         <EntityType Name="Season">
@@ -482,10 +478,9 @@
           <Property Name="Sport" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Label" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
           <NavigationProperty Name="Rounds" Relationship="Self.FK_Season_Round" FromRole="Season" ToRole="Round" />
-          <NavigationProperty Name="SeasonWinners" Relationship="Self.FK_Season_SeasonWinner" FromRole="Season"
+          <NavigationProperty Name="Winners" Relationship="Self.FK_Season_SeasonWinner" FromRole="Season"
                               ToRole="SeasonWinner" />
-          <NavigationProperty Name="Sport1" Relationship="Self.FK_Sport_Season" FromRole="Season" ToRole="Sport" />
-          <NavigationProperty Name="Team" Relationship="Self.SeasonResult" FromRole="Season" ToRole="Team" />
+          <NavigationProperty Name="WinningTeam" Relationship="Self.SeasonResult" FromRole="Season" ToRole="Team" />
         </EntityType>
         <EntityType Name="SeasonWinner">
           <Key>
@@ -494,10 +489,8 @@
           <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
           <Property Name="Season" Type="Int32" Nullable="false" />
           <Property Name="Participant" Type="Int32" Nullable="false" />
-          <NavigationProperty Name="Participant1" Relationship="Self.FK_Participant_SeasonWinner"
+          <NavigationProperty Name="RelatedParticipant" Relationship="Self.FK_Participant_SeasonWinner"
                               FromRole="SeasonWinner" ToRole="Participant" />
-          <NavigationProperty Name="Season1" Relationship="Self.FK_Season_SeasonWinner" FromRole="SeasonWinner"
-                              ToRole="Season" />
         </EntityType>
         <EntityType Name="Sport">
           <Key>
@@ -513,8 +506,6 @@
             <PropertyRef Name="Name" />
           </Key>
           <Property Name="Name" Type="String" MaxLength="20" FixedLength="false" Unicode="true" Nullable="false" />
-          <NavigationProperty Name="RoundResults" Relationship="Self.FK_Status_RoundResult" FromRole="Status"
-                              ToRole="RoundResult" />
         </EntityType>
         <EntityType Name="Team">
           <Key>
@@ -524,10 +515,8 @@
           <Property Name="Name" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Sport" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Country" Type="String" MaxLength="2" FixedLength="true" Unicode="false" Nullable="false" />
-          <NavigationProperty Name="Country1" Relationship="Self.FK_Country_Team" FromRole="Team" ToRole="Country" />
-          <NavigationProperty Name="RoundResults" Relationship="Self.FK_Team_RoundResult" FromRole="Team"
-                              ToRole="RoundResult" />
-          <NavigationProperty Name="Sport1" Relationship="Self.FK_Sport_Team" FromRole="Team" ToRole="Sport" />
+          <NavigationProperty Name="RelatedCountry" Relationship="Self.FK_Country_Team" FromRole="Team" ToRole="Country" />
+          <NavigationProperty Name="RelatedSport" Relationship="Self.FK_Sport_Team" FromRole="Team" ToRole="Sport" />
           <NavigationProperty Name="Seasons" Relationship="Self.SeasonResult" FromRole="Team" ToRole="Season" />
         </EntityType>
         <EntityType Name="Venue">
@@ -536,7 +525,7 @@
           </Key>
           <Property Name="Name" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Country" Type="String" MaxLength="2" FixedLength="true" Unicode="false" Nullable="false" />
-          <NavigationProperty Name="Country1" Relationship="Self.FK_Country_Venue" FromRole="Venue" ToRole="Country" />
+          <NavigationProperty Name="RelatedCountry" Relationship="Self.FK_Country_Venue" FromRole="Venue" ToRole="Country" />
           <NavigationProperty Name="Rounds" Relationship="Self.FK_Venue_Round" FromRole="Venue" ToRole="Round" />
         </EntityType>
         <Association Name="FK_Country_Participant">
