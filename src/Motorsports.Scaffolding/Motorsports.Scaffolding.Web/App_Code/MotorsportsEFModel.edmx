@@ -437,9 +437,9 @@
           <Property Name="Season" Type="Int32" Nullable="false" />
           <Property Name="Venue" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
           <NavigationProperty Name="RoundResult" Relationship="Self.FK_Round_RoundResult" FromRole="Round"
-                              ToRole="RoundResult" />
+                              ToRole="RoundResult" a:SetterAccess="Private" xmlns:a="http://schemas.microsoft.com/ado/2006/04/codegeneration" />
           <NavigationProperty Name="RoundWinners" Relationship="Self.FK_Round_RoundWinner" FromRole="Round"
-                              ToRole="RoundWinner" />
+                              ToRole="RoundWinner" a:SetterAccess="Public" xmlns:a="http://schemas.microsoft.com/ado/2006/04/codegeneration" />
           <NavigationProperty Name="RelatedSeason" Relationship="Self.FK_Season_Round" FromRole="Round" ToRole="Season" />
           <NavigationProperty Name="RelatedVenue" Relationship="Self.FK_Venue_Round" FromRole="Round" ToRole="Venue" />
         </EntityType>
