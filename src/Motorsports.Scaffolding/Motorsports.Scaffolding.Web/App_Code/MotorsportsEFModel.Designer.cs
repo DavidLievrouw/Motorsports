@@ -12,7 +12,7 @@ using System.ComponentModel;
 using System.Data.EntityClient;
 using System.Data.Objects;
 using System.Data.Objects.DataClasses;
-using System.Linq;
+using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 using System.Xml.Serialization;
 
@@ -615,6 +615,13 @@ namespace Motorsports.Scaffolding.Web.App_Code
     [DataContractAttribute(IsReference=true)]
     public partial class Participant : EntityObject
     {
+
+      public override string ToString()
+      {
+        return string.Format("{0} {1} ",
+                             LastName ?? string.Empty,
+                             FirstName ?? string.Empty).Trim();
+      }
         #region Factory Method
     
         /// <summary>
