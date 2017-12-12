@@ -1,8 +1,6 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
-using System.Web.DynamicData;
 
-namespace Motorsports.Scaffolding
+namespace Motorsports.Scaffolding.Web
 {
   public partial class _Default : System.Web.UI.Page
   {

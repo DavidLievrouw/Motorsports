@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Web.DynamicData;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
-namespace Motorsports.Scaffolding
+namespace Motorsports.Scaffolding.Web.DynamicData.Filters
 {
   public partial class ForeignKeyFilter : System.Web.DynamicData.QueryableFilterUserControl
   {

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Motorsports.Scaffolding
+namespace Motorsports.Scaffolding.Web.DynamicData.FieldTemplates
 {
 
 

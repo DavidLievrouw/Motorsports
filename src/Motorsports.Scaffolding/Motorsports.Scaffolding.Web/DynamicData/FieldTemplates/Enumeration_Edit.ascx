@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" CodeBehind="Enumeration_Edit.ascx.cs" Inherits="Motorsports.Scaffolding.Enumeration_EditField" %>
+﻿<%@ Control Language="C#" CodeBehind="Enumeration_Edit.ascx.cs" Inherits="Motorsports.Scaffolding.Web.DynamicData.FieldTemplates.Enumeration_EditField" %>
 
 <asp:DropDownList ID="DropDownList1" runat="server" CssClass="DDDropDown" />
 

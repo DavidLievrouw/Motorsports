@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Specialized;
-using System.ComponentModel.DataAnnotations;
-using System.Web.DynamicData;
-using System.Web;
-using System.Web.UI;
-using System.Web.UI.WebControls;
+﻿using System.Web.UI;
 
-namespace Motorsports.Scaffolding
+namespace Motorsports.Scaffolding.Web.DynamicData.FieldTemplates
 {
   public partial class DateTimeField : System.Web.DynamicData.FieldTemplateUserControl
   {

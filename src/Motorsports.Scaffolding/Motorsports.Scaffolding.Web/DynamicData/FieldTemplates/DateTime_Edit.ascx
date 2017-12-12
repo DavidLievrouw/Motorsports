@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" CodeBehind="DateTime_Edit.ascx.cs" Inherits="Motorsports.Scaffolding.DateTime_EditField" %>
+﻿<%@ Control Language="C#" CodeBehind="DateTime_Edit.ascx.cs" Inherits="Motorsports.Scaffolding.Web.DynamicData.FieldTemplates.DateTime_EditField" %>
 
 
 <asp:TextBox ID="TextBox1" runat="server" CssClass="DDTextBox" Text='<%# FieldValueEditString %>' Columns="20" TextMode="DateTime"></asp:TextBox>

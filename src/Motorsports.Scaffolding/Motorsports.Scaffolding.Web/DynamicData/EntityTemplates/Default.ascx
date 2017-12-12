@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" CodeBehind="Default.ascx.cs" Inherits="Motorsports.Scaffolding.DefaultEntityTemplate" %>
+﻿<%@ Control Language="C#" CodeBehind="Default.ascx.cs" Inherits="Motorsports.Scaffolding.Web.DynamicData.EntityTemplates.DefaultEntityTemplate" %>
 
 <asp:EntityTemplate runat="server" ID="EntityTemplate1">
     <ItemTemplate>
