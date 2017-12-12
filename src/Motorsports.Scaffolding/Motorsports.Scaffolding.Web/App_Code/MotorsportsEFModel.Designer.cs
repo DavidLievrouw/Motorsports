@@ -616,12 +616,14 @@ namespace Motorsports.Scaffolding.Web
     public partial class Participant : EntityObject
     {
 
-      public override string ToString()
-      {
-        return string.Format("{0} {1} ",
-                             LastName ?? string.Empty,
-                             FirstName ?? string.Empty).Trim();
-      }
+       public override string ToString()
+       {
+         return string.Format(
+           "{0} {1}",
+           FirstName ?? string.Empty,
+           LastName ?? string.Empty).Trim();
+       }
+
         #region Factory Method
     
         /// <summary>

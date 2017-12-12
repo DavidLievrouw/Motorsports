@@ -1,66 +1,24 @@
 ﻿using System;
+using System.Web.DynamicData;
 using System.Web.UI;
 
-namespace Motorsports.Scaffolding.Web.DynamicData.FieldTemplates
-{
-  public partial class ChildrenField : System.Web.DynamicData.FieldTemplateUserControl
-  {
-    private bool _allowNavigation = true;
-    private string _navigateUrl;
+namespace Motorsports.Scaffolding.Web.DynamicData.FieldTemplates {
+  public partial class ChildrenField : FieldTemplateUserControl {
+    public string NavigateUrl { get; set; }
 
-    public string NavigateUrl
-    {
-      get
-      {
-        return _navigateUrl;
-      }
-      set
-      {
-        _navigateUrl = value;
-      }
-    }
+    public bool AllowNavigation { get; set; } = true;
 
-    public bool AllowNavigation
-    {
-      get
-      {
-        return _allowNavigation;
-      }
-      set
-      {
-        _allowNavigation = value;
-      }
-    }
+    public override Control DataControl => HyperLink1;
 
-    protected void Page_Load(object sender, EventArgs e)
-    {
+    protected void Page_Load(object sender, EventArgs e) {
       HyperLink1.Text = "View " + ChildrenColumn.ChildTable.DisplayName;
     }
 
-    protected string GetChildrenPath()
-    {
-      if (!AllowNavigation)
-      {
-        return null;
-      }
+    protected string GetChildrenPath() {
+      if (!AllowNavigation) return null;
 
-      if (String.IsNullOrEmpty(NavigateUrl))
-      {
-        return ChildrenPath;
-      }
-      else
-      {
-        return BuildChildrenPath(NavigateUrl);
-      }
+      if (string.IsNullOrEmpty(NavigateUrl)) return ChildrenPath;
+      else return BuildChildrenPath(NavigateUrl);
     }
-
-    public override Control DataControl
-    {
-      get
-      {
-        return HyperLink1;
-      }
-    }
-
   }
 }

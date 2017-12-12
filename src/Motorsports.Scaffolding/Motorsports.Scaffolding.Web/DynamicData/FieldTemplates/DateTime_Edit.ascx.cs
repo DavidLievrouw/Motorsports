@@ -2,16 +2,17 @@
 using System.Collections.Specialized;
 using System.ComponentModel.DataAnnotations;
 using System.Web;
+using System.Web.DynamicData;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
-namespace Motorsports.Scaffolding.Web.DynamicData.FieldTemplates
-{
-  public partial class DateTime_EditField : System.Web.DynamicData.FieldTemplateUserControl
-  {
-    private static DataTypeAttribute DefaultDateAttribute = new DataTypeAttribute(DataType.DateTime);
-    protected void Page_Load(object sender, EventArgs e)
-    {
+namespace Motorsports.Scaffolding.Web.DynamicData.FieldTemplates {
+  public partial class DateTime_EditField : FieldTemplateUserControl {
+    static readonly DataTypeAttribute DefaultDateAttribute = new DataTypeAttribute(DataType.DateTime);
+
+    public override Control DataControl => TextBox1;
+
+    protected void Page_Load(object sender, EventArgs e) {
       TextBox1.ToolTip = Column.Description;
 
       SetUpValidator(RequiredFieldValidator1);
@@ -20,45 +21,30 @@ namespace Motorsports.Scaffolding.Web.DynamicData.FieldTemplates
       SetUpCustomValidator(DateValidator);
     }
 
-    private void SetUpCustomValidator(CustomValidator validator)
-    {
-      if (Column.DataTypeAttribute != null)
-      {
-        switch (Column.DataTypeAttribute.DataType)
-        {
+    void SetUpCustomValidator(CustomValidator validator) {
+      if (Column.DataTypeAttribute != null) {
+        switch (Column.DataTypeAttribute.DataType) {
           case DataType.Date:
           case DataType.DateTime:
           case DataType.Time:
             validator.Enabled = true;
-            DateValidator.ErrorMessage = HttpUtility.HtmlEncode(Column.DataTypeAttribute.FormatErrorMessage(Column.DisplayName));
+            DateValidator.ErrorMessage = HttpUtility.HtmlEncode(s: Column.DataTypeAttribute.FormatErrorMessage(Column.DisplayName));
             break;
         }
       }
-      else if (Column.ColumnType.Equals(typeof(DateTime)))
-      {
+      else if (Column.ColumnType.Equals(o: typeof(DateTime))) {
         validator.Enabled = true;
-        DateValidator.ErrorMessage = HttpUtility.HtmlEncode(DefaultDateAttribute.FormatErrorMessage(Column.DisplayName));
+        DateValidator.ErrorMessage = HttpUtility.HtmlEncode(s: DefaultDateAttribute.FormatErrorMessage(Column.DisplayName));
       }
     }
 
-    protected void DateValidator_ServerValidate(object source, ServerValidateEventArgs args)
-    {
+    protected void DateValidator_ServerValidate(object source, ServerValidateEventArgs args) {
       DateTime dummyResult;
       args.IsValid = DateTime.TryParse(args.Value, out dummyResult);
     }
 
-    protected override void ExtractValues(IOrderedDictionary dictionary)
-    {
+    protected override void ExtractValues(IOrderedDictionary dictionary) {
       dictionary[Column.Name] = ConvertEditedValue(TextBox1.Text);
     }
-
-    public override Control DataControl
-    {
-      get
-      {
-        return TextBox1;
-      }
-    }
-
   }
 }
