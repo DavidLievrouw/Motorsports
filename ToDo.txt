@@ -1,0 +1,5 @@
+SCAFFOLDING:
+-------------
+Add ReSharper options
+Apply ReSharper cleanup and improvements
+Configure display of all properties
