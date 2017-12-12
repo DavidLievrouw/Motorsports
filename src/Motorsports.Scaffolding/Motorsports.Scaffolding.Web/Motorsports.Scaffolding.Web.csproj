@@ -85,54 +85,54 @@
     </Content>
     <Content Include="CSDynamicDataWebApplication.ico" />
     <Content Include="Default.aspx" />
-    <Content Include="App_Code\Country.cs">
+    <Compile Include="App_Code\Country.cs">
       <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Content>
-    <Content Include="App_Code\MotorsportsModel.Context.cs">
+    </Compile>
+    <Compile Include="App_Code\MotorsportsModel.Context.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>MotorsportsModel.Context.tt</DependentUpon>
-    </Content>
-    <Content Include="App_Code\MotorsportsModel.cs">
+    </Compile>
+    <Compile Include="App_Code\MotorsportsModel.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Content>
+    </Compile>
     <Content Include="App_Code\MotorsportsModel.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>MotorsportsModel.edmx</DependentUpon>
     </Content>
-    <Content Include="App_Code\Participant.cs">
+    <Compile Include="App_Code\Participant.cs">
       <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Content>
-    <Content Include="App_Code\Round.cs">
+    </Compile>
+    <Compile Include="App_Code\Round.cs">
       <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Content>
-    <Content Include="App_Code\RoundResult.cs">
+    </Compile>
+    <Compile Include="App_Code\RoundResult.cs">
       <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Content>
-    <Content Include="App_Code\RoundWinner.cs">
+    </Compile>
+    <Compile Include="App_Code\RoundWinner.cs">
       <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Content>
-    <Content Include="App_Code\Season.cs">
+    </Compile>
+    <Compile Include="App_Code\Season.cs">
       <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Content>
-    <Content Include="App_Code\SeasonWinner.cs">
+    </Compile>
+    <Compile Include="App_Code\SeasonWinner.cs">
       <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Content>
-    <Content Include="App_Code\Sport.cs">
+    </Compile>
+    <Compile Include="App_Code\Sport.cs">
       <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Content>
-    <Content Include="App_Code\Status.cs">
+    </Compile>
+    <Compile Include="App_Code\Status.cs">
       <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Content>
-    <Content Include="App_Code\Team.cs">
+    </Compile>
+    <Compile Include="App_Code\Team.cs">
       <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Content>
-    <Content Include="App_Code\Venue.cs">
+    </Compile>
+    <Compile Include="App_Code\Venue.cs">
       <DependentUpon>MotorsportsModel.tt</DependentUpon>
-    </Content>
+    </Compile>
     <Compile Include="Default.aspx.cs">
       <DependentUpon>Default.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
