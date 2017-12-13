@@ -1,22 +1,30 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Motorsports.Scaffolding.Core.Models;
 
 namespace Motorsports.Scaffolding.Core {
   public class Startup {
-    public Startup(IConfiguration configuration) {
-      Configuration = configuration;
+    public Startup(IHostingEnvironment env) {
+      var builder = new ConfigurationBuilder()
+        .SetBasePath(env.ContentRootPath)
+        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+        .AddJsonFile("appsettings-connectionstrings.json", optional: false, reloadOnChange: true)
+        .AddEnvironmentVariables();
+      Configuration = builder.Build();
     }
 
     public IConfiguration Configuration { get; }
 
-    // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services) {
       services.AddMvc();
+
+      var connectionString = Configuration.GetConnectionString("Motorsports");
+      services.AddDbContext<MotorsportsContext>(options => options.UseSqlServer(connectionString));
     }
 
-    // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IHostingEnvironment env) {
       if (env.IsDevelopment()) {
         app.UseDeveloperExceptionPage();
