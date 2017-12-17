@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Motorsports.Scaffolding.Core.Dapper;
 using Motorsports.Scaffolding.Core.Models;
+using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core {
   public class Startup {
@@ -21,8 +24,14 @@ namespace Motorsports.Scaffolding.Core {
     public void ConfigureServices(IServiceCollection services) {
       services.AddMvc();
 
+      // Lowest level data access
       var connectionString = Configuration.GetConnectionString("Motorsports");
       services.AddDbContext<MotorsportsContext>(options => options.UseSqlServer(connectionString));
+      services.TryAddSingleton<IQueryExecutor>(new QueryExecutor(new SqlDbConnectionFactory(connectionString)));
+
+      // Services
+      services.TryAddSingleton<ISportService>(provider => new SportService(provider.GetRequiredService<IQueryExecutor>()));
+      services.TryAddSingleton<IVenueService>(provider => new VenueService(provider.GetRequiredService<IQueryExecutor>()));
     }
 
     public void Configure(IApplicationBuilder app, IHostingEnvironment env) {

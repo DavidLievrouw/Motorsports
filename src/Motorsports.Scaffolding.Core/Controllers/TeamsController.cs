@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -10,7 +11,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     readonly MotorsportsContext _context;
 
     public TeamsController(MotorsportsContext context) {
-      _context = context;
+      _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
     // GET: Teams
