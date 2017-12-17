@@ -3,7 +3,7 @@
     public int Season { get; set; }
     public int WinningTeam { get; set; }
 
-    public Season SeasonNavigation { get; set; }
-    public Team WinningTeamNavigation { get; set; }
+    public Season RelatedSeason { get; set; }
+    public Team RelatedWinningTeam { get; set; }
   }
 }

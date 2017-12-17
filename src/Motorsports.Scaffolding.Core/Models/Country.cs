@@ -3,9 +3,9 @@
 namespace Motorsports.Scaffolding.Core.Models {
   public partial class Country {
     public Country() {
-      Participant = new HashSet<Participant>();
-      Team = new HashSet<Team>();
-      Venue = new HashSet<Venue>();
+      RelatedParticipants = new HashSet<Participant>();
+      RelatedTeams = new HashSet<Team>();
+      RelatedVenues = new HashSet<Venue>();
     }
 
     public string Iso { get; set; }
@@ -15,8 +15,8 @@ namespace Motorsports.Scaffolding.Core.Models {
     public short? NumCode { get; set; }
     public short? PhoneCode { get; set; }
 
-    public ICollection<Participant> Participant { get; set; }
-    public ICollection<Team> Team { get; set; }
-    public ICollection<Venue> Venue { get; set; }
+    public ICollection<Participant> RelatedParticipants { get; set; }
+    public ICollection<Team> RelatedTeams { get; set; }
+    public ICollection<Venue> RelatedVenues { get; set; }
   }
 }

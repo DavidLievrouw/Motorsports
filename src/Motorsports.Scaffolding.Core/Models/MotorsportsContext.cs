@@ -59,7 +59,7 @@ namespace Motorsports.Scaffolding.Core.Models {
             .HasMaxLength(10);
 
           entity.HasOne(d => d.RelatedCountry)
-            .WithMany(p => p.Participant)
+            .WithMany(p => p.RelatedParticipants)
             .HasForeignKey(d => d.Country)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_Country_Participant");
@@ -75,13 +75,13 @@ namespace Motorsports.Scaffolding.Core.Models {
             .IsRequired()
             .HasMaxLength(50);
 
-          entity.HasOne(d => d.SeasonNavigation)
-            .WithMany(p => p.Round)
+          entity.HasOne(d => d.RelatedSeason)
+            .WithMany(p => p.RelatedRounds)
             .HasForeignKey(d => d.Season)
             .HasConstraintName("FK_Season_Round");
 
-          entity.HasOne(d => d.VenueNavigation)
-            .WithMany(p => p.Round)
+          entity.HasOne(d => d.RelatedVenue)
+            .WithMany(p => p.RelatedRounds)
             .HasForeignKey(d => d.Venue)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_Venue_Round");
@@ -101,33 +101,21 @@ namespace Motorsports.Scaffolding.Core.Models {
             .IsRequired()
             .HasMaxLength(20);
 
-          entity.HasOne(d => d.RoundNavigation)
-            .WithOne(p => p.RoundResult)
+          entity.HasOne(d => d.RelatedRound)
+            .WithOne(p => p.RelatedRoundResult)
             .HasForeignKey<RoundResult>(d => d.Round)
             .HasConstraintName("FK_Round_RoundResult");
 
-          entity.HasOne(d => d.StatusNavigation)
-            .WithMany(p => p.RoundResult)
-            .HasForeignKey(d => d.Status)
-            .OnDelete(DeleteBehavior.ClientSetNull)
-            .HasConstraintName("FK_Status_RoundResult");
-
-          entity.HasOne(d => d.WinningTeamNavigation)
-            .WithMany(p => p.RoundResult)
+          entity.HasOne(d => d.RelatedWinningTeam)
+            .WithMany(p => p.RelatedRoundResults)
             .HasForeignKey(d => d.WinningTeam)
             .HasConstraintName("FK_Team_RoundResult");
         });
 
       modelBuilder.Entity<RoundWinner>(
         entity => {
-          entity.HasOne(d => d.ParticipantNavigation)
-            .WithMany(p => p.RoundWinner)
-            .HasForeignKey(d => d.Participant)
-            .OnDelete(DeleteBehavior.ClientSetNull)
-            .HasConstraintName("FK_Participant_RoundWinner");
-
-          entity.HasOne(d => d.RoundNavigation)
-            .WithMany(p => p.RoundWinner)
+          entity.HasOne(d => d.RelatedRound)
+            .WithMany(p => p.RelatedRoundWinners)
             .HasForeignKey(d => d.Round)
             .HasConstraintName("FK_Round_RoundWinner");
         });
@@ -140,8 +128,8 @@ namespace Motorsports.Scaffolding.Core.Models {
             .IsRequired()
             .HasMaxLength(50);
 
-          entity.HasOne(d => d.SportNavigation)
-            .WithMany(p => p.Season)
+          entity.HasOne(d => d.RelatedSport)
+            .WithMany(p => p.RelatedSeasons)
             .HasForeignKey(d => d.Sport)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_Sport_Season");
@@ -153,13 +141,13 @@ namespace Motorsports.Scaffolding.Core.Models {
 
           entity.Property(e => e.Season).ValueGeneratedNever();
 
-          entity.HasOne(d => d.SeasonNavigation)
-            .WithOne(p => p.SeasonResult)
+          entity.HasOne(d => d.RelatedSeason)
+            .WithOne(p => p.RelatedSeasonResult)
             .HasForeignKey<SeasonResult>(d => d.Season)
             .HasConstraintName("FK_Season_SeasonResult");
 
-          entity.HasOne(d => d.WinningTeamNavigation)
-            .WithMany(p => p.SeasonResult)
+          entity.HasOne(d => d.RelatedWinningTeam)
+            .WithMany(p => p.RelatedSeasonResults)
             .HasForeignKey(d => d.WinningTeam)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_Team_SeasonResult");
@@ -167,14 +155,8 @@ namespace Motorsports.Scaffolding.Core.Models {
 
       modelBuilder.Entity<SeasonWinner>(
         entity => {
-          entity.HasOne(d => d.ParticipantNavigation)
-            .WithMany(p => p.SeasonWinner)
-            .HasForeignKey(d => d.Participant)
-            .OnDelete(DeleteBehavior.ClientSetNull)
-            .HasConstraintName("FK_Participant_SeasonWinner");
-
-          entity.HasOne(d => d.SeasonNavigation)
-            .WithMany(p => p.SeasonWinner)
+          entity.HasOne(d => d.RelatedSeason)
+            .WithMany(p => p.RelatedSeasonWinners)
             .HasForeignKey(d => d.Season)
             .HasConstraintName("FK_Season_SeasonWinner");
         });
@@ -213,14 +195,14 @@ namespace Motorsports.Scaffolding.Core.Models {
             .IsRequired()
             .HasMaxLength(50);
 
-          entity.HasOne(d => d.CountryNavigation)
-            .WithMany(p => p.Team)
+          entity.HasOne(d => d.RelatedCountry)
+            .WithMany(p => p.RelatedTeams)
             .HasForeignKey(d => d.Country)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_Country_Team");
 
-          entity.HasOne(d => d.SportNavigation)
-            .WithMany(p => p.Team)
+          entity.HasOne(d => d.RelatedSport)
+            .WithMany(p => p.RelatedTeams)
             .HasForeignKey(d => d.Sport)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_Sport_Team");
@@ -238,8 +220,8 @@ namespace Motorsports.Scaffolding.Core.Models {
             .IsRequired()
             .HasColumnType("char(2)");
 
-          entity.HasOne(d => d.CountryNavigation)
-            .WithMany(p => p.Venue)
+          entity.HasOne(d => d.RelatedCountry)
+            .WithMany(p => p.RelatedVenues)
             .HasForeignKey(d => d.Country)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_Country_Venue");

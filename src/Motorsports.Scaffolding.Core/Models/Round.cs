@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Motorsports.Scaffolding.Core.Models {
   public partial class Round {
     public Round() {
-      RoundWinner = new HashSet<RoundWinner>();
+      RelatedRoundWinners = new HashSet<RoundWinner>();
     }
 
     public int Id { get; set; }
@@ -14,9 +14,9 @@ namespace Motorsports.Scaffolding.Core.Models {
     public int Season { get; set; }
     public string Venue { get; set; }
 
-    public Season SeasonNavigation { get; set; }
-    public Venue VenueNavigation { get; set; }
-    public RoundResult RoundResult { get; set; }
-    public ICollection<RoundWinner> RoundWinner { get; set; }
+    public Season RelatedSeason { get; set; }
+    public Venue RelatedVenue { get; set; }
+    public RoundResult RelatedRoundResult { get; set; }
+    public ICollection<RoundWinner> RelatedRoundWinners { get; set; }
   }
 }

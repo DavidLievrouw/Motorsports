@@ -6,8 +6,8 @@
     public decimal? Rain { get; set; }
     public int? WinningTeam { get; set; }
 
-    public Round RoundNavigation { get; set; }
-    public Status StatusNavigation { get; set; }
-    public Team WinningTeamNavigation { get; set; }
+    public Round RelatedRound { get; set; }
+    public Status RelatedStatus { get; set; }
+    public Team RelatedWinningTeam { get; set; }
   }
 }
