@@ -1,16 +1,20 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
+using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
   public class VenuesController : Controller {
+    readonly IVenueService _venueService;
     readonly MotorsportsContext _context;
 
-    public VenuesController(MotorsportsContext context) {
-      _context = context;
+    public VenuesController(MotorsportsContext context, IVenueService venueService) {
+      _venueService = venueService ?? throw new ArgumentNullException(nameof(venueService));
+      _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
     // GET: Venues
@@ -33,7 +37,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
     // GET: Venues/Create
     public IActionResult Create() {
-      ViewData["Country"] = new SelectList(_context.Country, "Iso", "Iso");
+      ViewData["Country"] = new SelectList(_context.Country.OrderBy(_ => _.NiceName), "Iso", "Iso");
       return View(new Venue());
     }
 
@@ -48,7 +52,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
       }
-      ViewData["Country"] = new SelectList(_context.Country, "Iso", "Iso", venue.Country);
+      ViewData["Country"] = new SelectList(_context.Country.OrderBy(_ => _.NiceName), "Iso", "Iso", venue.Country);
       return View(venue);
     }
 
@@ -58,7 +62,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
       var venue = await _context.Venue.SingleOrDefaultAsync(m => m.Name == id);
       if (venue == null) return NotFound();
-      ViewData["Country"] = new SelectList(_context.Country, "Iso", "Iso", venue.Country);
+      ViewData["Country"] = new SelectList(_context.Country.OrderBy(_ => _.NiceName), "Iso", "Iso", venue.Country);
       return View(venue);
     }
 
@@ -68,19 +72,20 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(string id, [Bind("Name,Country")] Venue venue) {
-      if (id != venue.Name) return NotFound();
-
       if (ModelState.IsValid) {
         try {
+          // EF does not allow updating the primary key.
+          // So keep EF context manually up-to-date, and do the db work ourselves.
           _context.Update(venue);
-          await _context.SaveChangesAsync();
+          _context.Entry(venue).State = EntityState.Unchanged;
+          await _venueService.UpdateVenue(id, venue);
         } catch (DbUpdateConcurrencyException) {
           if (!VenueExists(venue.Name)) return NotFound();
           else throw;
         }
         return RedirectToAction(nameof(Index));
       }
-      ViewData["Country"] = new SelectList(_context.Country, "Iso", "Iso", venue.Country);
+      ViewData["Country"] = new SelectList(_context.Country.OrderBy(_ => _.NiceName), "Iso", "Iso", venue.Country);
       return View(venue);
     }
 

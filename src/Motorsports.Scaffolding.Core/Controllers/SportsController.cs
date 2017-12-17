@@ -1,15 +1,19 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
+using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
   public class SportsController : Controller {
     readonly MotorsportsContext _context;
+    readonly ISportService _sportService;
 
-    public SportsController(MotorsportsContext context) {
-      _context = context;
+    public SportsController(MotorsportsContext context, ISportService sportService) {
+      _context = context ?? throw new ArgumentNullException(nameof(context));
+      _sportService = sportService ?? throw new ArgumentNullException(nameof(sportService));
     }
 
     // GET: Sports
@@ -62,12 +66,13 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(string id, [Bind("Name,FullName")] Sport sport) {
-      if (id != sport.Name) return NotFound();
-
       if (ModelState.IsValid) {
         try {
+          // EF does not allow updating the primary key.
+          // So keep EF context manually up-to-date, and do the db work ourselves.
           _context.Update(sport);
-          await _context.SaveChangesAsync();
+          _context.Entry(sport).State = EntityState.Unchanged;
+          await _sportService.UpdateSport(id, sport);
         } catch (DbUpdateConcurrencyException) {
           if (!SportExists(sport.Name)) return NotFound();
           else throw;
