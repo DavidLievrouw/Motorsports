@@ -30,7 +30,11 @@
       </div>
       <div class="form-group">
         <label asp-for="Country" class="control-label"></label>
-        @Html.EditorFor(_ => _.Country, "Country", new { Countries = ((SelectList)ViewBag.Country).Items })
+        @Html.EditorFor(_ => _.Country, "Country", new {
+          Countries = ((SelectList) ViewBag.Country).Items,
+          SelectedCountry = Model.Country,
+          TargetProperty = nameof(Model.Country)
+        })
         <span asp-validation-for="Country" class="text-danger"></span>
       </div>
       <div class="form-group">
