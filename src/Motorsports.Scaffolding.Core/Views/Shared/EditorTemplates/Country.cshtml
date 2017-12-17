@@ -1,0 +1,8 @@
+﻿@using System.Collections
+
+@model string
+
+@{
+  var list = ((IEnumerable)ViewData["Countries"]).OfType<Country>();
+  <div>Country selector: @list.Count()</div>
+}
