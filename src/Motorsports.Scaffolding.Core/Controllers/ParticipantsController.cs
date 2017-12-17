@@ -16,7 +16,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     // GET: Participants
     public async Task<IActionResult> Index() {
       var motorsportsContext = _context.Participant.Include(p => p.RelatedCountry);
-      return View(model: await motorsportsContext.ToListAsync());
+      return View(await motorsportsContext.ToListAsync());
     }
 
     // GET: Participants/Details/5
@@ -46,9 +46,9 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       if (ModelState.IsValid) {
         _context.Add(participant);
         await _context.SaveChangesAsync();
-        return RedirectToAction(actionName: nameof(Index));
+        return RedirectToAction(nameof(Index));
       }
-      ViewData["Country"] = new SelectList(items: _context.Country.OrderBy(_ => _.NiceName), dataValueField: "Iso", dataTextField: "NiceName", selectedValue: participant.Country);
+      ViewData["Country"] = new SelectList(_context.Country.OrderBy(_ => _.NiceName), "Iso", "NiceName", participant.Country);
       return View(participant);
     }
 
@@ -58,7 +58,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
       var participant = await _context.Participant.SingleOrDefaultAsync(m => m.Id == id);
       if (participant == null) return NotFound();
-      ViewData["Country"] = new SelectList(items: _context.Country.OrderBy(_ => _.NiceName), dataValueField: "Iso", dataTextField: "NiceName", selectedValue: participant.Country);
+      ViewData["Country"] = new SelectList(_context.Country.OrderBy(_ => _.NiceName), "Iso", "NiceName", participant.Country);
       return View(participant);
     }
 
@@ -78,9 +78,9 @@ namespace Motorsports.Scaffolding.Core.Controllers {
           if (!ParticipantExists(participant.Id)) return NotFound();
           else throw;
         }
-        return RedirectToAction(actionName: nameof(Index));
+        return RedirectToAction(nameof(Index));
       }
-      ViewData["Country"] = new SelectList(items: _context.Country.OrderBy(_ => _.NiceName), dataValueField: "Iso", dataTextField: "NiceName", selectedValue: participant.Country);
+      ViewData["Country"] = new SelectList(_context.Country.OrderBy(_ => _.NiceName), "Iso", "NiceName", participant.Country);
       return View(participant);
     }
 
