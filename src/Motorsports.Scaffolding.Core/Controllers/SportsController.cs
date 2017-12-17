@@ -77,28 +77,6 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       return View(sport);
     }
 
-    // GET: Sports/Delete/5
-    public async Task<IActionResult> Delete(string id) {
-      if (id == null) return NotFound();
-
-      var sport = await _context.Sport
-        .SingleOrDefaultAsync(m => m.Name == id);
-      if (sport == null) return NotFound();
-
-      return View(sport);
-    }
-
-    // POST: Sports/Delete/5
-    [HttpPost]
-    [ActionName("Delete")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(string id) {
-      var sport = await _context.Sport.SingleOrDefaultAsync(m => m.Name == id);
-      _context.Sport.Remove(sport);
-      await _context.SaveChangesAsync();
-      return RedirectToAction(actionName: nameof(Index));
-    }
-
     bool SportExists(string id) {
       return _context.Sport.Any(e => e.Name == id);
     }
