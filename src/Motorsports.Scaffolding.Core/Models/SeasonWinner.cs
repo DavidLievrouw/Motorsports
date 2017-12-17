@@ -4,7 +4,7 @@
     public int Season { get; set; }
     public int Participant { get; set; }
 
-    public Participant ParticipantNavigation { get; set; }
-    public Season SeasonNavigation { get; set; }
+    public Participant RelatedParticipant { get; set; }
+    public Season RelatedSeason { get; set; }
   }
 }

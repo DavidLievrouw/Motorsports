@@ -1,12 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
 
 namespace Motorsports.Scaffolding.Core.Models {
   public partial class Sport {
     public Sport() {
-      Season = new HashSet<Season>();
-      Team = new HashSet<Team>();
+      RelatedSeasons = new HashSet<Season>();
+      RelatedTeams = new HashSet<Team>();
     }
 
     public string Name { get; set; }
@@ -14,7 +13,7 @@ namespace Motorsports.Scaffolding.Core.Models {
     [DisplayName("Full name")]
     public string FullName { get; set; }
 
-    public ICollection<Season> Season { get; set; }
-    public ICollection<Team> Team { get; set; }
+    public ICollection<Season> RelatedSeasons { get; set; }
+    public ICollection<Team> RelatedTeams { get; set; }
   }
 }

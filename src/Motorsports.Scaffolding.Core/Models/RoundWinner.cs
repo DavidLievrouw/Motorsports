@@ -4,7 +4,7 @@
     public int Round { get; set; }
     public int Participant { get; set; }
 
-    public Participant ParticipantNavigation { get; set; }
-    public Round RoundNavigation { get; set; }
+    public Participant RelatedParticipant { get; set; }
+    public Round RelatedRound { get; set; }
   }
 }
