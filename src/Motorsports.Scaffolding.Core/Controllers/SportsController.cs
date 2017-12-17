@@ -30,7 +30,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
     // GET: Sports/Create
     public IActionResult Create() {
-      return View();
+      return View(new Sport());
     }
 
     // POST: Sports/Create
