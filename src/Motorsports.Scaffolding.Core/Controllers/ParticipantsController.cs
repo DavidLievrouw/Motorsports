@@ -15,7 +15,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
     // GET: Participants
     public async Task<IActionResult> Index() {
-      var motorsportsContext = _context.Participant.Include(p => p.CountryNavigation);
+      var motorsportsContext = _context.Participant.Include(p => p.RelatedCountry);
       return View(model: await motorsportsContext.ToListAsync());
     }
 
@@ -24,7 +24,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       if (id == null) return NotFound();
 
       var participant = await _context.Participant
-        .Include(p => p.CountryNavigation)
+        .Include(p => p.RelatedCountry)
         .SingleOrDefaultAsync(m => m.Id == id);
       if (participant == null) return NotFound();
 
@@ -82,29 +82,6 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       }
       ViewData["Country"] = new SelectList(items: _context.Country.OrderBy(_ => _.NiceName), dataValueField: "Iso", dataTextField: "NiceName", selectedValue: participant.Country);
       return View(participant);
-    }
-
-    // GET: Participants/Delete/5
-    public async Task<IActionResult> Delete(int? id) {
-      if (id == null) return NotFound();
-
-      var participant = await _context.Participant
-        .Include(p => p.CountryNavigation)
-        .SingleOrDefaultAsync(m => m.Id == id);
-      if (participant == null) return NotFound();
-
-      return View(participant);
-    }
-
-    // POST: Participants/Delete/5
-    [HttpPost]
-    [ActionName("Delete")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id) {
-      var participant = await _context.Participant.SingleOrDefaultAsync(m => m.Id == id);
-      _context.Participant.Remove(participant);
-      await _context.SaveChangesAsync();
-      return RedirectToAction(actionName: nameof(Index));
     }
 
     bool ParticipantExists(int id) {

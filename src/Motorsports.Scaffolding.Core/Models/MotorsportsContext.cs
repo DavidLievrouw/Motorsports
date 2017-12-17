@@ -58,7 +58,7 @@ namespace Motorsports.Scaffolding.Core.Models {
             .IsRequired()
             .HasMaxLength(10);
 
-          entity.HasOne(d => d.CountryNavigation)
+          entity.HasOne(d => d.RelatedCountry)
             .WithMany(p => p.Participant)
             .HasForeignKey(d => d.Country)
             .OnDelete(DeleteBehavior.ClientSetNull)
