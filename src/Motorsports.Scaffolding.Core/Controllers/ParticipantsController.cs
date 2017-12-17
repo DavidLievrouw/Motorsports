@@ -33,8 +33,8 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
     // GET: Participants/Create
     public IActionResult Create() {
-      ViewData["Country"] = new SelectList(_context.Country, "Iso", "NiceName");
-      return View();
+      ViewData["Country"] = new SelectList(_context.Country.OrderBy(_ => _.NiceName), "Iso", "NiceName");
+      return View(new Participant());
     }
 
     // POST: Participants/Create
