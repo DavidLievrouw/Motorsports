@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
+using Motorsports.Scaffolding.Core.Models.DisplayModels;
+using Motorsports.Scaffolding.Core.Models.EditModels;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
   public class SeasonsController : Controller {
@@ -16,10 +18,9 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
     // GET: Seasons
     public async Task<IActionResult> Index() {
-      var motorsportsContext = _context.Season
-        .Include(s => s.RelatedSport)
-        .OrderBy(s => s.NiceLabel);
-      return View(await motorsportsContext.ToListAsync());
+      var motorsportsContext = _context.Season.Include(s => s.RelatedSport);
+      var indexItems = (await motorsportsContext.ToListAsync()).Select(s => new SeasonDisplayModel(s));
+      return View(indexItems);
     }
 
     // GET: Seasons/Details/5
@@ -31,13 +32,13 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         .SingleOrDefaultAsync(m => m.Id == id);
       if (season == null) return NotFound();
 
-      return View(season);
+      return View(new SeasonDisplayModel(season));
     }
 
     // GET: Seasons/Create
     public IActionResult Create() {
       ViewData["Sport"] = new SelectList(_context.Sport, "Name", "Name");
-      return View(new Season());
+      return View(new SeasonEditModel(new Season()));
     }
 
     // POST: Seasons/Create
@@ -52,7 +53,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         return RedirectToAction(nameof(Index));
       }
       ViewData["Sport"] = new SelectList(_context.Sport, "Name", "Name", season.Sport);
-      return View(season);
+      return View(new SeasonEditModel(season));
     }
 
     // GET: Seasons/Edit/5
@@ -62,7 +63,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       var season = await _context.Season.SingleOrDefaultAsync(m => m.Id == id);
       if (season == null) return NotFound();
       ViewData["Sport"] = new SelectList(_context.Sport, "Name", "Name", season.Sport);
-      return View(season);
+      return View(new SeasonEditModel(season));
     }
 
     // POST: Seasons/Edit/5
@@ -84,7 +85,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         return RedirectToAction(nameof(Index));
       }
       ViewData["Sport"] = new SelectList(_context.Sport, "Name", "Name", season.Sport);
-      return View(season);
+      return View(new SeasonEditModel(season));
     }
 
     // GET: Seasons/Delete/5
@@ -96,7 +97,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         .SingleOrDefaultAsync(m => m.Id == id);
       if (season == null) return NotFound();
 
-      return View(season);
+      return View(new SeasonDisplayModel(season));
     }
 
     // POST: Seasons/Delete/5
