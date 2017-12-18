@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
 using Motorsports.Scaffolding.Core.Models.DisplayModels;
@@ -37,8 +36,11 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
     // GET: Seasons/Create
     public IActionResult Create() {
-      ViewData["Sport"] = new SelectList(_context.Sport, "Name", "Name");
-      return View(new SeasonEditModel(new Season()));
+      return View(new SeasonEditModel(
+        new Season(),
+        _context.Sport.OrderBy(sport => sport.Name),
+        _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
+        _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
 
     // POST: Seasons/Create
@@ -52,8 +54,11 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
       }
-      ViewData["Sport"] = new SelectList(_context.Sport, "Name", "Name", season.Sport);
-      return View(new SeasonEditModel(season));
+      return View(new SeasonEditModel(
+        new Season(),
+        _context.Sport.OrderBy(sport => sport.Name),
+        _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
+        _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
 
     // GET: Seasons/Edit/5
@@ -62,8 +67,11 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
       var season = await _context.Season.SingleOrDefaultAsync(m => m.Id == id);
       if (season == null) return NotFound();
-      ViewData["Sport"] = new SelectList(_context.Sport, "Name", "Name", season.Sport);
-      return View(new SeasonEditModel(season));
+      return View(new SeasonEditModel(
+        season,
+        _context.Sport.OrderBy(sport => sport.Name),
+        _context.Team.Where(team => team.Sport == season.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
+        _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
 
     // POST: Seasons/Edit/5
@@ -84,8 +92,11 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         }
         return RedirectToAction(nameof(Index));
       }
-      ViewData["Sport"] = new SelectList(_context.Sport, "Name", "Name", season.Sport);
-      return View(new SeasonEditModel(season));
+      return View(new SeasonEditModel(
+        season,
+        _context.Sport.OrderBy(sport => sport.Name),
+        _context.Team.Where(team => team.Sport == season.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
+        _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
 
     // GET: Seasons/Delete/5
