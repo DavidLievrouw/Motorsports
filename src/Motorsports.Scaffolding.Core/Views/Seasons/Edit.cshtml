@@ -26,7 +26,9 @@
               Text = sport.FullName,
               Value = sport.Name,
               Selected = sport.Name == @Model.Sport
-            })
+            }),
+            null,
+            new { @class="form-control" }
           )
         </div>
         <span asp-validation-for="Sport" class="text-danger"></span>
