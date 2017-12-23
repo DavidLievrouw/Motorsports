@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
 using Motorsports.Scaffolding.Core.Models.DisplayModels;
 using Motorsports.Scaffolding.Core.Models.EditModels;
-using Motorsports.Scaffolding.Core.Models.UpdateModels;
 using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
@@ -40,8 +39,9 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
     // GET: Seasons/Create
     public IActionResult Create() {
-      return View(new SeasonEditModel(
+      return View(new SeasonDisplayModel(
         new Season(),
+        _context.Sport.OrderBy(sport => sport.Name),
         _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
@@ -57,8 +57,9 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
       }
-      return View(new SeasonEditModel(
+      return View(new SeasonDisplayModel(
         new Season(),
+        _context.Sport.OrderBy(sport => sport.Name),
         _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
@@ -69,8 +70,9 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
       var season = await _context.Season.Include(s => s.RelatedSeasonResult).SingleOrDefaultAsync(m => m.Id == id);
       if (season == null) return NotFound();
-      return View(new SeasonEditModel(
+      return View(new SeasonDisplayModel(
         season,
+        _context.Sport.OrderBy(sport => sport.Name),
         _context.Team.Where(team => team.Sport == season.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
@@ -80,7 +82,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,Sport,Label,WinningTeamId")] SeasonUpdateModel season) {
+    public async Task<IActionResult> Edit(int id, [Bind("Id,Sport,WinningTeamId")] SeasonEditModel season) {
       if (id != season.Id) return NotFound();
 
       if (ModelState.IsValid) {
@@ -88,8 +90,9 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         return RedirectToAction(nameof(Index));
       }
       var seasonDataModel = _context.Season.Single(s => s.Id == season.Id);
-      return View(new SeasonEditModel(
+      return View(new SeasonDisplayModel(
         seasonDataModel, 
+        _context.Sport.OrderBy(sport => sport.Name),
         _context.Team.Where(team => team.Sport == seasonDataModel.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
@@ -115,10 +118,6 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       _context.Season.Remove(season);
       await _context.SaveChangesAsync();
       return RedirectToAction(nameof(Index));
-    }
-
-    bool SeasonExists(int id) {
-      return _context.Season.Any(e => e.Id == id);
     }
   }
 }

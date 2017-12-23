@@ -1,4 +1,4 @@
-﻿@model Motorsports.Scaffolding.Core.Models.EditModels.SeasonEditModel
+﻿@model Motorsports.Scaffolding.Core.Models.DisplayModels.SeasonDisplayModel
 
 @{
   ViewData["Title"] = "Create";
@@ -17,7 +17,7 @@
         <div>
           @Html.DropDownListFor(
              m => m.Sport,
-             @Model.Sports.Select(sport => new SelectListItem
+             @Model.AvailableSports.Select(sport => new SelectListItem
              {
                Text = sport.FullName,
                Value = sport.Name,

@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Motorsports.Scaffolding.Core.Models;
-using Motorsports.Scaffolding.Core.Models.UpdateModels;
+using Motorsports.Scaffolding.Core.Models.EditModels;
 
 namespace Motorsports.Scaffolding.Core.Services {
   public interface ISeasonService {
-    Task UpdateSeason(SeasonUpdateModel season);
+    Task UpdateSeason(SeasonEditModel season);
   }
 
   public class SeasonService : ISeasonService {
@@ -16,7 +16,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    public async Task UpdateSeason(SeasonUpdateModel season) {
+    public async Task UpdateSeason(SeasonEditModel season) {
       if (season == null) throw new ArgumentNullException(nameof(season));
 
       var seasonToUpdate = _context.Season.Single(s => s.Id == season.Id);
