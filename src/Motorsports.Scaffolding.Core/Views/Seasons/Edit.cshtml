@@ -14,14 +14,24 @@
       <div asp-validation-summary="ModelOnly" class="text-danger"></div>
       <input type="hidden" asp-for="Id"/>
       <div class="form-group">
-        <label asp-for="Label" class="control-label"></label>
-        <input asp-for="Label" class="form-control" />
-        <span asp-validation-for="Label" class="text-danger"></span>
-      </div>
-      <div class="form-group">
         <label asp-for="Sport" class="control-label"></label>
         <div>@Model.Sport</div>
         <span asp-validation-for="Sport" class="text-danger"></span>
+      </div>
+      <div class="form-group">
+        <label asp-for="Label" class="control-label"></label>
+        <input asp-for="Label" class="form-control"/>
+        <span asp-validation-for="Label" class="text-danger"></span>
+      </div>
+      <div class="form-group">
+        <label asp-for="WinningTeamId" class="control-label"></label>
+        <div>
+          @Html.EditorFor(_ => _.WinningTeamId, typeof(Team).Name, new {
+            Teams = Model.Teams,
+            SelectedTeam = Model.WinningTeamId,
+            TargetProperty = nameof(Model.WinningTeamId)
+          })
+        </div>
       </div>
       <div class="form-group">
         <input type="submit" value="Save" class="btn btn-default"/>

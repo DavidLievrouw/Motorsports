@@ -13,24 +13,25 @@
     <form asp-action="Create">
       <div asp-validation-summary="ModelOnly" class="text-danger"></div>
       <div class="form-group">
-        <label asp-for="Label" class="control-label"></label>
-        <input asp-for="Label" class="form-control" />
-        <span asp-validation-for="Label" class="text-danger"></span>
-      </div>
-      <div class="form-group">
         <label asp-for="Sport" class="control-label"></label>
         <div>
           @Html.DropDownListFor(
-            m => m.Sport,
-            @Model.Sports.Select(sport => new SelectListItem {
-              Text = sport.FullName,
-              Value = sport.Name,
-              Selected = sport.Name == @Model.Sport
-            }),
-            null,
-            new { @class="form-control" }
-          )
+             m => m.Sport,
+             @Model.Sports.Select(sport => new SelectListItem
+             {
+               Text = sport.FullName,
+               Value = sport.Name,
+               Selected = sport.Name == @Model.Sport
+             }),
+             null,
+             new { @class = "form-control" }
+           )
         </div>
+      </div>
+      <div class="form-group">
+        <label asp-for="Label" class="control-label"></label>
+        <input asp-for="Label" class="form-control" />
+        <span asp-validation-for="Label" class="text-danger"></span>
       </div>
       <div class="form-group">
         <input type="submit" value="Create" class="btn btn-default" />

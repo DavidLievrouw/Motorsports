@@ -6,12 +6,16 @@ using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
 using Motorsports.Scaffolding.Core.Models.DisplayModels;
 using Motorsports.Scaffolding.Core.Models.EditModels;
+using Motorsports.Scaffolding.Core.Models.UpdateModels;
+using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
   public class SeasonsController : Controller {
+    readonly ISeasonService _seasonService;
     readonly MotorsportsContext _context;
 
-    public SeasonsController(MotorsportsContext context) {
+    public SeasonsController(MotorsportsContext context, ISeasonService seasonService) {
+      _seasonService = seasonService ?? throw new ArgumentNullException(nameof(seasonService));
       _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
@@ -38,7 +42,6 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     public IActionResult Create() {
       return View(new SeasonEditModel(
         new Season(),
-        _context.Sport.OrderBy(sport => sport.Name),
         _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
@@ -56,7 +59,6 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       }
       return View(new SeasonEditModel(
         new Season(),
-        _context.Sport.OrderBy(sport => sport.Name),
         _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
@@ -65,11 +67,10 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     public async Task<IActionResult> Edit(int? id) {
       if (id == null) return NotFound();
 
-      var season = await _context.Season.SingleOrDefaultAsync(m => m.Id == id);
+      var season = await _context.Season.Include(s => s.RelatedSeasonResult).SingleOrDefaultAsync(m => m.Id == id);
       if (season == null) return NotFound();
       return View(new SeasonEditModel(
         season,
-        _context.Sport.OrderBy(sport => sport.Name),
         _context.Team.Where(team => team.Sport == season.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
@@ -79,23 +80,17 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,Sport,Label")] Season season) {
+    public async Task<IActionResult> Edit(int id, [Bind("Id,Sport,Label,WinningTeamId")] SeasonUpdateModel season) {
       if (id != season.Id) return NotFound();
 
       if (ModelState.IsValid) {
-        try {
-          _context.Update(season);
-          await _context.SaveChangesAsync();
-        } catch (DbUpdateConcurrencyException) {
-          if (!SeasonExists(season.Id)) return NotFound();
-          else throw;
-        }
+        await _seasonService.UpdateSeason(season);
         return RedirectToAction(nameof(Index));
       }
+      var seasonDataModel = _context.Season.Single(s => s.Id == season.Id);
       return View(new SeasonEditModel(
-        season,
-        _context.Sport.OrderBy(sport => sport.Name),
-        _context.Team.Where(team => team.Sport == season.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
+        seasonDataModel, 
+        _context.Team.Where(team => team.Sport == seasonDataModel.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
 

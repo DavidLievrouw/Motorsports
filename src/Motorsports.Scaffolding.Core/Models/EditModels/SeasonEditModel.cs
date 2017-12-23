@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace Motorsports.Scaffolding.Core.Models.EditModels {
   public class SeasonEditModel : EditModel<Season> {
     public SeasonEditModel(
-      Season season, 
-      IEnumerable<Sport> sports,
+      Season season,
       IEnumerable<Team> teams,
       IEnumerable<Participant> participants) : base(season) {
-      Sports = sports;
       Teams = teams;
       Participants = participants;
     }
@@ -27,11 +26,15 @@ namespace Motorsports.Scaffolding.Core.Models.EditModels {
       set => DataModel.Label = value;
     }
 
-    public IEnumerable<Sport> Sports { get; }
     public IEnumerable<Team> Teams { get; }
     public IEnumerable<Participant> Participants { get; }
 
-    public IEnumerable<Participant> WinningParticipants { get; set; }
-    public Team WinningTeam { get; set; }
+    [DisplayName("Winning team")]
+    public int? WinningTeamId {
+      get => DataModel.RelatedSeasonResult?.WinningTeam;
+      set => DataModel.RelatedSeasonResult = value.HasValue
+        ? new SeasonResult {Season = DataModel.Id, WinningTeam = value.Value}
+        : null;
+    }
   }
 }

@@ -1,0 +1,32 @@
+﻿@using System.Collections
+
+@model int?
+
+@{
+  var allTeams = ((IEnumerable)ViewData["Teams"]).OfType<Team>();
+  var selectedTeam = (int?)ViewData["SelectedTeam"];
+  var targetProperty = ViewData["TargetProperty"] ?? "Team";
+}
+
+<link href="/css/select2.css" rel="stylesheet" />
+<script src="/js/select2.full.js"></script>
+
+<select name="@targetProperty" id="slcTeams" class="form-control">
+  @{
+    foreach (var team in allTeams) {
+      <option value="@team.Id">@team.Name (@team.Sport)</option>
+    }
+  }
+</select>
+
+<script>
+  $(document).ready(function() {
+    var teams = $("#slcTeams");
+    teams.select2({
+      placeholder: "Select a team",
+      allowClear: true
+    });
+    teams.val(@Html.Raw(selectedTeam.HasValue ? "\"" + selectedTeam.Value + "\"" : "null"));
+    teams.trigger("change"); // Notify any JS components that the value changed
+  });
+</script>
