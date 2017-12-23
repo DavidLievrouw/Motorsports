@@ -37,7 +37,8 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public IEnumerable<Team> AvailableTeams { get; }
     public IEnumerable<Participant> AvailableParticipants { get; }
     public IEnumerable<Sport> AvailableSports { get; }
-
+    
+    [DisplayName("Winning team")]
     public int? WinningTeamId {
       get => DataModel.RelatedSeasonResult?.WinningTeam;
       set => DataModel.RelatedSeasonResult = value.HasValue
