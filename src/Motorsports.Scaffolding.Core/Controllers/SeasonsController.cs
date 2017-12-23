@@ -10,8 +10,8 @@ using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
   public class SeasonsController : Controller {
-    readonly ISeasonService _seasonService;
     readonly MotorsportsContext _context;
+    readonly ISeasonService _seasonService;
 
     public SeasonsController(MotorsportsContext context, ISeasonService seasonService) {
       _seasonService = seasonService ?? throw new ArgumentNullException(nameof(seasonService));
@@ -20,7 +20,12 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
     // GET: Seasons
     public async Task<IActionResult> Index() {
-      var motorsportsContext = _context.Season.Include(s => s.RelatedSport);
+      var motorsportsContext = _context.Season
+        .Include(s => s.RelatedSport)
+        .Include(s => s.RelatedSeasonResult)
+        .ThenInclude(s => s.RelatedWinningTeam)
+        .Include(s => s.RelatedSeasonWinners)
+        .ThenInclude(sw => sw.RelatedParticipant);
       var indexItems = (await motorsportsContext.ToListAsync()).Select(s => new SeasonDisplayModel(s));
       return View(indexItems);
     }
@@ -31,6 +36,8 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
       var season = await _context.Season
         .Include(s => s.RelatedSport)
+        .Include(s => s.RelatedSeasonResult)
+        .ThenInclude(s => s.RelatedWinningTeam)
         .Include(s => s.RelatedSeasonWinners)
         .ThenInclude(sw => sw.RelatedParticipant)
         .SingleOrDefaultAsync(m => m.Id == id);
@@ -41,11 +48,12 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
     // GET: Seasons/Create
     public IActionResult Create() {
-      return View(new SeasonDisplayModel(
-        new Season(),
-        _context.Sport.OrderBy(sport => sport.Name),
-        _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
-        _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
+      return View(
+        new SeasonDisplayModel(
+          new Season(),
+          _context.Sport.OrderBy(sport => sport.Name),
+          _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
+          _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
 
     // POST: Seasons/Create
@@ -59,11 +67,12 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
       }
-      return View(new SeasonDisplayModel(
-        new Season(),
-        _context.Sport.OrderBy(sport => sport.Name),
-        _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
-        _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
+      return View(
+        new SeasonDisplayModel(
+          new Season(),
+          _context.Sport.OrderBy(sport => sport.Name),
+          _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
+          _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
 
     // GET: Seasons/Edit/5
@@ -76,11 +85,12 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         .ThenInclude(sw => sw.RelatedParticipant)
         .SingleOrDefaultAsync(m => m.Id == id);
       if (season == null) return NotFound();
-      return View(new SeasonDisplayModel(
-        season,
-        _context.Sport.OrderBy(sport => sport.Name),
-        _context.Team.Where(team => team.Sport == season.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
-        _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
+      return View(
+        new SeasonDisplayModel(
+          season,
+          _context.Sport.OrderBy(sport => sport.Name),
+          _context.Team.Where(team => team.Sport == season.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
+          _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
 
     // POST: Seasons/Edit/5
@@ -88,7 +98,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,Sport,WinningTeamId,WinningParticipantIds[]"), ModelBinder(typeof(SeasonEditModel.SeasonEditModelBinder))] SeasonEditModel season) {
+    public async Task<IActionResult> Edit(int id, [Bind("Id,Sport,WinningTeamId,WinningParticipantIds[]")] [ModelBinder(typeof(SeasonEditModel.SeasonEditModelBinder))] SeasonEditModel season) {
       if (id != season.Id) return NotFound();
 
       if (ModelState.IsValid) {
@@ -96,11 +106,12 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         return RedirectToAction(nameof(Index));
       }
       var seasonDataModel = _context.Season.Single(s => s.Id == season.Id);
-      return View(new SeasonDisplayModel(
-        seasonDataModel,
-        _context.Sport.OrderBy(sport => sport.Name),
-        _context.Team.Where(team => team.Sport == seasonDataModel.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
-        _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
+      return View(
+        new SeasonDisplayModel(
+          seasonDataModel,
+          _context.Sport.OrderBy(sport => sport.Name),
+          _context.Team.Where(team => team.Sport == seasonDataModel.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
+          _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
 
     // GET: Seasons/Delete/5
@@ -109,6 +120,10 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
       var season = await _context.Season
         .Include(s => s.RelatedSport)
+        .Include(s => s.RelatedSeasonResult)
+        .ThenInclude(s => s.RelatedWinningTeam)
+        .Include(s => s.RelatedSeasonWinners)
+        .ThenInclude(sw => sw.RelatedParticipant)
         .SingleOrDefaultAsync(m => m.Id == id);
       if (season == null) return NotFound();
 
