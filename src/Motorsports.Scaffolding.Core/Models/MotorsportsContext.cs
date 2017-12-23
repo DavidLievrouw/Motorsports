@@ -114,6 +114,11 @@ namespace Motorsports.Scaffolding.Core.Models {
 
       modelBuilder.Entity<RoundWinner>(
         entity => {
+          entity.HasOne(d => d.RelatedParticipant)
+            .WithMany(p => p.WonRounds)
+            .HasForeignKey(d => d.Participant)
+            .HasConstraintName("FK_Participant_RoundWinner");
+
           entity.HasOne(d => d.RelatedRound)
             .WithMany(p => p.RelatedRoundWinners)
             .HasForeignKey(d => d.Round)
@@ -155,6 +160,11 @@ namespace Motorsports.Scaffolding.Core.Models {
 
       modelBuilder.Entity<SeasonWinner>(
         entity => {
+          entity.HasOne(d => d.RelatedParticipant)
+            .WithMany(p => p.WonSeasons)
+            .HasForeignKey(d => d.Participant)
+            .HasConstraintName("FK_Participant_SeasonWinner");
+
           entity.HasOne(d => d.RelatedSeason)
             .WithMany(p => p.RelatedSeasonWinners)
             .HasForeignKey(d => d.Season)
