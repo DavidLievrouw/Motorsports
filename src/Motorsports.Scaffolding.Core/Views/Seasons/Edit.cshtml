@@ -1,4 +1,4 @@
-﻿@model Motorsports.Scaffolding.Core.Models.EditModels.SeasonEditModel
+﻿@model Motorsports.Scaffolding.Core.Models.DisplayModels.SeasonDisplayModel
 
 @{
   ViewData["Title"] = "Edit";
@@ -27,7 +27,7 @@
         <label asp-for="WinningTeamId" class="control-label"></label>
         <div>
           @Html.EditorFor(_ => _.WinningTeamId, typeof(Team).Name, new {
-            Teams = Model.Teams,
+            Teams = Model.AvailableTeams,
             SelectedTeam = Model.WinningTeamId,
             TargetProperty = nameof(Model.WinningTeamId)
           })

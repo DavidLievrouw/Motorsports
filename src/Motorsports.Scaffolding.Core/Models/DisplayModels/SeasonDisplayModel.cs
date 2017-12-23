@@ -1,9 +1,18 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 
 namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
   public class SeasonDisplayModel : DisplayModel<Season> {
-    public SeasonDisplayModel(Season season) : base(season) { }
+    public SeasonDisplayModel(
+      Season season,
+      IEnumerable<Sport> sports = null,
+      IEnumerable<Team> teams = null,
+      IEnumerable<Participant> participants = null) : base(season) {
+      AvailableSports = sports;
+      AvailableTeams = teams;
+      AvailableParticipants = participants;
+    }
 
     public int Id {
       get => DataModel.Id;
@@ -24,6 +33,20 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       get => DataModel.RelatedSport;
       set => DataModel.RelatedSport = value;
     }
+    
+    public IEnumerable<Team> AvailableTeams { get; }
+    public IEnumerable<Participant> AvailableParticipants { get; }
+    public IEnumerable<Sport> AvailableSports { get; }
+
+    public int? WinningTeamId {
+      get => DataModel.RelatedSeasonResult?.WinningTeam;
+      set => DataModel.RelatedSeasonResult = value.HasValue
+        ? new SeasonResult {Season = DataModel.Id, WinningTeam = value.Value}
+        : null;
+    }
+
+    [DisplayName("Winning team")]
+    public Team WinningTeam => DataModel.RelatedSeasonResult?.RelatedWinningTeam;
 
     [DisplayName("Nice label")]
     public string NiceLabel {
