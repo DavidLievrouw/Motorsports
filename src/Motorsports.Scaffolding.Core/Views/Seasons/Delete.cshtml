@@ -12,6 +12,12 @@
   <hr />
   <dl class="dl-horizontal">
     <dt>
+      @Html.DisplayNameFor(model => model.Sport)
+    </dt>
+    <dd>
+      @Html.DisplayFor(model => model.RelatedSport.FullName)
+    </dd>
+    <dt>
       @Html.DisplayNameFor(model => model.Label)
     </dt>
     <dd>
@@ -22,12 +28,6 @@
     </dt>
     <dd>
       @Html.DisplayFor(model => model.NiceLabel)
-    </dd>
-    <dt>
-      @Html.DisplayNameFor(model => model.Sport)
-    </dt>
-    <dd>
-      @Html.DisplayFor(model => model.RelatedSport.FullName)
     </dd>
   </dl>
 
