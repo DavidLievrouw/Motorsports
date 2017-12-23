@@ -1,0 +1,37 @@
+﻿@using System.Collections
+@using Newtonsoft.Json
+
+@model string[]
+
+@{
+  var allParticipants = ((IEnumerable) ViewData["Participants"]).OfType<Participant>().ToList();
+  var selectedParticipants = (string[]) ViewData["SelectedParticipants"];
+  var targetProperty = ViewData["TargetProperty"] ?? "WinningParticipants";
+
+  var participantsData = allParticipants
+    .Select(_ => new {
+      id = _.Id,
+      text = _.ToString()
+    }).ToArray();
+}
+
+<link href="/css/select2.css" rel="stylesheet"/>
+<script src="/js/select2.full.js"></script>
+
+<select name="@(targetProperty)[]" id="slcWinningParticipants" class="form-control" multiple="multiple"></select>
+
+<script>
+  $(document).ready(function() {
+    var winningParticipants = $("#slcWinningParticipants");
+    winningParticipants.select2({
+      placeholder: "Select winning participant(s)",
+      allowClear: true,
+      maximumSelectionSize: 4,
+      data: @Html.Raw(JsonConvert.SerializeObject(participantsData))
+    });
+    winningParticipants.val(@Html.Raw(selectedParticipants.Any()
+                              ? JsonConvert.SerializeObject(selectedParticipants)
+                              : "null"));
+    winningParticipants.trigger("change"); // Notify any JS components that the value changed
+  });
+</script>

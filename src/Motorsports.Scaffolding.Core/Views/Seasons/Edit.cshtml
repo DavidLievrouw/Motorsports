@@ -34,6 +34,17 @@
         </div>
       </div>
       <div class="form-group">
+        <label asp-for="WinningParticipants" class="control-label"></label>
+        <div>
+          @Html.EditorFor(_ => _.WinningParticipantIds, nameof(Model.WinningParticipants), new {
+            Participants = Model.AvailableParticipants,
+            SelectedParticipants = Model.WinningParticipantIds,
+            TargetProperty = nameof(Model.WinningParticipantIds)
+          })
+        </div>
+        <input type="hidden" asp-for="WinningParticipantIds"/>
+      </div>
+      <div class="form-group">
         <input type="submit" value="Save" class="btn btn-default"/>
       </div>
     </form>

@@ -31,6 +31,8 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
       var season = await _context.Season
         .Include(s => s.RelatedSport)
+        .Include(s => s.RelatedSeasonWinners)
+        .ThenInclude(sw => sw.RelatedParticipant)
         .SingleOrDefaultAsync(m => m.Id == id);
       if (season == null) return NotFound();
 
@@ -68,7 +70,11 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     public async Task<IActionResult> Edit(int? id) {
       if (id == null) return NotFound();
 
-      var season = await _context.Season.Include(s => s.RelatedSeasonResult).SingleOrDefaultAsync(m => m.Id == id);
+      var season = await _context.Season
+        .Include(s => s.RelatedSeasonResult)
+        .Include(s => s.RelatedSeasonWinners)
+        .ThenInclude(sw => sw.RelatedParticipant)
+        .SingleOrDefaultAsync(m => m.Id == id);
       if (season == null) return NotFound();
       return View(new SeasonDisplayModel(
         season,
@@ -82,7 +88,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,Sport,WinningTeamId")] SeasonEditModel season) {
+    public async Task<IActionResult> Edit(int id, [Bind("Id,Sport,WinningTeamId,WinningParticipantIds[]"), ModelBinder(typeof(SeasonEditModel.SeasonEditModelBinder))] SeasonEditModel season) {
       if (id != season.Id) return NotFound();
 
       if (ModelState.IsValid) {
@@ -91,7 +97,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       }
       var seasonDataModel = _context.Season.Single(s => s.Id == season.Id);
       return View(new SeasonDisplayModel(
-        seasonDataModel, 
+        seasonDataModel,
         _context.Sport.OrderBy(sport => sport.Name),
         _context.Team.Where(team => team.Sport == seasonDataModel.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
