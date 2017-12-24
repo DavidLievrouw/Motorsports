@@ -41,6 +41,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .ThenInclude(rr => rr.RelatedWinningTeam)
         .Include(r => r.RelatedRoundWinners)
         .ThenInclude(rw => rw.RelatedParticipant)
+        .Include(r => r.RelatedVenue)
         .Select(r => new RoundDisplayModel(r, null, null, null, null))
         .ToListAsync();
     }
@@ -52,6 +53,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .ThenInclude(rr => rr.RelatedWinningTeam)
         .Include(r => r.RelatedRoundWinners)
         .ThenInclude(rw => rw.RelatedParticipant)
+        .Include(r => r.RelatedVenue)
         .SingleOrDefaultAsync(m => m.Id == roundId);
 
       return new RoundDisplayModel(
@@ -67,8 +69,10 @@ namespace Motorsports.Scaffolding.Core.Services {
 
       // Find record to update
       var roundToUpdate = _context.Round
+        .Include(s => s.RelatedSeason)
         .Include(s => s.RelatedRoundResult)
         .Include(s => s.RelatedRoundWinners)
+        .Include(r => r.RelatedVenue)
         .Single(s => s.Id == round.Id);
 
       // Update round result

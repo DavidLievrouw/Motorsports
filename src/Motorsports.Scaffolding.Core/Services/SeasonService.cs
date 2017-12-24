@@ -40,6 +40,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .ThenInclude(s => s.RelatedWinningTeam)
         .Include(s => s.RelatedSeasonWinners)
         .ThenInclude(sw => sw.RelatedParticipant)
+        .Include(s => s.RelatedRounds)
         .Select(s => new SeasonDisplayModel(s, null, null, null))
         .ToListAsync();
     }
@@ -51,6 +52,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .ThenInclude(s => s.RelatedWinningTeam)
         .Include(s => s.RelatedSeasonWinners)
         .ThenInclude(sw => sw.RelatedParticipant)
+        .Include(s => s.RelatedRounds)
         .SingleOrDefaultAsync(m => m.Id == seasonId);
 
       return new SeasonDisplayModel(

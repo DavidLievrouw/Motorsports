@@ -11,27 +11,39 @@
 </p>
 <table class="table">
   <thead>
-  <tr>
-    <th>
-      @Html.DisplayNameFor(model => model.Label)
-    </th>
-    <th>
-      @Html.DisplayNameFor(model => model.Sport)
-    </th>
-    <th>
-      @Html.DisplayNameFor(model => model.Winners)
-    </th>
-    <th></th>
-  </tr>
+    <tr>
+      <th>
+        @Html.DisplayNameFor(model => model.Sport)
+      </th>
+      <th>
+        @Html.DisplayNameFor(model => model.Label)
+      </th>
+      <th>
+        @Html.DisplayNameFor(model => model.StartDate)
+      </th>
+      <th>
+        @Html.DisplayNameFor(model => model.EndDate)
+      </th>
+      <th>
+        @Html.DisplayNameFor(model => model.Winners)
+      </th>
+      <th></th>
+    </tr>
   </thead>
   <tbody>
   @foreach (var item in Model) {
     <tr>
       <td>
-        @Html.DisplayFor(modelItem => item.NiceLabel)
+        @Html.DisplayFor(modelItem => item.RelatedSport.Name)
       </td>
       <td>
-        @Html.DisplayFor(modelItem => item.RelatedSport.Name)
+        @Html.DisplayFor(modelItem => item.Label)
+      </td>
+      <td>
+        @Html.DisplayFor(modelItem => item.StartDate)
+      </td>
+      <td>
+        @Html.DisplayFor(modelItem => item.EndDate)
       </td>
       <td>
         @Html.DisplayFor(modelItem => item.Winners)
