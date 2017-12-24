@@ -1,51 +1,51 @@
-﻿@model Motorsports.Scaffolding.Core.Models.Round
+﻿@model Motorsports.Scaffolding.Core.Models.DisplayModels.RoundDisplayModel
 
 @{
-    ViewData["Title"] = "Create";
+  ViewData["Title"] = "Create";
 }
 
 <h2>Create</h2>
 
 <h4>Round</h4>
-<hr />
+<hr/>
 <div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Date" class="control-label"></label>
-                <input asp-for="Date" class="form-control" />
-                <span asp-validation-for="Date" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Number" class="control-label"></label>
-                <input asp-for="Number" class="form-control" />
-                <span asp-validation-for="Number" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Season" class="control-label"></label>
-                <select asp-for="Season" class ="form-control" asp-items="ViewBag.Season"></select>
-            </div>
-            <div class="form-group">
-                <label asp-for="Venue" class="control-label"></label>
-                <select asp-for="Venue" class ="form-control" asp-items="ViewBag.Venue"></select>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-default" />
-            </div>
-        </form>
-    </div>
+  <div class="col-md-4">
+    <form asp-action="Create">
+      <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+      <div class="form-group">
+        <label asp-for="Date" class="control-label"></label>
+        <input asp-for="Date" class="form-control"/>
+        <span asp-validation-for="Date" class="text-danger"></span>
+      </div>
+      <div class="form-group">
+        <label asp-for="Number" class="control-label"></label>
+        <input asp-for="Number" class="form-control"/>
+        <span asp-validation-for="Number" class="text-danger"></span>
+      </div>
+      <div class="form-group">
+        <label asp-for="Name" class="control-label"></label>
+        <input asp-for="Name" class="form-control"/>
+        <span asp-validation-for="Name" class="text-danger"></span>
+      </div>
+      <div class="form-group">
+        <label asp-for="Season" class="control-label"></label>
+        <select asp-for="Season" class="form-control" asp-items="ViewBag.Season"></select>
+      </div>
+      <div class="form-group">
+        <label asp-for="Venue" class="control-label"></label>
+        <select asp-for="Venue" class="form-control" asp-items="ViewBag.Venue"></select>
+      </div>
+      <div class="form-group">
+        <input type="submit" value="Create" class="btn btn-default"/>
+      </div>
+    </form>
+  </div>
 </div>
 
 <div>
-    <a asp-action="Index">Back to List</a>
+  <a asp-action="Index">Back to List</a>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+  @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }
