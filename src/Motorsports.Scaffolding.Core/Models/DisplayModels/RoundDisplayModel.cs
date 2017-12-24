@@ -5,13 +5,16 @@ using System.Linq;
 using Motorsports.Scaffolding.Core.Models.EditModels;
 
 namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
-  public class RoundDisplayModel : DisplayModel<Round> {
+  public class RoundDisplayModel {
+    readonly Round _round;
+
     public RoundDisplayModel(
       Round round,
       IEnumerable<Season> seasons = null,
       IEnumerable<Team> teams = null,
       IEnumerable<Participant> participants = null,
-      IEnumerable<Status> statuses = null) : base(round) {
+      IEnumerable<Status> statuses = null) {
+      _round = round ?? throw new ArgumentNullException(nameof(round));
       AvailableSeasons = seasons;
       AvailableTeams = teams;
       AvailableParticipants = participants;
@@ -20,51 +23,51 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     }
 
     public int Id {
-      get => DataModel.Id;
-      set => DataModel.Id = value;
+      get => _round.Id;
+      set => _round.Id = value;
     }
 
     public string Name {
-      get => DataModel.Name;
-      set => DataModel.Name = value;
+      get => _round.Name;
+      set => _round.Name = value;
     }
 
     public DateTime Date {
-      get => DataModel.Date;
-      set => DataModel.Date = value;
+      get => _round.Date;
+      set => _round.Date = value;
     }
 
     public short Number {
-      get => DataModel.Number;
-      set => DataModel.Number = value;
+      get => _round.Number;
+      set => _round.Number = value;
     }
 
     public int Season {
-      get => DataModel.Season;
-      set => DataModel.Season = value;
+      get => _round.Season;
+      set => _round.Season = value;
     }
 
     public Season RelatedSeason {
-      get => DataModel.RelatedSeason;
-      set => DataModel.RelatedSeason = value;
+      get => _round.RelatedSeason;
+      set => _round.RelatedSeason = value;
     }
 
     public string Venue {
-      get => DataModel.Venue;
-      set => DataModel.Venue = value;
+      get => _round.Venue;
+      set => _round.Venue = value;
     }
 
     public Venue RelatedVenue {
-      get => DataModel.RelatedVenue;
-      set => DataModel.RelatedVenue = value;
+      get => _round.RelatedVenue;
+      set => _round.RelatedVenue = value;
     }
 
-    public string Status => DataModel.RelatedRoundResult?.Status ?? RoundEditModel.RoundStatus.Scheduled.ToString();
+    public string Status => _round.RelatedRoundResult?.Status ?? RoundEditModel.RoundStatus.Scheduled.ToString();
 
-    public short? Rating => (short?) DataModel.RelatedRoundResult?.Rating;
+    public short? Rating => (short?) _round.RelatedRoundResult?.Rating;
 
-    public RoundEditModel.RainLevel? Rain => DataModel.RelatedRoundResult?.Rain.HasValue ?? false
-      ? Enum.Parse<RoundEditModel.RainLevel>(Enum.GetName(typeof(RoundEditModel.RainLevel), DataModel.RelatedRoundResult.Rain))
+    public RoundEditModel.RainLevel? Rain => _round.RelatedRoundResult?.Rain.HasValue ?? false
+      ? Enum.Parse<RoundEditModel.RainLevel>(Enum.GetName(typeof(RoundEditModel.RainLevel), _round.RelatedRoundResult.Rain))
       : new RoundEditModel.RainLevel?();
 
     public IEnumerable<Team> AvailableTeams { get; }
@@ -74,9 +77,9 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
 
     [DisplayName("Winning team")]
     public int? WinningTeamId {
-      get => DataModel.RelatedRoundResult?.WinningTeam;
-      set => DataModel.RelatedRoundResult = value.HasValue
-        ? new RoundResult {Round = DataModel.Id, WinningTeam = value.Value}
+      get => _round.RelatedRoundResult?.WinningTeam;
+      set => _round.RelatedRoundResult = value.HasValue
+        ? new RoundResult {Round = _round.Id, WinningTeam = value.Value}
         : null;
     }
 
@@ -84,13 +87,13 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public string[] WinningParticipantIds { get; set; }
 
     [DisplayName("Nice name")]
-    public string NiceName => $"{DataModel.RelatedSeason.Sport}: {Number} {RelatedVenue} ({Date:d MMM yyyy}) - {Status}";
+    public string NiceName => $"{_round.RelatedSeason.Sport}: {Number} {RelatedVenue} ({Date:d MMM yyyy}) - {Status}";
 
     [DisplayName("Winners")]
     public string Winners {
       get {
-        var winningTeam = DataModel.RelatedRoundResult?.RelatedWinningTeam;
-        var winningParticipants = (DataModel.RelatedRoundWinners?.Select(sw => sw.RelatedParticipant) ?? Enumerable.Empty<Participant>()).ToList();
+        var winningTeam = _round.RelatedRoundResult?.RelatedWinningTeam;
+        var winningParticipants = (_round.RelatedRoundWinners?.Select(sw => sw.RelatedParticipant) ?? Enumerable.Empty<Participant>()).ToList();
         if (!winningParticipants.Any() && winningTeam == null) return "/";
         if (winningParticipants.Any() && winningParticipants.Any() && winningTeam == null) return $"{string.Join(", ", winningParticipants.Select(p => p.GetFullName()))}";
         if (!winningParticipants.Any() && winningTeam != null) return $"{winningTeam.Name}";
@@ -99,12 +102,12 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     }
 
     [DisplayName("Winning team")]
-    public string WinningTeam => DataModel.RelatedRoundResult?.RelatedWinningTeam?.Name ?? "/";
+    public string WinningTeam => _round.RelatedRoundResult?.RelatedWinningTeam?.Name ?? "/";
 
     [DisplayName("Winning participant(s)")]
     public string WinningParticipants {
       get {
-        var winningParticipants = (DataModel.RelatedRoundWinners?.Select(sw => sw.RelatedParticipant) ?? Enumerable.Empty<Participant>()).ToList();
+        var winningParticipants = (_round.RelatedRoundWinners?.Select(sw => sw.RelatedParticipant) ?? Enumerable.Empty<Participant>()).ToList();
         return winningParticipants.Any()
           ? string.Join(", ", winningParticipants)
           : "/";

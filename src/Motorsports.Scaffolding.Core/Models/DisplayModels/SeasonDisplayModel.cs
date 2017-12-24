@@ -1,14 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
 namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
-  public class SeasonDisplayModel : DisplayModel<Season> {
+  public class SeasonDisplayModel {
+    readonly Season _season;
+
     public SeasonDisplayModel(
       Season season,
       IEnumerable<Sport> sports = null,
       IEnumerable<Team> teams = null,
-      IEnumerable<Participant> participants = null) : base(season) {
+      IEnumerable<Participant> participants = null) {
+      _season = season ?? throw new ArgumentNullException(nameof(season));
       AvailableSports = sports;
       AvailableTeams = teams;
       AvailableParticipants = participants;
@@ -16,23 +20,23 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     }
 
     public int Id {
-      get => DataModel.Id;
-      set => DataModel.Id = value;
+      get => _season.Id;
+      set => _season.Id = value;
     }
 
     public string Sport {
-      get => DataModel.Sport;
-      set => DataModel.Sport = value;
+      get => _season.Sport;
+      set => _season.Sport = value;
     }
 
     public string Label {
-      get => DataModel.Label;
-      set => DataModel.Label = value;
+      get => _season.Label;
+      set => _season.Label = value;
     }
 
     public Sport RelatedSport {
-      get => DataModel.RelatedSport;
-      set => DataModel.RelatedSport = value;
+      get => _season.RelatedSport;
+      set => _season.RelatedSport = value;
     }
 
     public IEnumerable<Team> AvailableTeams { get; }
@@ -41,9 +45,9 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
 
     [DisplayName("Winning team")]
     public int? WinningTeamId {
-      get => DataModel.RelatedSeasonResult?.WinningTeam;
-      set => DataModel.RelatedSeasonResult = value.HasValue
-        ? new SeasonResult {Season = DataModel.Id, WinningTeam = value.Value}
+      get => _season.RelatedSeasonResult?.WinningTeam;
+      set => _season.RelatedSeasonResult = value.HasValue
+        ? new SeasonResult {Season = _season.Id, WinningTeam = value.Value}
         : null;
     }
     
@@ -53,25 +57,25 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     [DisplayName("Nice label")]
     public string NiceLabel {
       get {
-        if (!string.IsNullOrWhiteSpace(DataModel.Label)) return $"{DataModel.Label} ({DataModel.Sport})";
-        var firstRound = DataModel.RelatedRounds?.OrderBy(r => r.Number)?.FirstOrDefault()?.Date;
-        var lastRound = DataModel.RelatedRounds?.OrderByDescending(r => r.Number)?.FirstOrDefault()?.Date;
+        if (!string.IsNullOrWhiteSpace(_season.Label)) return $"{_season.Label} ({_season.Sport})";
+        var firstRound = _season.RelatedRounds?.OrderBy(r => r.Number)?.FirstOrDefault()?.Date;
+        var lastRound = _season.RelatedRounds?.OrderByDescending(r => r.Number)?.FirstOrDefault()?.Date;
         var firstYear = firstRound?.Year;
         var lastYear = lastRound?.Year;
         if (firstYear.HasValue && lastYear.HasValue) {
           return firstYear.Value == lastYear.Value
-            ? $"{DataModel.Sport} ({firstYear.Value})"
-            : $"{DataModel.Sport} ({firstYear.Value}-{lastYear.Value})";
+            ? $"{_season.Sport} ({firstYear.Value})"
+            : $"{_season.Sport} ({firstYear.Value}-{lastYear.Value})";
         }
-        return $"{DataModel.Sport} (no rounds defined)";
+        return $"{_season.Sport} (no rounds defined)";
       }
     }
 
     [DisplayName("Winners")]
     public string Winners {
       get {
-        var winningTeam = DataModel.RelatedSeasonResult?.RelatedWinningTeam;
-        var winningParticipants = (DataModel.RelatedSeasonWinners?.Select(sw => sw.RelatedParticipant) ?? Enumerable.Empty<Participant>()).ToList();
+        var winningTeam = _season.RelatedSeasonResult?.RelatedWinningTeam;
+        var winningParticipants = (_season.RelatedSeasonWinners?.Select(sw => sw.RelatedParticipant) ?? Enumerable.Empty<Participant>()).ToList();
         if (!winningParticipants.Any() && winningTeam == null) return "/";
         if (winningParticipants.Any() && winningParticipants.Any() && winningTeam == null) return $"{string.Join(", ", winningParticipants.Select(p => p.GetFullName()))}";
         if (!winningParticipants.Any() && winningTeam != null) return $"{winningTeam.Name}";
@@ -80,12 +84,12 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     }
 
     [DisplayName("Winning team")]
-    public string WinningTeam => DataModel.RelatedSeasonResult?.RelatedWinningTeam?.Name ?? "/";
+    public string WinningTeam => _season.RelatedSeasonResult?.RelatedWinningTeam?.Name ?? "/";
 
     [DisplayName("Winning participant(s)")]
     public string WinningParticipants {
       get {
-        var winningParticipants = (DataModel.RelatedSeasonWinners?.Select(sw => sw.RelatedParticipant) ?? Enumerable.Empty<Participant>()).ToList();
+        var winningParticipants = (_season.RelatedSeasonWinners?.Select(sw => sw.RelatedParticipant) ?? Enumerable.Empty<Participant>()).ToList();
         return winningParticipants.Any()
           ? string.Join(", ", winningParticipants)
           : "/";
