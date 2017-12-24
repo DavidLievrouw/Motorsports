@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using Motorsports.Scaffolding.Core.Models.EditModels;
 
 namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
   public class RoundDisplayModel {
@@ -12,12 +11,14 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       IEnumerable<Season> seasons = null,
       IEnumerable<Team> teams = null,
       IEnumerable<Participant> participants = null,
-      IEnumerable<Status> statuses = null) {
+      IEnumerable<Status> statuses = null,
+      IEnumerable<Venue> venues = null) {
       DataModel = round ?? throw new ArgumentNullException(nameof(round));
       AvailableSeasons = seasons;
       AvailableTeams = teams;
       AvailableParticipants = participants;
       AvailableStatuses = statuses;
+      AvailableVenues = venues;
       WinningParticipantIds = round.RelatedRoundWinners?.Select(winner => winner.Participant).ToArray() ?? Enumerable.Empty<int>().ToArray();
     }
 
@@ -66,7 +67,8 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     }
 
     public string Status => DataModel.RelatedRoundResult?.Status ?? RoundStatus.Scheduled.ToString();
-
+    
+    [DisplayFormat(NullDisplayText = "?")]
     public short? Rating => (short?) DataModel.RelatedRoundResult?.Rating;
 
     [DisplayFormat(NullDisplayText = "?")]
@@ -78,6 +80,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public IEnumerable<Participant> AvailableParticipants { get; }
     public IEnumerable<Status> AvailableStatuses { get; }
     public IEnumerable<Season> AvailableSeasons { get; }
+    public IEnumerable<Venue> AvailableVenues { get; }
 
     [DisplayName("Winning team")]
     public int? WinningTeamId {

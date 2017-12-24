@@ -27,11 +27,12 @@ namespace Motorsports.Scaffolding.Core.Services {
     public Task<RoundDisplayModel> GetNew() {
       return Task.FromResult(
         new RoundDisplayModel(
-          new Round(),
-          _context.Season.Include(s => s.RelatedRounds).OrderBy(season => season.Sport).ThenBy(season => season.RelatedRounds.Min(r => r.Date)),
+          new Round { Date = DateTime.Today },
+          _context.Season.Include(s => s.RelatedRounds).OrderBy(season => season.Sport),
           _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
           _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
-          _context.Status));
+          _context.Status,
+          _context.Venue.OrderBy(v => v.Name)));
     }
 
     public Task<List<RoundDisplayModel>> LoadRoundList() {
@@ -42,7 +43,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Include(r => r.RelatedRoundWinners)
         .ThenInclude(rw => rw.RelatedParticipant)
         .Include(r => r.RelatedVenue)
-        .Select(r => new RoundDisplayModel(r, null, null, null, null))
+        .Select(r => new RoundDisplayModel(r, null, null, null, null, null))
         .ToListAsync();
     }
 
@@ -58,10 +59,11 @@ namespace Motorsports.Scaffolding.Core.Services {
 
       return new RoundDisplayModel(
         seasonDataModel,
-        _context.Season.Include(s => s.RelatedRounds).OrderBy(season => season.Sport).ThenBy(season => season.RelatedRounds.Min(r => r.Date)),
+        _context.Season.Include(s => s.RelatedRounds).OrderBy(season => season.Sport),
         _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
-        _context.Status);
+        _context.Status,
+        _context.Venue.OrderBy(v => v.Name));
     }
 
     public async Task UpdateRound(RoundEditModel round) {
