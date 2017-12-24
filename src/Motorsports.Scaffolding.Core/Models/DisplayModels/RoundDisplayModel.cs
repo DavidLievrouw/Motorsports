@@ -19,7 +19,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       AvailableTeams = teams;
       AvailableParticipants = participants;
       AvailableStatuses = statuses;
-      WinningParticipantIds = round.RelatedRoundWinners?.Select(winner => winner.Participant.ToString()).ToArray() ?? Enumerable.Empty<string>().ToArray();
+      WinningParticipantIds = round.RelatedRoundWinners?.Select(winner => winner.Participant).ToArray() ?? Enumerable.Empty<int>().ToArray();
     }
 
     public int Id {
@@ -84,7 +84,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     }
 
     [DisplayName("Winning participant(s)")]
-    public string[] WinningParticipantIds { get; set; }
+    public int[] WinningParticipantIds { get; set; }
 
     [DisplayName("Nice name")]
     public string NiceName => $"{_round.RelatedSeason.Sport}: {Number} {RelatedVenue} ({Date:d MMM yyyy}) - {Status}";
