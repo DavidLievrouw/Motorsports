@@ -1,13 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
+using Motorsports.Scaffolding.Core.Models.DisplayModels;
 using Motorsports.Scaffolding.Core.Models.EditModels;
 
 namespace Motorsports.Scaffolding.Core.Services {
   public interface ISeasonService {
+    Task<SeasonDisplayModel> GetNew();
+    Task<List<SeasonDisplayModel>> LoadSeasonList();
+    Task<SeasonDisplayModel> LoadDisplayModel(int seasonId);
     Task UpdateSeason(SeasonEditModel season);
+    Task CreateSeason(Season season);
+    Task DeleteSeason(int seasonId);
   }
 
   public class SeasonService : ISeasonService {
@@ -15,6 +22,42 @@ namespace Motorsports.Scaffolding.Core.Services {
 
     public SeasonService(MotorsportsContext context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
+    }
+
+    public Task<SeasonDisplayModel> GetNew() {
+      return Task.FromResult(
+        new SeasonDisplayModel(
+          new Season(),
+          _context.Sport.OrderBy(sport => sport.Name),
+          _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
+          _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
+    }
+
+    public Task<List<SeasonDisplayModel>> LoadSeasonList() {
+      return _context.Season
+        .Include(s => s.RelatedSport)
+        .Include(s => s.RelatedSeasonResult)
+        .ThenInclude(s => s.RelatedWinningTeam)
+        .Include(s => s.RelatedSeasonWinners)
+        .ThenInclude(sw => sw.RelatedParticipant)
+        .Select(s => new SeasonDisplayModel(s, null, null, null))
+        .ToListAsync();
+    }
+
+    public async Task<SeasonDisplayModel> LoadDisplayModel(int seasonId) {
+      var seasonDataModel = await _context.Season
+        .Include(s => s.RelatedSport)
+        .Include(s => s.RelatedSeasonResult)
+        .ThenInclude(s => s.RelatedWinningTeam)
+        .Include(s => s.RelatedSeasonWinners)
+        .ThenInclude(sw => sw.RelatedParticipant)
+        .SingleOrDefaultAsync(m => m.Id == seasonId);
+
+      return new SeasonDisplayModel(
+        seasonDataModel,
+        _context.Sport.OrderBy(sport => sport.Name),
+        _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
+        _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName));
     }
 
     public async Task UpdateSeason(SeasonEditModel season) {
@@ -37,7 +80,7 @@ namespace Motorsports.Scaffolding.Core.Services {
           };
         }
       }
-      
+
       // Update winners
       _context.SeasonWinner.RemoveRange(_context.SeasonWinner.Where(sw => sw.Season == season.Id));
       foreach (var winningParticipantId in season.WinningParticipantIds) {
@@ -53,6 +96,17 @@ namespace Motorsports.Scaffolding.Core.Services {
 
       // Commit
       _context.Update(seasonToUpdate);
+      await _context.SaveChangesAsync();
+    }
+
+    public async Task CreateSeason(Season season) {
+      _context.Add(season);
+      await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteSeason(int seasonId) {
+      var season = await _context.Season.SingleOrDefaultAsync(m => m.Id == seasonId);
+      _context.Season.Remove(season);
       await _context.SaveChangesAsync();
     }
   }

@@ -1,59 +1,36 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
-using Motorsports.Scaffolding.Core.Models.DisplayModels;
 using Motorsports.Scaffolding.Core.Models.EditModels;
 using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
   public class SeasonsController : Controller {
-    readonly MotorsportsContext _context;
     readonly ISeasonService _seasonService;
 
-    public SeasonsController(MotorsportsContext context, ISeasonService seasonService) {
+    public SeasonsController(ISeasonService seasonService) {
       _seasonService = seasonService ?? throw new ArgumentNullException(nameof(seasonService));
-      _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
     // GET: Seasons
     public async Task<IActionResult> Index() {
-      var motorsportsContext = _context.Season
-        .Include(s => s.RelatedSport)
-        .Include(s => s.RelatedSeasonResult)
-        .ThenInclude(s => s.RelatedWinningTeam)
-        .Include(s => s.RelatedSeasonWinners)
-        .ThenInclude(sw => sw.RelatedParticipant);
-      var indexItems = (await motorsportsContext.ToListAsync()).Select(s => new SeasonDisplayModel(s));
-      return View(indexItems);
+      return View(await _seasonService.LoadSeasonList());
     }
 
     // GET: Seasons/Details/5
     public async Task<IActionResult> Details(int? id) {
       if (id == null) return NotFound();
 
-      var season = await _context.Season
-        .Include(s => s.RelatedSport)
-        .Include(s => s.RelatedSeasonResult)
-        .ThenInclude(s => s.RelatedWinningTeam)
-        .Include(s => s.RelatedSeasonWinners)
-        .ThenInclude(sw => sw.RelatedParticipant)
-        .SingleOrDefaultAsync(m => m.Id == id);
+      var season = await _seasonService.LoadDisplayModel(id.Value);
       if (season == null) return NotFound();
 
-      return View(new SeasonDisplayModel(season));
+      return View(season);
     }
 
     // GET: Seasons/Create
-    public IActionResult Create() {
-      return View(
-        new SeasonDisplayModel(
-          new Season(),
-          _context.Sport.OrderBy(sport => sport.Name),
-          _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
-          _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
+    public async Task<IActionResult> Create() {
+      return View(await _seasonService.GetNew());
     }
 
     // POST: Seasons/Create
@@ -63,34 +40,20 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("Id,Sport,Label")] Season season) {
       if (ModelState.IsValid) {
-        _context.Add(season);
-        await _context.SaveChangesAsync();
+        await _seasonService.CreateSeason(season);
         return RedirectToAction(nameof(Index));
       }
-      return View(
-        new SeasonDisplayModel(
-          new Season(),
-          _context.Sport.OrderBy(sport => sport.Name),
-          _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
-          _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
+      return View(await _seasonService.GetNew());
     }
 
     // GET: Seasons/Edit/5
     public async Task<IActionResult> Edit(int? id) {
       if (id == null) return NotFound();
-
-      var season = await _context.Season
-        .Include(s => s.RelatedSeasonResult)
-        .Include(s => s.RelatedSeasonWinners)
-        .ThenInclude(sw => sw.RelatedParticipant)
-        .SingleOrDefaultAsync(m => m.Id == id);
+      
+      var season = await _seasonService.LoadDisplayModel(id.Value);
       if (season == null) return NotFound();
-      return View(
-        new SeasonDisplayModel(
-          season,
-          _context.Sport.OrderBy(sport => sport.Name),
-          _context.Team.Where(team => team.Sport == season.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
-          _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
+
+      return View(season);
     }
 
     // POST: Seasons/Edit/5
@@ -105,29 +68,18 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         await _seasonService.UpdateSeason(season);
         return RedirectToAction(nameof(Index));
       }
-      var seasonDataModel = _context.Season.Single(s => s.Id == season.Id);
-      return View(
-        new SeasonDisplayModel(
-          seasonDataModel,
-          _context.Sport.OrderBy(sport => sport.Name),
-          _context.Team.Where(team => team.Sport == seasonDataModel.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
-          _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
+
+      return View(await _seasonService.LoadDisplayModel(season.Id));
     }
 
     // GET: Seasons/Delete/5
     public async Task<IActionResult> Delete(int? id) {
       if (id == null) return NotFound();
 
-      var season = await _context.Season
-        .Include(s => s.RelatedSport)
-        .Include(s => s.RelatedSeasonResult)
-        .ThenInclude(s => s.RelatedWinningTeam)
-        .Include(s => s.RelatedSeasonWinners)
-        .ThenInclude(sw => sw.RelatedParticipant)
-        .SingleOrDefaultAsync(m => m.Id == id);
+      var season = await _seasonService.LoadDisplayModel(id.Value);
       if (season == null) return NotFound();
 
-      return View(new SeasonDisplayModel(season));
+      return View(season);
     }
 
     // POST: Seasons/Delete/5
@@ -135,9 +87,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     [ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id) {
-      var season = await _context.Season.SingleOrDefaultAsync(m => m.Id == id);
-      _context.Season.Remove(season);
-      await _context.SaveChangesAsync();
+      await _seasonService.DeleteSeason(id);
       return RedirectToAction(nameof(Index));
     }
   }
