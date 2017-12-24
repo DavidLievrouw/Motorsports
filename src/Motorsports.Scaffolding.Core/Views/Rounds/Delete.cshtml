@@ -12,10 +12,10 @@
   <hr/>
   <dl class="dl-horizontal">
     <dt>
-      @Html.DisplayNameFor(model => model.Date)
+      @Html.DisplayNameFor(model => model.Season)
     </dt>
     <dd>
-      @Html.DisplayFor(model => model.Date)
+      @Html.DisplayFor(model => model.RelatedSeason)
     </dd>
     <dt>
       @Html.DisplayNameFor(model => model.Number)
@@ -24,16 +24,16 @@
       @Html.DisplayFor(model => model.Number)
     </dd>
     <dt>
+      @Html.DisplayNameFor(model => model.Date)
+    </dt>
+    <dd>
+      @Html.DisplayFor(model => model.Date)
+    </dd>
+    <dt>
       @Html.DisplayNameFor(model => model.Name)
     </dt>
     <dd>
       @Html.DisplayFor(model => model.Name)
-    </dd>
-    <dt>
-      @Html.DisplayNameFor(model => model.RelatedSeason)
-    </dt>
-    <dd>
-      @Html.DisplayFor(model => model.RelatedSeason.Sport)
     </dd>
     <dt>
       @Html.DisplayNameFor(model => model.RelatedVenue)
@@ -41,8 +41,37 @@
     <dd>
       @Html.DisplayFor(model => model.RelatedVenue.Name)
     </dd>
+    <dt>
+      @Html.DisplayNameFor(model => model.Status)
+    </dt>
+    <dd>
+      @Html.DisplayFor(model => model.Status)
+    </dd>
+    <dt>
+      @Html.DisplayNameFor(model => model.Rating)
+    </dt>
+    <dd>
+      @Html.DisplayFor(model => model.Rating)
+    </dd>
+    <dt>
+      @Html.DisplayNameFor(model => model.Rain)
+    </dt>
+    <dd>
+      @Html.DisplayFor(model => model.Rain)
+    </dd>
+    <dt>
+      @Html.DisplayNameFor(model => model.WinningTeam)
+    </dt>
+    <dd>
+      @Html.DisplayFor(model => model.WinningTeam)
+    </dd>
+    <dt>
+      @Html.DisplayNameFor(model => model.WinningParticipants)
+    </dt>
+    <dd>
+      @Html.DisplayFor(model => model.WinningParticipants)
+    </dd>
   </dl>
-
   <form asp-action="Delete">
     <input type="hidden" asp-for="Id"/>
     <input type="submit" value="Delete" class="btn btn-default"/> |
