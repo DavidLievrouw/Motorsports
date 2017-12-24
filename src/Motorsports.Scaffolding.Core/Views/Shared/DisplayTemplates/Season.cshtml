@@ -1,0 +1,22 @@
+﻿@model Season
+
+@if (!string.IsNullOrWhiteSpace(Model.Label)) {
+  <div>@Model.Label (@Model.Sport)</div>
+}
+else {
+  var firstRound = Model.RelatedRounds?.OrderBy(r => r.Number)?.FirstOrDefault()?.Date;
+  var lastRound = Model.RelatedRounds?.OrderByDescending(r => r.Number)?.FirstOrDefault()?.Date;
+  var firstYear = firstRound?.Year;
+  var lastYear = lastRound?.Year;
+  if (firstYear.HasValue && lastYear.HasValue) {
+    if (firstYear.Value == lastYear.Value) {
+      <div>@Model.Sport (@firstYear.Value)</div>
+    }
+    else {
+      <div>@Model.Sport (@firstYear.Value-@lastYear.Value)</div>
+    }
+  }
+  else {
+    <div>@Model.Sport (no rounds defined)</div>
+  }
+}
