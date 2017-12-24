@@ -20,24 +20,6 @@ namespace Motorsports.Scaffolding.Core.Models.EditModels {
     public RoundStatus? Status { get; set; }
     public short? Rating { get; set; }
 
-    public enum RainLevel {
-      NoRain,
-      NoRainButDampStart,
-      RainWithoutImpact,
-      RainWithMinorImpact,
-      RainWithConsiderableImpact,
-      FullWetEvent,
-      StoppedDueToHeavyRain,
-      CancelledDueToHeavyRain
-    }
-
-    public enum RoundStatus {
-      Scheduled,
-      Finished,
-      Interrupted,
-      Cancelled
-    }
-
     public class RoundEditModelBinder : IModelBinder {
       public Task BindModelAsync(ModelBindingContext bindingContext) {
         if (bindingContext == null) throw new ArgumentNullException(nameof(bindingContext));

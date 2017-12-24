@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Motorsports.Scaffolding.Core.Models.EditModels;
 
@@ -26,12 +27,14 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       get => DataModel.Id;
       set => DataModel.Id = value;
     }
-
+    
+    [DisplayFormat(NullDisplayText = "/")]
     public string Name {
       get => DataModel.Name;
       set => DataModel.Name = value;
     }
-
+    
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}")]
     public DateTime Date {
       get => DataModel.Date;
       set => DataModel.Date = value;
@@ -62,13 +65,14 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       set => DataModel.RelatedVenue = value;
     }
 
-    public string Status => DataModel.RelatedRoundResult?.Status ?? RoundEditModel.RoundStatus.Scheduled.ToString();
+    public string Status => DataModel.RelatedRoundResult?.Status ?? RoundStatus.Scheduled.ToString();
 
     public short? Rating => (short?) DataModel.RelatedRoundResult?.Rating;
 
-    public RoundEditModel.RainLevel? Rain => DataModel.RelatedRoundResult?.Rain.HasValue ?? false
-      ? Enum.Parse<RoundEditModel.RainLevel>(Enum.GetName(typeof(RoundEditModel.RainLevel), DataModel.RelatedRoundResult.Rain))
-      : new RoundEditModel.RainLevel?();
+    [DisplayFormat(NullDisplayText = "?")]
+    public RainLevel? Rain => DataModel.RelatedRoundResult?.Rain.HasValue ?? false
+      ? Enum.Parse<RainLevel>(Enum.GetName(typeof(RainLevel), (int)DataModel.RelatedRoundResult.Rain))
+      : new RainLevel?();
 
     public IEnumerable<Team> AvailableTeams { get; }
     public IEnumerable<Participant> AvailableParticipants { get; }
