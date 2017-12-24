@@ -1,11 +1,11 @@
 ﻿@using System.Collections
 @using Newtonsoft.Json
 
-@model string[]
+@model int[]
 
 @{
   var allParticipants = ((IEnumerable) ViewData["Participants"]).OfType<Participant>().ToList();
-  var selectedParticipants = (string[]) ViewData["SelectedParticipants"];
+  var selectedParticipants = (int[]) ViewData["SelectedParticipants"];
   var targetProperty = ViewData["TargetProperty"] ?? "WinningParticipants";
 
   var participantsData = allParticipants

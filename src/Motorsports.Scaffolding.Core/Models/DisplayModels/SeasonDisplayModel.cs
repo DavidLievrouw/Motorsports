@@ -16,7 +16,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       AvailableSports = sports;
       AvailableTeams = teams;
       AvailableParticipants = participants;
-      WinningParticipantIds = season.RelatedSeasonWinners?.Select(winner => winner.Participant.ToString()).ToArray() ?? Enumerable.Empty<string>().ToArray();
+      WinningParticipantIds = season.RelatedSeasonWinners?.Select(winner => winner.Participant).ToArray() ?? Enumerable.Empty<int>().ToArray();
     }
 
     public int Id {
@@ -52,7 +52,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     }
     
     [DisplayName("Winning participant(s)")]
-    public string[] WinningParticipantIds { get; set; }
+    public int[] WinningParticipantIds { get; set; }
 
     [DisplayName("Nice label")]
     public string NiceLabel {
