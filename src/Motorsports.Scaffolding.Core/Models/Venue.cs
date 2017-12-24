@@ -11,5 +11,9 @@ namespace Motorsports.Scaffolding.Core.Models {
 
     public Country RelatedCountry { get; set; }
     public ICollection<Round> RelatedRounds { get; set; }
+
+    public override string ToString() {
+      return $"{Name} ({Country})";
+    }
   }
 }
