@@ -30,13 +30,43 @@
       </div>
       <div class="form-group">
         <label asp-for="Season" class="control-label"></label>
-        <select asp-for="Season" class="form-control" asp-items="ViewBag.Season"></select>
-        <span asp-validation-for="Season" class="text-danger"></span>
+        <div>
+          @Html.EditorFor(_ => _.Season, typeof(Season).Name, new {
+            Seasons = Model.AvailableSeasons,
+            SelectedSeason = Model.Season,
+            TargetProperty = nameof(Model.Season)
+          })
+        </div>
       </div>
       <div class="form-group">
         <label asp-for="Venue" class="control-label"></label>
-        <select asp-for="Venue" class="form-control" asp-items="ViewBag.Venue"></select>
-        <span asp-validation-for="Venue" class="text-danger"></span>
+        <div>
+          @Html.EditorFor(_ => _.Venue, typeof(Venue).Name, new {
+            Venues = Model.AvailableVenues,
+            SelectedVenue = Model.Venue,
+            TargetProperty = nameof(Model.Venue)
+          })
+        </div>
+      </div>
+      <div class="form-group">
+        <label asp-for="WinningTeamId" class="control-label"></label>
+        <div>
+          @Html.EditorFor(_ => _.WinningTeamId, nameof(Model.WinningTeam), new {
+            Teams = Model.AvailableTeams,
+            SelectedTeam = Model.WinningTeamId,
+            TargetProperty = nameof(Model.WinningTeamId)
+          })
+        </div>
+      </div>
+      <div class="form-group">
+        <label asp-for="WinningParticipants" class="control-label"></label>
+        <div>
+          @Html.EditorFor(_ => _.WinningParticipantIds, nameof(Model.WinningParticipants), new {
+            Participants = Model.AvailableParticipants,
+            SelectedParticipants = Model.WinningParticipantIds,
+            TargetProperty = nameof(Model.WinningParticipantIds)
+          })
+        </div>
       </div>
       <div class="form-group">
         <input type="submit" value="Save" class="btn btn-default"/>

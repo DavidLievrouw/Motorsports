@@ -11,6 +11,7 @@ namespace Motorsports.Scaffolding.Core.Models.EditModels {
     public string Name { get; set; }
     public DateTime Date { get; set; }
     public short Number { get; set; }
+    public int SeasonId { get; set; }
     public string Venue { get; set; }
 
     public int? WinningTeamId { get; set; }
@@ -28,6 +29,7 @@ namespace Motorsports.Scaffolding.Core.Models.EditModels {
 
         var winningParticipantsStringValues = request.Form[nameof(WinningParticipantIds) + "[]"];
         var idStringStringValues = request.Form[nameof(Id)];
+        var seasonIdStringStringValues = request.Form[nameof(SeasonId)];
         var nameStringStringValues = request.Form[nameof(Name)];
         var dateStringStringValues = request.Form[nameof(Date)];
         var numberStringStringValues = request.Form[nameof(Number)];
@@ -41,6 +43,9 @@ namespace Motorsports.Scaffolding.Core.Models.EditModels {
           Id = idStringStringValues == StringValues.Empty
             ? 0
             : idStringStringValues.Select(int.Parse).First(),
+          SeasonId = seasonIdStringStringValues == StringValues.Empty
+            ? 0
+            : seasonIdStringStringValues.Select(int.Parse).First(),
           Name = nameStringStringValues == StringValues.Empty
             ? null
             : nameStringStringValues.First(),
