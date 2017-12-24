@@ -1,0 +1,45 @@
+﻿@using System.Collections
+@using Motorsports.Scaffolding.Core.Views
+@using Newtonsoft.Json
+
+@model int?
+
+@{
+  var allSeasons = ((IEnumerable) ViewData["Seasons"]).OfType<Season>().ToList();
+  var selectedSeason = (int?) ViewData["SelectedSeason"];
+  var targetProperty = ViewData["TargetProperty"] ?? "Season";
+
+  var groupedSeasons = allSeasons
+    .GroupBy(season => season.Sport)
+    .OrderBy(_ => _.Key)
+    .Select(_ => new {
+      id = 0,
+      text = _.Key,
+      children = _
+        .OrderBy(season => season.RelatedRounds.FirstOrDefault()?.Date ?? DateTime.MinValue)
+        .Select(season => new {
+          id = season.Id,
+          text = Html.Partial("DisplayTemplates/" + nameof(Season), season).ToHtmlString()
+        })
+    }).ToArray();
+}
+
+<link href="/css/select2.css" rel="stylesheet"/>
+<script src="/js/select2.full.js"></script>
+
+<select name="@targetProperty" id="slcSeasons" class="form-control"></select>
+
+<script>
+  $(document).ready(function() {
+    var seasons = $("#slcSeasons");
+    seasons.select2({
+      placeholder: "Select a season",
+      data: @Html.Raw(JsonConvert.SerializeObject(groupedSeasons)),
+      escapeMarkup: function(markup) { return markup; }
+    });
+    seasons.val(@Html.Raw(selectedSeason.HasValue
+                  ? "\"" + selectedSeason.Value + "\""
+                  : "null"));
+    seasons.trigger("change"); // Notify any JS components that the value changed
+  });
+</script>

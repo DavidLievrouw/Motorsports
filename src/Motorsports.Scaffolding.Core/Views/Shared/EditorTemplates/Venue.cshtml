@@ -1,0 +1,45 @@
+﻿@using System.Collections
+@using Motorsports.Scaffolding.Core.Views
+@using Newtonsoft.Json
+
+@model string
+
+@{
+  var allVenues = ((IEnumerable) ViewData["Venues"]).OfType<Venue>().ToList();
+  var selectedVenue = (string) ViewData["SelectedVenue"];
+  var targetProperty = ViewData["TargetProperty"] ?? "Venue";
+
+  var groupedVenues = allVenues
+    .GroupBy(venue => venue.Country)
+    .OrderBy(_ => _.Key)
+    .Select(_ => new {
+      id = 0,
+      text = _.Key,
+      children = _
+        .OrderBy(venue => venue.Name)
+        .Select(venue => new {
+          id = venue.Name,
+          text = Html.Partial("DisplayTemplates/" + nameof(Venue), venue).ToHtmlString()
+        })
+    }).ToArray();
+}
+
+<link href="/css/select2.css" rel="stylesheet"/>
+<script src="/js/select2.full.js"></script>
+
+<select name="@targetProperty" id="slcVenues" class="form-control"></select>
+
+<script>
+  $(document).ready(function() {
+    var venues = $("#slcVenues");
+    venues.select2({
+      placeholder: "Select a venue",
+      data: @Html.Raw(JsonConvert.SerializeObject(groupedVenues)),
+      escapeMarkup: function(markup) { return markup; }
+    });
+    venues.val(@Html.Raw(string.IsNullOrEmpty(selectedVenue)
+                 ? "null"
+                 : "\"" + selectedVenue + "\""));
+    venues.trigger("change"); // Notify any JS components that the value changed
+  });
+</script>
