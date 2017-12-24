@@ -1,42 +1,36 @@
-﻿using System.Linq;
+﻿using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
+using Motorsports.Scaffolding.Core.Models.EditModels;
+using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
   public class RoundsController : Controller {
-    readonly MotorsportsContext _context;
+    readonly IRoundService _roundService;
 
-    public RoundsController(MotorsportsContext context) {
-      _context = context;
+    public RoundsController(IRoundService roundService) {
+      _roundService = roundService ?? throw new ArgumentNullException(nameof(roundService));
     }
 
     // GET: Rounds
     public async Task<IActionResult> Index() {
-      var motorsportsContext = _context.Round.Include(r => r.RelatedSeason).Include(r => r.RelatedVenue);
-      return View(await motorsportsContext.ToListAsync());
+      return View(await _roundService.LoadRoundList());
     }
 
     // GET: Rounds/Details/5
     public async Task<IActionResult> Details(int? id) {
       if (id == null) return NotFound();
 
-      var round = await _context.Round
-        .Include(r => r.RelatedSeason)
-        .Include(r => r.RelatedVenue)
-        .SingleOrDefaultAsync(m => m.Id == id);
+      var round = await _roundService.LoadDisplayModel(id.Value);
       if (round == null) return NotFound();
 
       return View(round);
     }
 
     // GET: Rounds/Create
-    public IActionResult Create() {
-      ViewData["Season"] = new SelectList(_context.Season, "Id", "Sport");
-      ViewData["Venue"] = new SelectList(_context.Venue, "Name", "Name");
-      return View(new Round());
+    public async Task<IActionResult> Create() {
+      return View(await _roundService.GetNew());
     }
 
     // POST: Rounds/Create
@@ -48,24 +42,18 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       [Bind("Id,Date,Number,Name,Season,Venue")]
       Round round) {
       if (ModelState.IsValid) {
-        _context.Add(round);
-        await _context.SaveChangesAsync();
+        await _roundService.CreateRound(round);
         return RedirectToAction(nameof(Index));
       }
 
-      ViewData["Season"] = new SelectList(_context.Season, "Id", "Sport", round.Season);
-      ViewData["Venue"] = new SelectList(_context.Venue, "Name", "Name", round.Venue);
       return View(round);
     }
 
     // GET: Rounds/Edit/5
     public async Task<IActionResult> Edit(int? id) {
       if (id == null) return NotFound();
-
-      var round = await _context.Round.SingleOrDefaultAsync(m => m.Id == id);
+      var round = await _roundService.LoadDisplayModel(id.Value);
       if (round == null) return NotFound();
-      ViewData["Season"] = new SelectList(_context.Season, "Id", "Sport", round.Season);
-      ViewData["Venue"] = new SelectList(_context.Venue, "Name", "Name", round.Venue);
       return View(round);
     }
 
@@ -74,37 +62,20 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(
-      int id,
-      [Bind("Id,Date,Number,Name,Season,Venue")]
-      Round round) {
+    public async Task<IActionResult> Edit(int id,[Bind("Id,Name,Date,Number,Venue,Rain,Rating,Status,WinningTeamId,WinningParticipantIds[]")] [ModelBinder(typeof(RoundEditModel.RoundEditModelBinder))] RoundEditModel round) {
       if (id != round.Id) return NotFound();
-
       if (ModelState.IsValid) {
-        try {
-          _context.Update(round);
-          await _context.SaveChangesAsync();
-        } catch (DbUpdateConcurrencyException) {
-          if (!RoundExists(round.Id)) return NotFound();
-          else throw;
-        }
-
+        await _roundService.UpdateRound(round);
         return RedirectToAction(nameof(Index));
       }
-
-      ViewData["Season"] = new SelectList(_context.Season, "Id", "Sport", round.Season);
-      ViewData["Venue"] = new SelectList(_context.Venue, "Name", "Name", round.Venue);
-      return View(round);
+      return View(await _roundService.LoadDisplayModel(id));
     }
 
     // GET: Rounds/Delete/5
     public async Task<IActionResult> Delete(int? id) {
       if (id == null) return NotFound();
 
-      var round = await _context.Round
-        .Include(r => r.RelatedSeason)
-        .Include(r => r.RelatedVenue)
-        .SingleOrDefaultAsync(m => m.Id == id);
+      var round = await _roundService.LoadDisplayModel(id.Value);
       if (round == null) return NotFound();
 
       return View(round);
@@ -115,14 +86,8 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     [ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id) {
-      var round = await _context.Round.SingleOrDefaultAsync(m => m.Id == id);
-      _context.Round.Remove(round);
-      await _context.SaveChangesAsync();
+      await _roundService.DeleteRound(id);
       return RedirectToAction(nameof(Index));
-    }
-
-    bool RoundExists(int id) {
-      return _context.Round.Any(e => e.Id == id);
     }
   }
 }

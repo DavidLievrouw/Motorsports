@@ -39,6 +39,26 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       set => DataModel.Number = value;
     }
 
+    public int Season {
+      get => DataModel.Season;
+      set => DataModel.Season = value;
+    }
+
+    public Season RelatedSeason {
+      get => DataModel.RelatedSeason;
+      set => DataModel.RelatedSeason = value;
+    }
+
+    public string Venue {
+      get => DataModel.Venue;
+      set => DataModel.Venue = value;
+    }
+
+    public Venue RelatedVenue {
+      get => DataModel.RelatedVenue;
+      set => DataModel.RelatedVenue = value;
+    }
+
     public string Status => DataModel.RelatedRoundResult?.Status ?? RoundEditModel.RoundStatus.Scheduled.ToString();
 
     public short? Rating => (short?) DataModel.RelatedRoundResult?.Rating;
@@ -46,16 +66,6 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public RoundEditModel.RainLevel? Rain => DataModel.RelatedRoundResult?.Rain.HasValue ?? false
       ? Enum.Parse<RoundEditModel.RainLevel>(Enum.GetName(typeof(RoundEditModel.RainLevel), DataModel.RelatedRoundResult.Rain))
       : new RoundEditModel.RainLevel?();
-
-    public Season RelatedSeason {
-      get => DataModel.RelatedSeason;
-      set => DataModel.RelatedSeason = value;
-    }
-
-    public Venue RelatedVenue {
-      get => DataModel.RelatedVenue;
-      set => DataModel.RelatedVenue = value;
-    }
 
     public IEnumerable<Team> AvailableTeams { get; }
     public IEnumerable<Participant> AvailableParticipants { get; }

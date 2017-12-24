@@ -101,6 +101,12 @@ namespace Motorsports.Scaffolding.Core.Models {
             .IsRequired()
             .HasMaxLength(20);
 
+          entity.HasOne(d => d.RelatedStatus)
+            .WithMany(p => p.RelatedRoundResults)
+            .HasForeignKey(d => d.Status)
+            .OnDelete(DeleteBehavior.ClientSetNull)
+            .HasConstraintName("FK_Status_RoundResult");
+
           entity.HasOne(d => d.RelatedRound)
             .WithOne(p => p.RelatedRoundResult)
             .HasForeignKey<RoundResult>(d => d.Round)

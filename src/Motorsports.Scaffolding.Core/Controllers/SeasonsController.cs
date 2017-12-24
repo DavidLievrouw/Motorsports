@@ -63,13 +63,11 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, [Bind("Id,Sport,WinningTeamId,WinningParticipantIds[]")] [ModelBinder(typeof(SeasonEditModel.SeasonEditModelBinder))] SeasonEditModel season) {
       if (id != season.Id) return NotFound();
-
       if (ModelState.IsValid) {
         await _seasonService.UpdateSeason(season);
         return RedirectToAction(nameof(Index));
       }
-
-      return View(await _seasonService.LoadDisplayModel(season.Id));
+      return View(await _seasonService.LoadDisplayModel(id));
     }
 
     // GET: Seasons/Delete/5
