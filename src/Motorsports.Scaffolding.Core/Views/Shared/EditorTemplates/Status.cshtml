@@ -1,0 +1,36 @@
+﻿@using System.Collections
+@using Newtonsoft.Json
+
+@model string
+
+@{
+  var allStatuses = ((IEnumerable) ViewData["Statuses"]).OfType<Status>().ToList();
+  var selectedStatus = (string) ViewData["SelectedStatus"];
+  var targetProperty = ViewData["TargetProperty"] ?? "Status";
+
+  var statusesData = allStatuses
+    .Select(_ => new {
+      id = _.Name,
+      text = _.Name
+    }).ToArray();
+}
+
+<link href="/css/select2.css" rel="stylesheet"/>
+<script src="/js/select2.full.js"></script>
+
+<select name="@targetProperty" id="slcStatuses" class="form-control"></select>
+
+<script>
+  $(document).ready(function() {
+    var statuses = $("#slcStatuses");
+    statuses.select2({
+      placeholder: "Select a status",
+      data: @Html.Raw(JsonConvert.SerializeObject(statusesData)),
+      escapeMarkup: function(markup) { return markup; }
+    });
+    statuses.val(@Html.Raw(string.IsNullOrEmpty(selectedStatus)
+                   ? "null"
+                   : "\"" + selectedStatus + "\""));
+    statuses.trigger("change"); // Notify any JS components that the value changed
+  });
+</script>

@@ -37,6 +37,7 @@
             TargetProperty = nameof(Model.Season)
           })
         </div>
+        <span asp-validation-for="Season" class="text-danger"></span>
       </div>
       <div class="form-group">
         <label asp-for="Venue" class="control-label"></label>
@@ -47,6 +48,7 @@
             TargetProperty = nameof(Model.Venue)
           })
         </div>
+        <span asp-validation-for="Venue" class="text-danger"></span>
       </div>
       <div class="form-group">
         <label asp-for="WinningTeamId" class="control-label"></label>
@@ -57,6 +59,7 @@
             TargetProperty = nameof(Model.WinningTeamId)
           })
         </div>
+        <span asp-validation-for="WinningTeamId" class="text-danger"></span>
       </div>
       <div class="form-group">
         <label asp-for="WinningParticipants" class="control-label"></label>
@@ -67,6 +70,39 @@
             TargetProperty = nameof(Model.WinningParticipantIds)
           })
         </div>
+        <span asp-validation-for="WinningParticipantIds" class="text-danger"></span>
+      </div>
+      <div class="form-group">
+        <label asp-for="Rain" class="control-label"></label>
+        <div>
+          @Html.EditorFor(_ => _.Rain, nameof(Model.Rain), new {
+            RainLevels = Model.AvailableRainLevels,
+            SelectedRainLevel = Model.Rain,
+            TargetProperty = nameof(Model.Rain)
+          })
+        </div>
+        <span asp-validation-for="Rain" class="text-danger"></span>
+      </div>
+      <div class="form-group">
+        <label asp-for="Status" class="control-label"></label>
+        <div>
+          @Html.EditorFor(_ => _.Status, nameof(Model.Status), new {
+            Statuses = Model.AvailableStatuses,
+            SelectedStatus = Model.Status,
+            TargetProperty = nameof(Model.Status)
+          })
+        </div>
+        <span asp-validation-for="Status" class="text-danger"></span>
+      </div>
+      <div class="form-group">
+        <label asp-for="Rating" class="control-label"></label>
+        <div>
+          @Html.EditorFor(_ => _.Rating, nameof(Model.Rating), new {
+            SelectedRating = Model.Rating,
+            TargetProperty = nameof(Model.Rating)
+          })
+        </div>
+        <span asp-validation-for="Rating" class="text-danger"></span>
       </div>
       <div class="form-group">
         <input type="submit" value="Save" class="btn btn-default"/>

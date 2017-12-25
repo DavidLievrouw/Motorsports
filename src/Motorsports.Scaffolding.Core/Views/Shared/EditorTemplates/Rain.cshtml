@@ -1,0 +1,37 @@
+﻿@using System.Collections
+@using Motorsports.Scaffolding.Core.Views
+@using Newtonsoft.Json
+
+@model RainLevel?
+
+@{
+  var allRainLevels = ((IEnumerable) ViewData["RainLevels"]).OfType<RainLevel>().ToList();
+  var selectedRainLevel = (RainLevel?) ViewData["SelectedRainLevel"];
+  var targetProperty = ViewData["TargetProperty"] ?? "RainLevel";
+
+  var rainLevelsData = allRainLevels
+    .Select(_ => new {
+      id = (int)_,
+      text = _.GetDisplayName()
+    }).ToArray();
+}
+
+<link href="/css/select2.css" rel="stylesheet"/>
+<script src="/js/select2.full.js"></script>
+
+<select name="@targetProperty" id="slcRainLevels" class="form-control"></select>
+
+<script>
+  $(document).ready(function() {
+    var rainLevels = $("#slcRainLevels");
+    rainLevels.select2({
+      placeholder: "Select a rain level",
+      data: @Html.Raw(JsonConvert.SerializeObject(rainLevelsData)),
+      escapeMarkup: function(markup) { return markup; }
+    });
+    rainLevels.val(@Html.Raw(selectedRainLevel.HasValue
+                  ? "\"" + (int)selectedRainLevel.Value + "\""
+                  : "null"));
+    rainLevels.trigger("change"); // Notify any JS components that the value changed
+  });
+</script>
