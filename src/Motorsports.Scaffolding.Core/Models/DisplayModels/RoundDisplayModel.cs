@@ -81,6 +81,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public IEnumerable<Status> AvailableStatuses { get; }
     public IEnumerable<Season> AvailableSeasons { get; }
     public IEnumerable<Venue> AvailableVenues { get; }
+    public IEnumerable<RainLevel> AvailableRainLevels => Enum.GetValues(typeof(RainLevel)).OfType<RainLevel>();
 
     [DisplayName("Winning team")]
     public int? WinningTeamId {

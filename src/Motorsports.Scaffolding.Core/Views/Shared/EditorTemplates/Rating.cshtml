@@ -1,0 +1,35 @@
+﻿@model short?
+
+@{
+  const short minValue = 0;
+  const short maxValue = 10;
+  var selectedRating = (short?) ViewData["SelectedRating"];
+  var targetProperty = ViewData["TargetProperty"] ?? "Rating";
+}
+
+<table class="rating">
+  <tbody>
+  <tr>
+    <td>
+      <input type="range"
+             name="@targetProperty"
+             id="rngRating"
+             min="@minValue"
+             max="@maxValue"
+             step="1"
+             value="@selectedRating"
+             data-orientation="horizontal"
+             oninput="changeSlider(this.value);"/>
+    </td>
+    <td>
+      <div id="rangeValue">@selectedRating</div>
+    </td>
+  </tr>
+  </tbody>
+</table>
+
+<script>
+  function changeSlider(value) {
+    $("#rangeValue").html(value);
+  }
+</script>
