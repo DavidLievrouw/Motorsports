@@ -11,18 +11,21 @@
 </p>
 <table class="table">
   <thead>
-    <tr>
-      <th>
-        @Html.DisplayNameFor(model => model.Season)
-      </th>
-      <th>
-        @Html.DisplayNameFor(model => model.Name)
-      </th>
-      <th>
-        @Html.DisplayNameFor(model => model.Winners)
-      </th>
-      <th></th>
-    </tr>
+  <tr>
+    <th>
+      @Html.DisplayNameFor(model => model.Season)
+    </th>
+    <th>
+      @Html.DisplayNameFor(model => model.Name)
+    </th>
+    <th>
+      @Html.DisplayNameFor(model => model.WinningParticipantIds)
+    </th>
+    <th>
+      @Html.DisplayNameFor(model => model.WinningTeamId)
+    </th>
+    <th></th>
+  </tr>
   </thead>
   <tbody>
   @foreach (var item in Model) {
@@ -34,7 +37,10 @@
         @Html.DisplayFor(modelItem => item.DataModel, nameof(Round))
       </td>
       <td>
-        @Html.DisplayFor(modelItem => item.Winners)
+        @Html.DisplayFor(modelItem => item.WinningParticipants, nameof(item.WinningParticipants))
+      </td>
+      <td>
+        @Html.DisplayFor(modelItem => item.WinningTeam, nameof(item.WinningTeam))
       </td>
       <td>
         <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |

@@ -60,16 +60,16 @@
       @Html.DisplayFor(model => model.Rain)
     </dd>
     <dt>
-      @Html.DisplayNameFor(model => model.WinningTeam)
+      @Html.DisplayNameFor(model => model.WinningTeamId)
     </dt>
     <dd>
-      @Html.DisplayFor(model => model.WinningTeam)
+      @Html.DisplayFor(model => model.WinningTeam, nameof(Model.WinningTeam))
     </dd>
     <dt>
-      @Html.DisplayNameFor(model => model.WinningParticipants)
+      @Html.DisplayNameFor(model => model.WinningParticipantIds)
     </dt>
     <dd>
-      @Html.DisplayFor(model => model.WinningParticipants)
+      @Html.DisplayFor(model => model.WinningParticipants, nameof(Model.WinningParticipants))
     </dd>
   </dl>
   <form asp-action="Delete">

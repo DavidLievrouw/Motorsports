@@ -1,0 +1,10 @@
+﻿@model IEnumerable<Participant>
+
+@{
+  var winningParticipants = (Model ?? Enumerable.Empty<Participant>()).Select(p => $"{p.FirstName} {p.LastName}").ToList();
+  <div>
+    @(winningParticipants.Any()
+        ? string.Join(", ", winningParticipants)
+        : "/")
+  </div>
+}

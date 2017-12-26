@@ -41,6 +41,12 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       set => DataModel.RelatedSport = value;
     }
     
+    [DisplayFormat(NullDisplayText = "/")]
+    public IEnumerable<Participant> WinningParticipants => DataModel.RelatedSeasonWinners?.Select(sw => sw.RelatedParticipant);
+    
+    [DisplayFormat(NullDisplayText = "/")]
+    public Team WinningTeam => DataModel.RelatedSeasonResult?.RelatedWinningTeam;
+
     [DisplayName("Start date")]
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", NullDisplayText = "/")]
     public DateTime? StartDate => DataModel.RelatedRounds.FirstOrDefault()?.Date;
@@ -58,30 +64,5 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
 
     [DisplayName("Winning participant(s)")]
     public int[] WinningParticipantIds { get; }
-
-    [DisplayName("Winner(s)")]
-    public string Winners {
-      get {
-        var winningTeam = DataModel.RelatedSeasonResult?.RelatedWinningTeam;
-        var winningParticipants = (DataModel.RelatedSeasonWinners?.Select(sw => sw.RelatedParticipant) ?? Enumerable.Empty<Participant>()).ToList();
-        if (!winningParticipants.Any() && winningTeam == null) return "/";
-        if (winningParticipants.Any() && winningParticipants.Any() && winningTeam == null) return $"{string.Join(", ", winningParticipants.Select(p => p.GetFullName()))}";
-        if (!winningParticipants.Any() && winningTeam != null) return $"{winningTeam.Name}";
-        return $"{string.Join(", ", winningParticipants.Select(p => p.GetFullName()))} ({winningTeam?.Name})";
-      }
-    }
-
-    [DisplayName("Winning team")]
-    public string WinningTeam => DataModel.RelatedSeasonResult?.RelatedWinningTeam?.Name ?? "/";
-
-    [DisplayName("Winning participant(s)")]
-    public string WinningParticipants {
-      get {
-        var winningParticipants = (DataModel.RelatedSeasonWinners?.Select(sw => sw.RelatedParticipant) ?? Enumerable.Empty<Participant>()).ToList();
-        return winningParticipants.Any()
-          ? string.Join(", ", winningParticipants)
-          : "/";
-      } 
-    }
   }
 }

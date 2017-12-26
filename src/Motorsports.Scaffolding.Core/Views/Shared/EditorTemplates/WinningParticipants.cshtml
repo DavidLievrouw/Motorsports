@@ -11,7 +11,7 @@
   var participantsData = allParticipants
     .Select(_ => new {
       id = _.Id,
-      text = _.ToString()
+      text = $"{_.FirstName} {_.LastName} ({_.Country})"
     }).ToArray();
 }
 

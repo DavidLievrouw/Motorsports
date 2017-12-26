@@ -88,30 +88,11 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
 
     [DisplayName("Winning participant(s)")]
     public int[] WinningParticipantIds { get; }
+    
+    [DisplayFormat(NullDisplayText = "/")]
+    public Team WinningTeam => DataModel.RelatedRoundResult?.RelatedWinningTeam;
 
-    [DisplayName("Winner(s)")]
-    public string Winners {
-      get {
-        var winningTeam = DataModel.RelatedRoundResult?.RelatedWinningTeam;
-        var winningParticipants = (DataModel.RelatedRoundWinners?.Select(sw => sw.RelatedParticipant) ?? Enumerable.Empty<Participant>()).ToList();
-        if (!winningParticipants.Any() && winningTeam == null) return "/";
-        if (winningParticipants.Any() && winningParticipants.Any() && winningTeam == null) return $"{string.Join(", ", winningParticipants.Select(p => p.GetFullName()))}";
-        if (!winningParticipants.Any() && winningTeam != null) return $"{winningTeam.Name}";
-        return $"{string.Join(", ", winningParticipants.Select(p => p.GetFullName()))} ({winningTeam?.Name})";
-      }
-    }
-
-    [DisplayName("Winning team")]
-    public string WinningTeam => DataModel.RelatedRoundResult?.RelatedWinningTeam?.Name ?? "/";
-
-    [DisplayName("Winning participant(s)")]
-    public string WinningParticipants {
-      get {
-        var winningParticipants = (DataModel.RelatedRoundWinners?.Select(sw => sw.RelatedParticipant) ?? Enumerable.Empty<Participant>()).ToList();
-        return winningParticipants.Any()
-          ? string.Join(", ", winningParticipants)
-          : "/";
-      }
-    }
+    [DisplayFormat(NullDisplayText = "/")]
+    public IEnumerable<Participant> WinningParticipants => DataModel.RelatedRoundWinners?.Select(rw => rw.RelatedParticipant);
   }
 }
