@@ -18,6 +18,16 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       return View(await _roundService.LoadRoundList());
     }
 
+    // GET: /Rounds/Season/5
+    public async Task<IActionResult> Season(int? id) {
+      if (id == null) return NotFound();
+      
+      var roundsForSeason = await _roundService.LoadRoundList(id.Value);
+      if (roundsForSeason == null) return NotFound();
+
+      return View(roundsForSeason);
+    }
+
     // GET: Rounds/Details/5
     public async Task<IActionResult> Details(int? id) {
       if (id == null) return NotFound();
@@ -29,8 +39,9 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     }
 
     // GET: Rounds/Create
-    public async Task<IActionResult> Create() {
-      return View(await _roundService.GetNew());
+    public async Task<IActionResult> Create(int? id) {
+      if (id == null) return NotFound();
+      return View(await _roundService.GetNew(id.Value));
     }
 
     // POST: Rounds/Create
@@ -38,12 +49,13 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(
-      [Bind("Id,Date,Number,Name,Season,Venue")]
-      Round round) {
+    public async Task<IActionResult> Create(int? id,[Bind("Date,Number,Name,Venue")] Round round) {
+      if (id == null) return NotFound();
+
       if (ModelState.IsValid) {
+        round.Season = id.Value;
         await _roundService.CreateRound(round);
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Season), new { id = id.Value});
       }
 
       return View(round);
@@ -66,7 +78,9 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       if (id != round.Id) return NotFound();
       if (ModelState.IsValid) {
         await _roundService.UpdateRound(round);
-        return RedirectToAction(nameof(Index));
+        var roundDisplayModel = await _roundService.LoadDisplayModel(id);
+        if (roundDisplayModel == null) return NotFound();
+        return RedirectToAction(nameof(Season), new { id = roundDisplayModel.Season });
       }
       return View(await _roundService.LoadDisplayModel(id));
     }
@@ -86,8 +100,10 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     [ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id) {
+      var round = await _roundService.LoadDisplayModel(id);
+      if (round == null) return NotFound();
       await _roundService.DeleteRound(id);
-      return RedirectToAction(nameof(Index));
+      return RedirectToAction(nameof(Season), new { id = round.Season });
     }
   }
 }

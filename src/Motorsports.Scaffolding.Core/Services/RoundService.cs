@@ -9,8 +9,9 @@ using Motorsports.Scaffolding.Core.Models.EditModels;
 
 namespace Motorsports.Scaffolding.Core.Services {
   public interface IRoundService {
-    Task<RoundDisplayModel> GetNew();
+    Task<RoundDisplayModel> GetNew(int seasonId);
     Task<List<RoundDisplayModel>> LoadRoundList();
+    Task<List<RoundDisplayModel>> LoadRoundList(int seasonId);
     Task<RoundDisplayModel> LoadDisplayModel(int roundId);
     Task UpdateRound(RoundEditModel round);
     Task CreateRound(Round round);
@@ -24,10 +25,10 @@ namespace Motorsports.Scaffolding.Core.Services {
       _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    public Task<RoundDisplayModel> GetNew() {
+    public Task<RoundDisplayModel> GetNew(int seasonId) {
       return Task.FromResult(
         new RoundDisplayModel(
-          new Round {Date = DateTime.Today},
+          new Round {Date = DateTime.Today, Season = seasonId, RelatedSeason = _context.Season.Single(s => s.Id == seasonId ) },
           _context.Season.Include(s => s.RelatedRounds).OrderBy(season => season.Sport),
           _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
           _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
@@ -43,6 +44,19 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Include(r => r.RelatedRoundWinners)
         .ThenInclude(rw => rw.RelatedParticipant)
         .Include(r => r.RelatedVenue)
+        .Select(r => new RoundDisplayModel(r, null, null, null, null, null))
+        .ToListAsync();
+    }
+    
+    public Task<List<RoundDisplayModel>> LoadRoundList(int seasonId) {
+      return _context.Round
+        .Include(r => r.RelatedSeason)
+        .Include(r => r.RelatedRoundResult)
+        .ThenInclude(rr => rr.RelatedWinningTeam)
+        .Include(r => r.RelatedRoundWinners)
+        .ThenInclude(rw => rw.RelatedParticipant)
+        .Include(r => r.RelatedVenue)
+        .Where(r => r.Season == seasonId)
         .Select(r => new RoundDisplayModel(r, null, null, null, null, null))
         .ToListAsync();
     }
