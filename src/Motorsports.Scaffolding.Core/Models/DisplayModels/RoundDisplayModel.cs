@@ -84,15 +84,10 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public IEnumerable<RainLevel> AvailableRainLevels => Enum.GetValues(typeof(RainLevel)).OfType<RainLevel>();
 
     [DisplayName("Winning team")]
-    public int? WinningTeamId {
-      get => DataModel.RelatedRoundResult?.WinningTeam;
-      set => DataModel.RelatedRoundResult = value.HasValue
-        ? new RoundResult {Round = DataModel.Id, WinningTeam = value.Value}
-        : null;
-    }
+    public int? WinningTeamId => DataModel.RelatedRoundResult?.WinningTeam;
 
     [DisplayName("Winning participant(s)")]
-    public int[] WinningParticipantIds { get; set; }
+    public int[] WinningParticipantIds { get; }
 
     [DisplayName("Winner(s)")]
     public string Winners {

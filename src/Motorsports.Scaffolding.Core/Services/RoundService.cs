@@ -27,7 +27,7 @@ namespace Motorsports.Scaffolding.Core.Services {
     public Task<RoundDisplayModel> GetNew() {
       return Task.FromResult(
         new RoundDisplayModel(
-          new Round { Date = DateTime.Today },
+          new Round {Date = DateTime.Today},
           _context.Season.Include(s => s.RelatedRounds).OrderBy(season => season.Sport),
           _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
           _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
@@ -72,9 +72,11 @@ namespace Motorsports.Scaffolding.Core.Services {
       // Find record to update
       var roundToUpdate = _context.Round
         .Include(s => s.RelatedSeason)
-        .Include(s => s.RelatedRoundResult)
-        .Include(s => s.RelatedRoundWinners)
         .Include(r => r.RelatedVenue)
+        .Include(s => s.RelatedRoundResult)
+        .AsNoTracking()
+        .Include(s => s.RelatedRoundWinners)
+        .AsNoTracking()
         .Single(s => s.Id == round.Id);
 
       // Update round result
@@ -86,11 +88,11 @@ namespace Motorsports.Scaffolding.Core.Services {
             : new decimal?()) ||
           roundToUpdate.RelatedRoundResult?.Status != round.Status?.ToString() ||
           roundToUpdate.RelatedRoundResult?.Rating != round.Rating) {
-        _context.RoundResult.RemoveRange(_context.RoundResult.Where(sr => sr.Round == round.Id));
-        if (round.WinningTeamId.HasValue) {
+        var resultToUpdate = _context.RoundResult.SingleOrDefault(r => r.Round == roundToUpdate.Id);
+        if (resultToUpdate == null) {
           roundToUpdate.RelatedRoundResult = new RoundResult {
             Round = round.Id,
-            WinningTeam = round.WinningTeamId.Value,
+            WinningTeam = round.WinningTeamId,
             Rain = round.Rain.HasValue
               ? (decimal) round.Rain
               : new decimal?(),
@@ -99,18 +101,30 @@ namespace Motorsports.Scaffolding.Core.Services {
               : null,
             Rating = round.Rating
           };
+          _context.RoundResult.Add(roundToUpdate.RelatedRoundResult);
+        }
+        else {
+          resultToUpdate.Round = round.Id;
+          resultToUpdate.WinningTeam = round.WinningTeamId;
+          resultToUpdate.Rain = round.Rain.HasValue
+            ? (decimal) round.Rain
+            : new decimal?();
+          resultToUpdate.Status = round.Status.HasValue
+            ? round.Status.ToString()
+            : null;
+          resultToUpdate.Rating = round.Rating;
         }
       }
 
       // Update winners
-      _context.RoundWinner.RemoveRange(_context.RoundWinner.Where(sw => sw.Round == round.Id));
-      foreach (var winningParticipantId in round.WinningParticipantIds) {
-        _context.RoundWinner.Add(
-          new RoundWinner {
-            Round = round.Id,
-            Participant = winningParticipantId
-          });
-      }
+      var winnersToRemove = _context.RoundWinner.AsNoTracking().Where(rw => rw.Round == roundToUpdate.Id);
+      var winnersToAdd = round.WinningParticipantIds.Select(
+        wp => new RoundWinner {
+          Round = round.Id,
+          Participant = wp
+        });
+      _context.RoundWinner.RemoveRange(winnersToRemove);
+      roundToUpdate.RelatedRoundWinners = winnersToAdd.ToList();
 
       // Update venue
       roundToUpdate.Venue = round.Venue;

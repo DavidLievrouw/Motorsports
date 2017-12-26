@@ -68,30 +68,34 @@ namespace Motorsports.Scaffolding.Core.Services {
       // Find record to update
       var seasonToUpdate = _context.Season
         .Include(s => s.RelatedSeasonResult)
+        .AsNoTracking()
         .Include(s => s.RelatedSeasonWinners)
+        .AsNoTracking()
         .Single(s => s.Id == season.Id);
 
       // Update winning team
       if (seasonToUpdate.RelatedSeasonResult == null && season.WinningTeamId.HasValue ||
           seasonToUpdate.RelatedSeasonResult?.WinningTeam != season.WinningTeamId) {
-        _context.SeasonResult.RemoveRange(_context.SeasonResult.Where(sr => sr.Season == season.Id));
-        if (season.WinningTeamId.HasValue) {
+        var resultToUpdate = _context.SeasonResult.SingleOrDefault(r => r.Season == seasonToUpdate.Id);
+        if (resultToUpdate == null) {
           seasonToUpdate.RelatedSeasonResult = new SeasonResult {
             Season = season.Id,
-            WinningTeam = season.WinningTeamId.Value
+            WinningTeam = season.WinningTeamId
           };
+          _context.SeasonResult.Add(seasonToUpdate.RelatedSeasonResult);
         }
+        else resultToUpdate.WinningTeam = season.WinningTeamId;
       }
 
       // Update winners
-      _context.SeasonWinner.RemoveRange(_context.SeasonWinner.Where(sw => sw.Season == season.Id));
-      foreach (var winningParticipantId in season.WinningParticipantIds) {
-        _context.SeasonWinner.Add(
-          new SeasonWinner {
-            Season = season.Id,
-            Participant = winningParticipantId
-          });
-      }
+      var winnersToRemove = _context.SeasonWinner.AsNoTracking().Where(sw => sw.Season == seasonToUpdate.Id);
+      var winnersToAdd = season.WinningParticipantIds.Select(
+        wp => new SeasonWinner {
+          Season = season.Id,
+          Participant = wp
+        });
+      _context.SeasonWinner.RemoveRange(winnersToRemove);
+      seasonToUpdate.RelatedSeasonWinners = winnersToAdd.ToList();
 
       // Update label
       seasonToUpdate.Label = season.Label;

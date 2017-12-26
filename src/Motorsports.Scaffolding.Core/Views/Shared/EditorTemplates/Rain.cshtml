@@ -11,7 +11,7 @@
 
   var rainLevelsData = allRainLevels
     .Select(_ => new {
-      id = (int)_,
+      id = _.ToString(),
       text = _.GetDisplayName()
     }).ToArray();
 }
@@ -30,7 +30,7 @@
       escapeMarkup: function(markup) { return markup; }
     });
     rainLevels.val(@Html.Raw(selectedRainLevel.HasValue
-                  ? "\"" + (int)selectedRainLevel.Value + "\""
+                  ? "\"" + selectedRainLevel.Value + "\""
                   : "null"));
     rainLevels.trigger("change"); // Notify any JS components that the value changed
   });
