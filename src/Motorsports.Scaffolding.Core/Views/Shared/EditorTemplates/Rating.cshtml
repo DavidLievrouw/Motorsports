@@ -20,18 +20,21 @@
 </div>
 
 <script>
-  $("#rngRating").slider().on("change", function(event) {
-    const newValue = event.value.newValue;
-    const oldValue = event.value.oldValue;
+  $(document).ready(function() {
+    $("#rngRating").slider().on("change",
+      function(event) {
+        const newValue = event.value.newValue;
+        const oldValue = event.value.oldValue;
 
-    const changed = !($.inArray(newValue[0], oldValue) !== -1 && 
-      $.inArray(newValue[1], oldValue) !== -1 && 
-      $.inArray(oldValue[0], newValue) !== -1 && 
-      $.inArray(oldValue[1], newValue) !== -1 && 
-      newValue.length === oldValue.length);
+        const changed = !($.inArray(newValue[0], oldValue) !== -1 &&
+          $.inArray(newValue[1], oldValue) !== -1 &&
+          $.inArray(oldValue[0], newValue) !== -1 &&
+          $.inArray(oldValue[1], newValue) !== -1 &&
+          newValue.length === oldValue.length);
 
-    if(changed) {
-      $("#rangeValue").html(newValue);
-    }
+        if (changed) {
+          $("#rangeValue").html(newValue);
+        }
+      });
   });
 </script>
