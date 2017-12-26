@@ -26,7 +26,7 @@ namespace Motorsports.Scaffolding.Core {
 
       // Lowest level data access
       var connectionString = Configuration.GetConnectionString("Motorsports");
-      services.AddDbContext<MotorsportsContext>(options => options.UseSqlServer(connectionString));
+      services.AddDbContext<MotorsportsContext>(options => options.UseSqlServer(connectionString).EnableSensitiveDataLogging(CurrentEnvironment.IsDevelopment()));
       services.TryAddSingleton<IQueryExecutor>(new QueryExecutor(new SqlDbConnectionFactory(connectionString)));
 
       // Services
@@ -37,6 +37,8 @@ namespace Motorsports.Scaffolding.Core {
     }
 
     public void Configure(IApplicationBuilder app, IHostingEnvironment env) {
+      CurrentEnvironment = env;
+
       if (env.IsDevelopment()) {
         app.UseDeveloperExceptionPage();
         app.UseBrowserLink();
@@ -52,5 +54,7 @@ namespace Motorsports.Scaffolding.Core {
             template: "{controller=Home}/{action=Index}/{id?}");
         });
     }
+
+    public IHostingEnvironment CurrentEnvironment { get; private set; }
   }
 }

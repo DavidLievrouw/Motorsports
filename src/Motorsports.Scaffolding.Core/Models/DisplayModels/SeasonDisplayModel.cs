@@ -54,15 +54,10 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public IEnumerable<Sport> AvailableSports { get; }
 
     [DisplayName("Winning team")]
-    public int? WinningTeamId {
-      get => DataModel.RelatedSeasonResult?.WinningTeam;
-      set => DataModel.RelatedSeasonResult = value.HasValue
-        ? new SeasonResult {Season = DataModel.Id, WinningTeam = value.Value}
-        : null;
-    }
-    
+    public int? WinningTeamId => DataModel.RelatedSeasonResult?.WinningTeam;
+
     [DisplayName("Winning participant(s)")]
-    public int[] WinningParticipantIds { get; set; }
+    public int[] WinningParticipantIds { get; }
 
     [DisplayName("Winner(s)")]
     public string Winners {

@@ -160,7 +160,6 @@ namespace Motorsports.Scaffolding.Core.Models {
           entity.HasOne(d => d.RelatedWinningTeam)
             .WithMany(p => p.RelatedSeasonResults)
             .HasForeignKey(d => d.WinningTeam)
-            .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_Team_SeasonResult");
         });
 

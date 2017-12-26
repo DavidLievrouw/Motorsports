@@ -62,7 +62,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id,[Bind("Id,Season,Name,Date,Number,Venue,Rain,Rating,Status,WinningTeamId,WinningParticipantIds[]")] [ModelBinder(typeof(RoundEditModel.RoundEditModelBinder))] RoundEditModel round) {
+    public async Task<IActionResult> Edit(int id,[Bind("Id,Name,Date,Number,Venue,Rain,Rating,Status,WinningTeamId,WinningParticipantIds[]")] [ModelBinder(typeof(RoundEditModel.RoundEditModelBinder))] RoundEditModel round) {
       if (id != round.Id) return NotFound();
       if (ModelState.IsValid) {
         await _roundService.UpdateRound(round);
