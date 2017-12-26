@@ -7,29 +7,31 @@
   var targetProperty = ViewData["TargetProperty"] ?? "Rating";
 }
 
-<table class="rating">
-  <tbody>
-  <tr>
-    <td>
-      <input type="range"
-             name="@targetProperty"
-             id="rngRating"
-             min="@minValue"
-             max="@maxValue"
-             step="1"
-             value="@selectedRating"
-             data-orientation="horizontal"
-             oninput="changeSlider(this.value);"/>
-    </td>
-    <td>
-      <div id="rangeValue">@selectedRating</div>
-    </td>
-  </tr>
-  </tbody>
-</table>
+<div class="rating">
+  <input id="rngRating"
+         name="@targetProperty"
+         data-slider-id="rngRating"
+         type="text"
+         data-slider-min="@minValue"
+         data-slider-max="@maxValue"
+         data-slider-step="1"
+         data-slider-value="@selectedRating" />
+  <div id="rangeValue">@selectedRating</div>
+</div>
 
 <script>
-  function changeSlider(value) {
-    $("#rangeValue").html(value);
-  }
+  $("#rngRating").slider().on("change", function(event) {
+    const newValue = event.value.newValue;
+    const oldValue = event.value.oldValue;
+
+    const changed = !($.inArray(newValue[0], oldValue) !== -1 && 
+      $.inArray(newValue[1], oldValue) !== -1 && 
+      $.inArray(oldValue[0], newValue) !== -1 && 
+      $.inArray(oldValue[1], newValue) !== -1 && 
+      newValue.length === oldValue.length);
+
+    if(changed) {
+      $("#rangeValue").html(newValue);
+    }
+  });
 </script>
