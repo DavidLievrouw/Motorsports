@@ -14,7 +14,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     }
 
     // GET: /Rounds/Season/5
-    public async Task<IActionResult> Season(int? id) {
+    public async Task<IActionResult> Index(int? id) {
       if (id == null) return NotFound();
       
       var roundsForSeason = await _roundService.LoadRoundList(id.Value);
@@ -50,7 +50,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       if (ModelState.IsValid) {
         round.Season = id.Value;
         await _roundService.CreateRound(round);
-        return RedirectToAction(nameof(Season), new { id = id.Value});
+        return RedirectToAction(nameof(Index), new { id = id.Value});
       }
 
       return View(round);
@@ -75,7 +75,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         await _roundService.UpdateRound(round);
         var roundDisplayModel = await _roundService.LoadDisplayModel(id);
         if (roundDisplayModel == null) return NotFound();
-        return RedirectToAction(nameof(Season), new { id = roundDisplayModel.Season });
+        return RedirectToAction(nameof(Index), new { id = roundDisplayModel.Season });
       }
       return View(await _roundService.LoadDisplayModel(id));
     }
@@ -98,7 +98,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       var round = await _roundService.LoadDisplayModel(id);
       if (round == null) return NotFound();
       await _roundService.DeleteRound(id);
-      return RedirectToAction(nameof(Season), new { id = round.Season });
+      return RedirectToAction(nameof(Index), new { id = round.Season });
     }
   }
 }
