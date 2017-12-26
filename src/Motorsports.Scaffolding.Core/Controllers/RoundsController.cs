@@ -13,11 +13,6 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       _roundService = roundService ?? throw new ArgumentNullException(nameof(roundService));
     }
 
-    // GET: Rounds
-    public async Task<IActionResult> Index() {
-      return View(await _roundService.LoadRoundList());
-    }
-
     // GET: /Rounds/Season/5
     public async Task<IActionResult> Season(int? id) {
       if (id == null) return NotFound();
@@ -38,13 +33,13 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       return View(round);
     }
 
-    // GET: Rounds/Create
+    // GET: Rounds/Create/5
     public async Task<IActionResult> Create(int? id) {
       if (id == null) return NotFound();
       return View(await _roundService.GetNew(id.Value));
     }
 
-    // POST: Rounds/Create
+    // POST: Rounds/Create/5
     // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
     // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
