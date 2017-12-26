@@ -24,13 +24,5 @@ namespace Motorsports.Scaffolding.Core.Models {
 
     public ICollection<RoundWinner> WonRounds { get; set; }
     public ICollection<SeasonWinner> WonSeasons { get; set; }
-
-    public string GetFullName() {
-      return $"{FirstName} {LastName}";
-    }
-
-    public override string ToString() {
-      return $"{GetFullName()} ({Country})";
-    }
   }
 }
