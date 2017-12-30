@@ -6,6 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Motorsports.Scaffolding.Core.Dapper;
 using Motorsports.Scaffolding.Core.Models;
+using Motorsports.Scaffolding.Core.Models.Validators;
+using Motorsports.Scaffolding.Core.Models.Validators.Create;
+using Motorsports.Scaffolding.Core.Models.Validators.Update;
 using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core {
@@ -34,6 +37,11 @@ namespace Motorsports.Scaffolding.Core {
       services.TryAddSingleton<IVenueService>(provider => new VenueService(provider.GetRequiredService<IQueryExecutor>()));
       services.TryAddScoped<ISeasonService>(provider => new SeasonService(provider.GetService<MotorsportsContext>()));
       services.TryAddScoped<IRoundService>(provider => new RoundService(provider.GetService<MotorsportsContext>()));
+
+      // Validators
+      services.TryAddScoped<IModelStatePopulator<Sport>>(provider => new ModelStatePopulator<Sport>(
+        new CreateSportValidator(provider.GetService<MotorsportsContext>()),
+        new UpdateSportValidator(provider.GetService<MotorsportsContext>())));
     }
 
     public void Configure(IApplicationBuilder app, IHostingEnvironment env) {

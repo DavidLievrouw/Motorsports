@@ -4,16 +4,22 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
+using Motorsports.Scaffolding.Core.Models.Validators;
 using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
   public class SportsController : Controller {
     readonly MotorsportsContext _context;
     readonly ISportService _sportService;
+    readonly IModelStatePopulator<Sport> _sportModelStatePopulator;
 
-    public SportsController(MotorsportsContext context, ISportService sportService) {
+    public SportsController(
+      MotorsportsContext context, 
+      ISportService sportService,
+      IModelStatePopulator<Sport> sportModelStatePopulator) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
       _sportService = sportService ?? throw new ArgumentNullException(nameof(sportService));
+      _sportModelStatePopulator = sportModelStatePopulator ?? throw new ArgumentNullException(nameof(sportModelStatePopulator));
     }
 
     // GET: Sports
@@ -24,7 +30,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     // GET: Sports/Details/5
     public async Task<IActionResult> Details(string id) {
       if (id == null) return NotFound();
-
+      
       var sport = await _context.Sport
         .SingleOrDefaultAsync(m => m.Name == id);
       if (sport == null) return NotFound();
@@ -38,11 +44,10 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     }
 
     // POST: Sports/Create
-    // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-    // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("Name,FullName")] Sport sport) {
+      await _sportModelStatePopulator.ValidateAndPopulateForCreate(ModelState, sport);
       if (ModelState.IsValid) {
         _context.Add(sport);
         await _context.SaveChangesAsync();
@@ -61,11 +66,10 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     }
 
     // POST: Sports/Edit/5
-    // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-    // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(string id, [Bind("Name,FullName")] Sport sport) {
+      await _sportModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, sport);
       if (ModelState.IsValid) {
         try {
           // EF does not allow updating the primary key.
