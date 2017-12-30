@@ -142,13 +142,13 @@ namespace Motorsports.Scaffolding.Core.Services {
       var transactionalQueryExecutor = _queryExecutor.BeginTransaction();
       try {
         // Update round result
-        await _queryExecutor
+        await transactionalQueryExecutor
           .NewQuery("DELETE FROM [dbo].[RoundResult] WHERE [Round]=@Round")
           .WithCommandType(CommandType.Text)
           .WithParameters(new {Round = round.Id})
           .ExecuteAsync();
         if (round.Status.HasValue) {
-          await _queryExecutor
+          await transactionalQueryExecutor
             .NewQuery(@"
               INSERT INTO [dbo].[RoundResult]
                          ([Round]
@@ -177,7 +177,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         }
 
         // Update winners
-        await _queryExecutor
+        await transactionalQueryExecutor
           .NewQuery("DELETE FROM [dbo].[RoundWinner] WHERE [Round]=@Round")
           .WithCommandType(CommandType.Text)
           .WithParameters(new {Round = round.Id})
@@ -188,7 +188,7 @@ namespace Motorsports.Scaffolding.Core.Services {
             Participant = wp
           });
         foreach (var winner in winnersToAdd) {
-          await _queryExecutor
+          await transactionalQueryExecutor
             .NewQuery(@"
               INSERT INTO [dbo].[RoundWinner]
                          ([Round]
