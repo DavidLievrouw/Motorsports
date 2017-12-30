@@ -9,12 +9,14 @@ using Motorsports.Scaffolding.Core.Models.EditModels;
 
 namespace Motorsports.Scaffolding.Core.Services {
   public interface IRoundService {
+    Task<Round> LoadDataRecord(int roundId);
+    Task<RoundDisplayModel> CreateForRound(Round round);
     Task<RoundDisplayModel> GetNew(int seasonId);
     Task<List<RoundDisplayModel>> LoadRoundList();
     Task<List<RoundDisplayModel>> LoadRoundList(int seasonId);
     Task<RoundDisplayModel> LoadDisplayModel(int roundId);
     Task UpdateRound(RoundEditModel round);
-    Task CreateRound(Round round);
+    Task PersistRound(Round round);
     Task DeleteRound(int roundId);
   }
 
@@ -23,6 +25,39 @@ namespace Motorsports.Scaffolding.Core.Services {
 
     public RoundService(MotorsportsContext context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
+    }
+
+    public Task<Round> LoadDataRecord(int roundId) {
+      return _context.Round
+        .Include(r => r.RelatedSeason)
+        .Include(r => r.RelatedRoundResult)
+        .ThenInclude(rr => rr.RelatedWinningTeam)
+        .Include(r => r.RelatedRoundWinners)
+        .ThenInclude(rw => rw.RelatedParticipant)
+        .Include(r => r.RelatedVenue)
+        .SingleOrDefaultAsync(m => m.Id == roundId);
+    }
+
+    public Task<RoundDisplayModel> CreateForRound(Round round) {
+      return Task.FromResult(
+        new RoundDisplayModel(
+          new Round {
+            Id = round.Id,
+            Date = round.Date, 
+            Season = round.Season, 
+            RelatedSeason = _context.Season.SingleOrDefault(s => s.Id == round.Season),
+            Name = round.Name,
+            Number = round.Number,
+            Venue = round.Venue,
+            RelatedRoundResult = round.Id != default(int) ? _context.RoundResult.SingleOrDefault(r => r.Round == round.Id) : null,
+            RelatedRoundWinners = round.Id != default(int) ? _context.RoundWinner.Where(w => w.Round == round.Id).ToList() : null,
+            RelatedVenue = !string.IsNullOrEmpty(round.Venue) ? _context.Venue.SingleOrDefault(v => StringComparer.InvariantCultureIgnoreCase.Equals(v.Name, round.Venue)) : null
+          },
+          _context.Season.Include(s => s.RelatedRounds).OrderBy(season => season.Sport),
+          _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
+          _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
+          _context.Status,
+          _context.Venue.OrderBy(v => v.Name)));
     }
 
     public Task<RoundDisplayModel> GetNew(int seasonId) {
@@ -153,7 +188,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       await _context.SaveChangesAsync();
     }
 
-    public async Task CreateRound(Round round) {
+    public async Task PersistRound(Round round) {
       _context.Add(round);
       await _context.SaveChangesAsync();
     }

@@ -9,11 +9,12 @@ using Motorsports.Scaffolding.Core.Models.EditModels;
 
 namespace Motorsports.Scaffolding.Core.Services {
   public interface ISeasonService {
+    Task<Season> LoadDataRecord(int seasonId);
     Task<SeasonDisplayModel> GetNew();
     Task<List<SeasonDisplayModel>> LoadSeasonList();
     Task<SeasonDisplayModel> LoadDisplayModel(int seasonId);
     Task UpdateSeason(SeasonEditModel season);
-    Task CreateSeason(Season season);
+    Task PersistSeason(Season season);
     Task DeleteSeason(int seasonId);
   }
 
@@ -22,6 +23,17 @@ namespace Motorsports.Scaffolding.Core.Services {
 
     public SeasonService(MotorsportsContext context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
+    }
+
+    public Task<Season> LoadDataRecord(int seasonId) {
+      return _context.Season
+        .Include(s => s.RelatedSport)
+        .Include(s => s.RelatedSeasonResult)
+        .ThenInclude(s => s.RelatedWinningTeam)
+        .Include(s => s.RelatedSeasonWinners)
+        .ThenInclude(sw => sw.RelatedParticipant)
+        .Include(s => s.RelatedRounds)
+        .SingleOrDefaultAsync(m => m.Id == seasonId);
     }
 
     public Task<SeasonDisplayModel> GetNew() {
@@ -105,7 +117,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       await _context.SaveChangesAsync();
     }
 
-    public async Task CreateSeason(Season season) {
+    public async Task PersistSeason(Season season) {
       _context.Add(season);
       await _context.SaveChangesAsync();
     }
