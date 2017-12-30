@@ -48,3 +48,8 @@ div #rangeValue {
 div #rngRating .slider-selection {
   background: #BABABA;
 }
+
+div .formLabelWithLink {
+  display: flex;
+  justify-content: space-between;
+}

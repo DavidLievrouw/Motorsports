@@ -24,7 +24,10 @@
         <span asp-validation-for="Label" class="text-danger"></span>
       </div>
       <div class="form-group">
-        <label asp-for="WinningTeamId" class="control-label"></label>
+        <div class="formLabelWithLink">
+          <label asp-for="WinningTeamId" class="control-label"></label>
+          <a asp-action="Index" asp-controller="Teams" target="_blank">Edit teams</a>
+        </div>
         <div>
           @Html.EditorFor(_ => _.WinningTeamId, nameof(Model.WinningTeam), new {
             Teams = Model.AvailableTeams,
@@ -32,9 +35,13 @@
             TargetProperty = nameof(Model.WinningTeamId)
           })
         </div>
+        <span asp-validation-for="WinningTeamId" class="text-danger"></span>
       </div>
       <div class="form-group">
-        <label asp-for="WinningParticipantIds" class="control-label"></label>
+        <div class="formLabelWithLink">
+          <label asp-for="WinningParticipantIds" class="control-label"></label>
+          <a asp-action="Index" asp-controller="Participants" target="_blank">Edit participants</a>
+        </div>
         <div>
           @Html.EditorFor(_ => _.WinningParticipantIds, nameof(Model.WinningParticipants), new {
             Participants = Model.AvailableParticipants,
@@ -42,6 +49,7 @@
             TargetProperty = nameof(Model.WinningParticipantIds)
           })
         </div>
+        <span asp-validation-for="WinningParticipantIds" class="text-danger"></span>
       </div>
       <div class="form-group">
         <input type="submit" value="Save" class="btn btn-default"/>
