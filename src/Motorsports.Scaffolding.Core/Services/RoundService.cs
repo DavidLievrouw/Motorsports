@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Motorsports.Scaffolding.Core.Dapper;
 using Motorsports.Scaffolding.Core.Models;
 using Motorsports.Scaffolding.Core.Models.DisplayModels;
 using Motorsports.Scaffolding.Core.Models.EditModels;
@@ -22,9 +24,13 @@ namespace Motorsports.Scaffolding.Core.Services {
 
   public class RoundService : IRoundService {
     readonly MotorsportsContext _context;
+    readonly IQueryExecutor _queryExecutor;
 
-    public RoundService(MotorsportsContext context) {
+    public RoundService(
+      MotorsportsContext context,
+      IQueryExecutor queryExecutor) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
+      _queryExecutor = queryExecutor ?? throw new ArgumentNullException(nameof(queryExecutor));
     }
 
     public Task<Round> LoadDataRecord(int roundId) {
@@ -43,15 +49,21 @@ namespace Motorsports.Scaffolding.Core.Services {
         new RoundDisplayModel(
           new Round {
             Id = round.Id,
-            Date = round.Date, 
-            Season = round.Season, 
+            Date = round.Date,
+            Season = round.Season,
             RelatedSeason = _context.Season.SingleOrDefault(s => s.Id == round.Season),
             Name = round.Name,
             Number = round.Number,
             Venue = round.Venue,
-            RelatedRoundResult = round.Id != default(int) ? _context.RoundResult.SingleOrDefault(r => r.Round == round.Id) : null,
-            RelatedRoundWinners = round.Id != default(int) ? _context.RoundWinner.Where(w => w.Round == round.Id).ToList() : null,
-            RelatedVenue = !string.IsNullOrEmpty(round.Venue) ? _context.Venue.SingleOrDefault(v => StringComparer.InvariantCultureIgnoreCase.Equals(v.Name, round.Venue)) : null
+            RelatedRoundResult = round.Id != default(int)
+              ? _context.RoundResult.SingleOrDefault(r => r.Round == round.Id)
+              : null,
+            RelatedRoundWinners = round.Id != default(int)
+              ? _context.RoundWinner.Where(w => w.Round == round.Id).ToList()
+              : null,
+            RelatedVenue = !string.IsNullOrEmpty(round.Venue)
+              ? _context.Venue.SingleOrDefault(v => StringComparer.InvariantCultureIgnoreCase.Equals(v.Name, round.Venue))
+              : null
           },
           _context.Season.Include(s => s.RelatedRounds).OrderBy(season => season.Sport),
           _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
@@ -63,7 +75,7 @@ namespace Motorsports.Scaffolding.Core.Services {
     public Task<RoundDisplayModel> GetNew(int seasonId) {
       return Task.FromResult(
         new RoundDisplayModel(
-          new Round {Date = DateTime.Today, Season = seasonId, RelatedSeason = _context.Season.Single(s => s.Id == seasonId ) },
+          new Round {Date = DateTime.Today, Season = seasonId, RelatedSeason = _context.Season.Single(s => s.Id == seasonId)},
           _context.Season.Include(s => s.RelatedRounds).OrderBy(season => season.Sport),
           _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
           _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
@@ -82,7 +94,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Select(r => new RoundDisplayModel(r, null, null, null, null, null))
         .ToListAsync();
     }
-    
+
     public Task<List<RoundDisplayModel>> LoadRoundList(int seasonId) {
       return _context.Round
         .Include(r => r.RelatedSeason)
@@ -118,74 +130,85 @@ namespace Motorsports.Scaffolding.Core.Services {
     public async Task UpdateRound(RoundEditModel round) {
       if (round == null) throw new ArgumentNullException(nameof(round));
 
-      // Find record to update
-      var roundToUpdate = _context.Round
-        .Include(s => s.RelatedSeason)
-        .Include(r => r.RelatedVenue)
-        .Include(s => s.RelatedRoundResult)
-        .AsNoTracking()
-        .Include(s => s.RelatedRoundWinners)
-        .AsNoTracking()
-        .Single(s => s.Id == round.Id);
-
-      // Update round result
-      if (roundToUpdate.RelatedRoundResult == null && round.WinningTeamId.HasValue ||
-          roundToUpdate.RelatedRoundResult?.WinningTeam != round.WinningTeamId ||
-          roundToUpdate.RelatedRoundResult?.Rain !=
-          (round.Rain.HasValue
-            ? (decimal) round.Rain
-            : new decimal?()) ||
-          roundToUpdate.RelatedRoundResult?.Status != round.Status?.ToString() ||
-          roundToUpdate.RelatedRoundResult?.Rating != round.Rating) {
-        var resultToUpdate = _context.RoundResult.SingleOrDefault(r => r.Round == roundToUpdate.Id);
-        if (resultToUpdate == null) {
-          roundToUpdate.RelatedRoundResult = new RoundResult {
-            Round = round.Id,
-            WinningTeam = round.WinningTeamId,
-            Rain = round.Rain.HasValue
-              ? (decimal) round.Rain
-              : new decimal?(),
-            Status = round.Status.HasValue
-              ? round.Status.ToString()
-              : null,
-            Rating = round.Rating
-          };
-          _context.RoundResult.Add(roundToUpdate.RelatedRoundResult);
-        }
-        else {
-          resultToUpdate.Round = round.Id;
-          resultToUpdate.WinningTeam = round.WinningTeamId;
-          resultToUpdate.Rain = round.Rain.HasValue
-            ? (decimal) round.Rain
-            : new decimal?();
-          resultToUpdate.Status = round.Status.HasValue
-            ? round.Status.ToString()
-            : null;
-          resultToUpdate.Rating = round.Rating;
-        }
-      }
-
-      // Update winners
-      var winnersToRemove = _context.RoundWinner.AsNoTracking().Where(rw => rw.Round == roundToUpdate.Id);
-      var winnersToAdd = round.WinningParticipantIds.Select(
-        wp => new RoundWinner {
-          Round = round.Id,
-          Participant = wp
-        });
-      _context.RoundWinner.RemoveRange(winnersToRemove);
-      roundToUpdate.RelatedRoundWinners = winnersToAdd.ToList();
-
-      // Update venue
+      // Save EF changes
+      var roundToUpdate = _context.Round.Single(s => s.Id == round.Id);
       roundToUpdate.Venue = round.Venue;
-
-      // Update properties
       roundToUpdate.Date = round.Date;
       roundToUpdate.Number = round.Number;
       roundToUpdate.Name = round.Name;
-
-      // Commit
       _context.Update(roundToUpdate);
       await _context.SaveChangesAsync();
+
+      var transactionalQueryExecutor = _queryExecutor.BeginTransaction();
+      try {
+        // Update round result
+        await _queryExecutor
+          .NewQuery("DELETE FROM [dbo].[RoundResult] WHERE [Round]=@Round")
+          .WithCommandType(CommandType.Text)
+          .WithParameters(new {Round = round.Id})
+          .ExecuteAsync();
+        if (round.Status.HasValue) {
+          await _queryExecutor
+            .NewQuery(@"
+              INSERT INTO [dbo].[RoundResult]
+                         ([Round]
+                         ,[Status]
+                         ,[Rating]
+                         ,[Rain]
+                         ,[WinningTeam])
+                   VALUES
+                         (@Round
+                         ,@Status
+                         ,@Rating
+                         ,@Rain
+                         ,@WinningTeam)")
+            .WithCommandType(CommandType.Text)
+            .WithParameters(
+              new {
+                Round = round.Id,
+                Status = round.Status.ToString(),
+                Rating = round.Rating,
+                Rain = round.Rain.HasValue
+                  ? (int) round.Rain.Value
+                  : new int?(),
+                WinningTeam = round.WinningTeamId
+              })
+            .ExecuteAsync();
+        }
+
+        // Update winners
+        await _queryExecutor
+          .NewQuery("DELETE FROM [dbo].[RoundWinner] WHERE [Round]=@Round")
+          .WithCommandType(CommandType.Text)
+          .WithParameters(new {Round = round.Id})
+          .ExecuteAsync();
+        var winnersToAdd = round.WinningParticipantIds.Select(
+          wp => new RoundWinner {
+            Round = round.Id,
+            Participant = wp
+          });
+        foreach (var winner in winnersToAdd) {
+          await _queryExecutor
+            .NewQuery(@"
+              INSERT INTO [dbo].[RoundWinner]
+                         ([Round]
+                         ,[Participant])
+                   VALUES
+                         (@Round
+                         ,@Participant)")
+            .WithCommandType(CommandType.Text)
+            .WithParameters(new {Round = winner.Round, Participant = winner.Participant})
+            .ExecuteAsync();
+        }
+
+        // Commit
+        transactionalQueryExecutor.Commit();
+      } catch {
+        transactionalQueryExecutor.Rollback();
+        throw;
+      } finally {
+        transactionalQueryExecutor.Dispose();
+      }
     }
 
     public async Task PersistRound(Round round) {

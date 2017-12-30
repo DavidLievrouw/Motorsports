@@ -10,10 +10,8 @@ namespace Motorsports.Scaffolding.Core.Dapper {
       _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
     }
 
-    public IDbConnection OpenConnection() {
-      var connection = new SqlConnection(_connectionString);
-      connection.Open();
-      return connection;
+    public IDbConnection CreateConnection() {
+      return new SqlConnection(_connectionString);
     }
   }
 }
