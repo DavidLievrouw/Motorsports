@@ -12,7 +12,7 @@ using Motorsports.Scaffolding.Core.Models.EditModels;
 namespace Motorsports.Scaffolding.Core.Services {
   public interface IRoundService {
     Task<Round> LoadDataRecord(int roundId);
-    Task<RoundDisplayModel> CreateForRound(Round round);
+    Task<RoundDisplayModel> CreateForRound(Round round, int seasonId);
     Task<RoundDisplayModel> GetNew(int seasonId);
     Task<List<RoundDisplayModel>> LoadRoundList();
     Task<List<RoundDisplayModel>> LoadRoundList(int seasonId);
@@ -44,14 +44,14 @@ namespace Motorsports.Scaffolding.Core.Services {
         .SingleOrDefaultAsync(m => m.Id == roundId);
     }
 
-    public Task<RoundDisplayModel> CreateForRound(Round round) {
+    public Task<RoundDisplayModel> CreateForRound(Round round, int seasonId) {
       return Task.FromResult(
         new RoundDisplayModel(
           new Round {
             Id = round.Id,
             Date = round.Date,
-            Season = round.Season,
-            RelatedSeason = _context.Season.SingleOrDefault(s => s.Id == round.Season),
+            Season = seasonId,
+            RelatedSeason = _context.Season.Include(s => s.RelatedRounds).SingleOrDefault(s => s.Id == seasonId),
             Name = round.Name,
             Number = round.Number,
             Venue = round.Venue,
@@ -75,7 +75,11 @@ namespace Motorsports.Scaffolding.Core.Services {
     public Task<RoundDisplayModel> GetNew(int seasonId) {
       return Task.FromResult(
         new RoundDisplayModel(
-          new Round {Date = DateTime.Today, Season = seasonId, RelatedSeason = _context.Season.Single(s => s.Id == seasonId)},
+          new Round {
+            Date = DateTime.Today, 
+            Season = seasonId, 
+            RelatedSeason = _context.Season.Include(s => s.RelatedRounds).Single(s => s.Id == seasonId)
+          },
           _context.Season.Include(s => s.RelatedRounds).OrderBy(season => season.Sport),
           _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
           _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
