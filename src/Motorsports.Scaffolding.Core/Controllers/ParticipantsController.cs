@@ -5,13 +5,16 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
+using Motorsports.Scaffolding.Core.Models.Validators;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
   public class ParticipantsController : Controller {
     readonly MotorsportsContext _context;
+    readonly IModelStatePopulator<Participant> _participantModelStatePopulator;
 
-    public ParticipantsController(MotorsportsContext context) {
+    public ParticipantsController(MotorsportsContext context, IModelStatePopulator<Participant> participantModelStatePopulator) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
+      _participantModelStatePopulator = participantModelStatePopulator ?? throw new ArgumentNullException(nameof(participantModelStatePopulator));
     }
 
     // GET: Participants
@@ -39,11 +42,10 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     }
 
     // POST: Participants/Create
-    // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-    // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("Id,Title,FirstName,LastName,Country")] Participant participant) {
+      await _participantModelStatePopulator.ValidateAndPopulateForCreate(ModelState, participant);
       if (ModelState.IsValid) {
         _context.Add(participant);
         await _context.SaveChangesAsync();
@@ -64,13 +66,12 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     }
 
     // POST: Participants/Edit/5
-    // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-    // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, [Bind("Id,Title,FirstName,LastName,Country")] Participant participant) {
       if (id != participant.Id) return NotFound();
 
+      await _participantModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, participant);
       if (ModelState.IsValid) {
         try {
           _context.Update(participant);
