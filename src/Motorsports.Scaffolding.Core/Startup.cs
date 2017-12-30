@@ -42,6 +42,9 @@ namespace Motorsports.Scaffolding.Core {
       services.TryAddScoped<IModelStatePopulator<Sport>>(provider => new ModelStatePopulator<Sport>(
         new CreateSportValidator(provider.GetService<MotorsportsContext>()),
         new UpdateSportValidator(provider.GetService<MotorsportsContext>())));
+      services.TryAddScoped<IModelStatePopulator<Venue>>(provider => new ModelStatePopulator<Venue>(
+        new CreateVenueValidator(provider.GetService<MotorsportsContext>()),
+        new UpdateVenueValidator(provider.GetService<MotorsportsContext>())));
     }
 
     public void Configure(IApplicationBuilder app, IHostingEnvironment env) {

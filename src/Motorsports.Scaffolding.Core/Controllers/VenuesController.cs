@@ -5,15 +5,21 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
+using Motorsports.Scaffolding.Core.Models.Validators;
 using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
   public class VenuesController : Controller {
     readonly IVenueService _venueService;
+    readonly IModelStatePopulator<Venue> _venueModelStatePopulator;
     readonly MotorsportsContext _context;
 
-    public VenuesController(MotorsportsContext context, IVenueService venueService) {
+    public VenuesController(
+      MotorsportsContext context,
+      IVenueService venueService,
+      IModelStatePopulator<Venue> venueModelStatePopulator) {
       _venueService = venueService ?? throw new ArgumentNullException(nameof(venueService));
+      _venueModelStatePopulator = venueModelStatePopulator ?? throw new ArgumentNullException(nameof(venueModelStatePopulator));
       _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
@@ -42,11 +48,10 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     }
 
     // POST: Venues/Create
-    // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-    // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("Name,Country")] Venue venue) {
+      await _venueModelStatePopulator.ValidateAndPopulateForCreate(ModelState, venue);
       if (ModelState.IsValid) {
         _context.Add(venue);
         await _context.SaveChangesAsync();
@@ -67,11 +72,10 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     }
 
     // POST: Venues/Edit/5
-    // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-    // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(string id, [Bind("Name,Country")] Venue venue) {
+      await _venueModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, venue);
       if (ModelState.IsValid) {
         try {
           // EF does not allow updating the primary key.
