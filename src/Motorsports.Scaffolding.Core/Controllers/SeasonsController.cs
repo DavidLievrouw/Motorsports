@@ -3,14 +3,17 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Motorsports.Scaffolding.Core.Models;
 using Motorsports.Scaffolding.Core.Models.EditModels;
+using Motorsports.Scaffolding.Core.Models.Validators;
 using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
   public class SeasonsController : Controller {
     readonly ISeasonService _seasonService;
+    readonly IModelStatePopulator<Season> _seasonModelStatePopulator;
 
-    public SeasonsController(ISeasonService seasonService) {
+    public SeasonsController(ISeasonService seasonService, IModelStatePopulator<Season> seasonModelStatePopulator) {
       _seasonService = seasonService ?? throw new ArgumentNullException(nameof(seasonService));
+      _seasonModelStatePopulator = seasonModelStatePopulator ?? throw new ArgumentNullException(nameof(seasonModelStatePopulator));
     }
 
     // GET: Seasons
@@ -34,11 +37,10 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     }
 
     // POST: Seasons/Create
-    // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-    // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("Id,Sport,Label")] Season season) {
+    public async Task<IActionResult> Create([Bind("Sport,Label")] Season season) {
+      await _seasonModelStatePopulator.ValidateAndPopulateForCreate(ModelState, season);
       if (ModelState.IsValid) {
         await _seasonService.CreateSeason(season);
         return RedirectToAction(nameof(Index));
@@ -57,17 +59,12 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     }
 
     // POST: Seasons/Edit/5
-    // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-    // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, [Bind("Id,Sport,WinningTeamId,WinningParticipantIds[]")] [ModelBinder(typeof(SeasonEditModel.SeasonEditModelBinder))] SeasonEditModel season) {
       if (id != season.Id) return NotFound();
-      if (ModelState.IsValid) {
-        await _seasonService.UpdateSeason(season);
-        return RedirectToAction(nameof(Index));
-      }
-      return View(await _seasonService.LoadDisplayModel(id));
+      await _seasonService.UpdateSeason(season);
+      return RedirectToAction(nameof(Index));
     }
 
     // GET: Seasons/Delete/5
