@@ -15,7 +15,9 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
 
       RuleFor(_ => _.Country)
         .NotEmpty()
-        .WithMessage("A country is required.");
+        .WithMessage("A country is required.")
+        .Must(CountryExists)
+        .WithMessage("The specified country does not exist.");
 
       RuleFor(_ => _.Name)
         .Must(BeUnique)
@@ -25,6 +27,10 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
 
     bool BeUnique(Venue venue, string name) {
       return !_context.Venue.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, name));
+    }    
+
+    bool CountryExists(Venue venue, string country) {
+      return _context.Country.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Iso, country));
     }
   }
 }
