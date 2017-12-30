@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Motorsports.Scaffolding.Core.Models;
-using Motorsports.Scaffolding.Core.Models.DisplayModels;
 using Motorsports.Scaffolding.Core.Models.EditModels;
 using Motorsports.Scaffolding.Core.Models.Validators;
 using Motorsports.Scaffolding.Core.Services;
@@ -56,7 +55,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         return RedirectToAction(nameof(Index), new { id = id.Value});
       }
 
-      var roundDisplayModel = await _roundService.CreateForRound(round);
+      var roundDisplayModel = await _roundService.CreateForRound(round, id.Value);
       if (roundDisplayModel == null) return NotFound();
       return View(roundDisplayModel);
     }
