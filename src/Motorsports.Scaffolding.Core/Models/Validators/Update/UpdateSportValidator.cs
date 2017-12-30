@@ -20,7 +20,7 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
     }
 
     bool MustExist(Sport sport, string name) {
-      return _context.Sport.SingleOrDefault(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, name)) != null;
+      return _context.Sport.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, name));
     }
   }
 }

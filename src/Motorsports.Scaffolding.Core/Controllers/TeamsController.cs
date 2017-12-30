@@ -5,13 +5,16 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
+using Motorsports.Scaffolding.Core.Models.Validators;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
   public class TeamsController : Controller {
     readonly MotorsportsContext _context;
+    readonly IModelStatePopulator<Team> _teamModelStatePopulator;
 
-    public TeamsController(MotorsportsContext context) {
+    public TeamsController(MotorsportsContext context, IModelStatePopulator<Team> teamModelStatePopulator) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
+      _teamModelStatePopulator = teamModelStatePopulator ?? throw new ArgumentNullException(nameof(teamModelStatePopulator));
     }
 
     // GET: Teams
@@ -41,11 +44,10 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     }
 
     // POST: Teams/Create
-    // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-    // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("Id,Name,Sport,Country")] Team team) {
+      await _teamModelStatePopulator.ValidateAndPopulateForCreate(ModelState, team);
       if (ModelState.IsValid) {
         _context.Add(team);
         await _context.SaveChangesAsync();
@@ -75,6 +77,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Sport,Country")] Team team) {
       if (id != team.Id) return NotFound();
 
+      await _teamModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, team);
       if (ModelState.IsValid) {
         try {
           _context.Update(team);
