@@ -42,7 +42,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     public async Task<IActionResult> Create([Bind("Sport,Label")] Season season) {
       await _seasonModelStatePopulator.ValidateAndPopulateForCreate(ModelState, season);
       if (ModelState.IsValid) {
-        await _seasonService.CreateSeason(season);
+        await _seasonService.PersistSeason(season);
         return RedirectToAction(nameof(Index));
       }
       return View(await _seasonService.GetNew());
@@ -63,8 +63,17 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, [Bind("Id,Sport,WinningTeamId,WinningParticipantIds[]")] [ModelBinder(typeof(SeasonEditModel.SeasonEditModelBinder))] SeasonEditModel season) {
       if (id != season.Id) return NotFound();
-      await _seasonService.UpdateSeason(season);
-      return RedirectToAction(nameof(Index));
+
+      var seasonForValidation = await _seasonService.LoadDataRecord(id);
+      seasonForValidation.Label = season.Label;
+      await _seasonModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, seasonForValidation);
+
+      if (ModelState.IsValid) {
+        await _seasonService.UpdateSeason(season);
+        return RedirectToAction(nameof(Index));
+      }
+
+      return View(await _seasonService.LoadDisplayModel(id));
     }
 
     // GET: Seasons/Delete/5
