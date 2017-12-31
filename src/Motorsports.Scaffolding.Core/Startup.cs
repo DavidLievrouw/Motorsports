@@ -35,6 +35,7 @@ namespace Motorsports.Scaffolding.Core {
       // Services
       services.TryAddSingleton<ISportService>(provider => new SportService(provider.GetRequiredService<IQueryExecutor>()));
       services.TryAddSingleton<IVenueService>(provider => new VenueService(provider.GetRequiredService<IQueryExecutor>()));
+      services.TryAddSingleton<INextUpService>(provider => new NextUpService(provider.GetRequiredService<IQueryExecutor>()));
       services.TryAddScoped<ISeasonService>(provider => new SeasonService(provider.GetService<MotorsportsContext>()));
       services.TryAddScoped<IRoundService>(provider => new RoundService(provider.GetService<MotorsportsContext>(), provider.GetRequiredService<IQueryExecutor>()));
 
