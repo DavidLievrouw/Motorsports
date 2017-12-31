@@ -42,8 +42,8 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
 
     bool BeUnique(Round round, short number) {
       return !_context.Round.Any(_ => 
-        StringComparer.InvariantCultureIgnoreCase.Equals(_.Season, round.Season) && 
-        StringComparer.InvariantCultureIgnoreCase.Equals(_.Number, number));
+        _.Season == round.Season && 
+        _.Number == number);
     }
   }
 }
