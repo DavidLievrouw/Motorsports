@@ -9,6 +9,7 @@ using Motorsports.Scaffolding.Core.Models;
 using Motorsports.Scaffolding.Core.Models.Validators;
 using Motorsports.Scaffolding.Core.Models.Validators.Create;
 using Motorsports.Scaffolding.Core.Models.Validators.Update;
+using Motorsports.Scaffolding.Core.Security;
 using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core {
@@ -58,6 +59,15 @@ namespace Motorsports.Scaffolding.Core {
       services.TryAddScoped<IModelStatePopulator<Round>>(provider => new ModelStatePopulator<Round>(
         new CreateRoundValidator(provider.GetService<MotorsportsContext>()),
         new UpdateRoundValidator(provider.GetService<MotorsportsContext>())));
+
+      // Security
+      services.TryAddSingleton(provider => new PasswordHashingConfig());
+      services.TryAddSingleton<IHashPasswordService>(provider => new HashPasswordService(provider.GetRequiredService<PasswordHashingConfig>()));
+      services.TryAddSingleton<IAuthenticateUserService<UsernamePasswordCredentials>>(provider => new UsernamePasswordAuthenticateUserService(
+        new UserDataService(provider.GetRequiredService<IQueryExecutor>(), provider.GetRequiredService<PasswordHashingConfig>()), 
+        new RandomHashedPasswordProvider(provider.GetRequiredService<IHashPasswordService>()),
+        provider.GetRequiredService<IHashPasswordService>(),
+        new UsernamePasswordCredentialsValidator()));
     }
 
     public void Configure(IApplicationBuilder app, IHostingEnvironment env) {
