@@ -47,10 +47,11 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(int? id,[Bind("Date,Number,Name,Venue")] Round round) {
       if (id == null) return NotFound();
+      
+      round.Season = id.Value;
 
       await _roundModelStatePopulator.ValidateAndPopulateForCreate(ModelState, round);
       if (ModelState.IsValid) {
-        round.Season = id.Value;
         await _roundService.PersistRound(round);
         return RedirectToAction(nameof(Index), new { id = id.Value});
       }
