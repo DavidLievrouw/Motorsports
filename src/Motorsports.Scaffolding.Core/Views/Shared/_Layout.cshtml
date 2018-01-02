@@ -12,13 +12,20 @@
   <script src="~/lib/jquery/dist/jquery.js"></script>
 </head>
 <body>
-<nav class="navbar navbar-inverse navbar-fixed-top">
-  <div class="container">
-    <div class="navbar-header">
-      <a asp-area="" asp-controller="Home" asp-action="Index" class="navbar-brand">Motorsports</a>
+@if (User.Identity.IsAuthenticated) {
+  <nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <a asp-controller="Home" asp-action="Index" class="navbar-brand">Motorsports</a>
+      </div>
+      <div class="navbar-collapse collapse">
+        <ul class="nav navbar-nav navbar-right">
+          <li><a asp-controller="Login" asp-action="Logout" class="navbar-brand">Log out</a></li>
+        </ul>
+      </div>
     </div>
-  </div>
-</nav>
+  </nav>
+}
 <div class="container body-content">
   @RenderBody()
   <hr/>
