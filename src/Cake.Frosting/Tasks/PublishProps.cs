@@ -11,7 +11,7 @@ namespace Build.Tasks {
     public PublishProps(ICakeContext context) : base(context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
 
-      PublishTargetDirectoryPath = RepoRootDirectoryPath + "/pub";
+      PublishTargetDirectoryPath = RepoRootDirectoryPath + "/dist";
       ScaffoldingProjectFilePath = SourceDirectoryPath + "/Motorsports.Scaffolding.Core/Motorsports.Scaffolding.Core.csproj";
       
       _context.Information("Publish directory = " + PublishTargetDirectory);
