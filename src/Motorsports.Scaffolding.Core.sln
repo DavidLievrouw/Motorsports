@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Motorsports.Scaffolding.Core", "Motorsports.Scaffolding.Core\Motorsports.Scaffolding.Core.csproj", "{CFC8D2E7-AD6E-4AA6-9D20-647C97C6C896}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Build", "build\Build.csproj", "{3818A39F-EC24-4D7F-965B-9C259330995F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Build", "Cake.Frosting\Build.csproj", "{3818A39F-EC24-4D7F-965B-9C259330995F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
