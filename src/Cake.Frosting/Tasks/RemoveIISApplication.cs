@@ -1,4 +1,3 @@
-using Build.Infrastructure;
 using Cake.Frosting;
 
 namespace Build.Tasks {
