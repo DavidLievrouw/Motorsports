@@ -1,3 +1,4 @@
+using Cake.Common.Diagnostics;
 using Cake.Common.IO;
 using Cake.Common.Tools.DotNetCore;
 using Cake.Common.Tools.DotNetCore.Clean;
@@ -7,6 +8,7 @@ using Cake.Frosting;
 
 namespace Build.Tasks {
   [TaskName(nameof(Publish))]
+  [Dependency(typeof(StopIISApplicationPoolIfExists))]
   [Dependency(typeof(InitVersion))]
   [Dependency(typeof(RestorePackages))]
   public sealed class Publish : FrostingTaskWithProps<PublishProps> {
@@ -28,6 +30,14 @@ namespace Build.Tasks {
           Verbosity = props.DotNetCoreVerbosity,
           ArgumentCustomization = args => args.Append("--no-restore")
         });
+    }
+
+    public override void Finally(ICakeContext context) {
+      base.Finally(context);
+
+      context.Information("Starting application pool, if needed...");
+      var startPoolTask = new StartIISApplicationPoolIfExists();
+      if (startPoolTask.ShouldRun(context)) startPoolTask.Run(context);
     }
   }
 }
