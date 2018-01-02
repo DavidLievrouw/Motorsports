@@ -2,6 +2,7 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication;
 
 namespace Motorsports.Scaffolding.Core.Security {
   public class UsernamePasswordAuthenticateUserService : IAuthenticateUserService<UsernamePasswordCredentials> {
@@ -9,14 +10,17 @@ namespace Motorsports.Scaffolding.Core.Security {
     readonly IHashPasswordService _hashPasswordService;
     readonly IRandomHashedPasswordProvider _randomHashedPasswordProvider;
     readonly IValidator<UsernamePasswordCredentials> _usernamePasswordCredentialsValidator;
+    readonly IAuthenticationSchemeProvider _authenticationSchemeProvider;
 
     public UsernamePasswordAuthenticateUserService(
       IUserDataService userDataService,
       IRandomHashedPasswordProvider randomHashedPasswordProvider,
       IHashPasswordService hashPasswordService,
-      IValidator<UsernamePasswordCredentials> usernamePasswordCredentialsValidator) {
+      IValidator<UsernamePasswordCredentials> usernamePasswordCredentialsValidator,
+      IAuthenticationSchemeProvider authenticationSchemeProvider) {
       _userDataService = userDataService ?? throw new ArgumentNullException(nameof(userDataService));
       _usernamePasswordCredentialsValidator = usernamePasswordCredentialsValidator ??throw new ArgumentNullException(nameof(usernamePasswordCredentialsValidator));
+      _authenticationSchemeProvider = authenticationSchemeProvider ?? throw new ArgumentNullException(nameof(authenticationSchemeProvider));
       _randomHashedPasswordProvider = randomHashedPasswordProvider ??throw new ArgumentNullException(nameof(randomHashedPasswordProvider));
       _hashPasswordService = hashPasswordService ?? throw new ArgumentNullException(nameof(hashPasswordService));
     }
@@ -39,7 +43,9 @@ namespace Motorsports.Scaffolding.Core.Security {
         password.Iterations);
       if (!password.Equals(hashedPassword) || user == null) return new AuthenticationFailure<UsernamePasswordAuthenticateFailureReason>(UsernamePasswordAuthenticateFailureReason.InvalidCredentials);
 
-      var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(user.AsClaims()));
+      var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(
+        user.AsClaims(),
+        (await _authenticationSchemeProvider.GetDefaultSignInSchemeAsync()).Name));
 
       return new AuthenticationSuccess(claimsPrincipal);
     }
