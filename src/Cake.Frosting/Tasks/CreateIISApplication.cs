@@ -7,7 +7,7 @@ namespace Build.Tasks {
   [Dependency(typeof(RemoveIISApplication))]
   public sealed class CreateIISApplication : FrostingTask {
     public override void Run(ICakeContext context) {
-      var props = context.GetProps<IISApplicationProps>();
+      var props = context.BuildProps<IISApplicationProps>();
 
       context.CreatePool(props.IISApplicationPoolSettings);
       context.AddSiteApplication(props.IISApplicationSettings); 

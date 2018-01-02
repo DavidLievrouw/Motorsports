@@ -12,7 +12,7 @@ namespace Build.Tasks {
     /// - Adds key to _Props.Items: AssemblyVersion
     /// </summary>
     public override void Run(ICakeContext context) {
-      var props = context.GetProps<InitVersionProps>();
+      var props = context.BuildProps<InitVersionProps>();
 
       var productVersion = context.FileReadText(props.VersionFile);
       var assemblyVersion = $"{productVersion}.0";
