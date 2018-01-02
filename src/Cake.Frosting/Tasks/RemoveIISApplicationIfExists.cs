@@ -4,16 +4,14 @@ using Cake.IIS;
 
 namespace Build.Tasks {
   [TaskName(nameof(RemoveIISApplicationIfExists))]
-  public sealed class RemoveIISApplicationIfExists : FrostingTaskWithProps<IISApplicationProps> {
+  public sealed class RemoveIISApplicationIfExists : FrostingTask {
     public override bool ShouldRun(ICakeContext context) {
-      var props = GetProperties(context);
-
+      var props = context.GetProps<IISApplicationProps>();
       return context.SiteApplicationExists(props.IISApplicationSettings);
     }
     
     public override void Run(ICakeContext context) {
-      var props = GetProperties(context);
-
+      var props = context.GetProps<IISApplicationProps>();
       context.RemoveSiteApplication(props.IISApplicationSettings); 
     }
   }

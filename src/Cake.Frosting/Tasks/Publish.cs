@@ -11,9 +11,9 @@ namespace Build.Tasks {
   [Dependency(typeof(StopIISApplicationPoolIfExists))]
   [Dependency(typeof(InitVersion))]
   [Dependency(typeof(RestorePackages))]
-  public sealed class Publish : FrostingTaskWithProps<PublishProps> {
+  public sealed class Publish : FrostingTask {
     public override void Run(ICakeContext context) {
-      var props = GetProperties(context);
+      var props = context.GetProps<PublishProps>();
 
       context.CleanDirectory(props.PublishTargetDirectory);
       context.DotNetCoreClean(

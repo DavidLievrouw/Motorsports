@@ -5,16 +5,14 @@ using Cake.IIS;
 namespace Build.Tasks {
   [TaskName(nameof(RemoveIISApplicationPoolIfExists))]
   [Dependency(typeof(StopIISApplicationPoolIfExists))]
-  public sealed class RemoveIISApplicationPoolIfExists : FrostingTaskWithProps<IISApplicationProps> {
+  public sealed class RemoveIISApplicationPoolIfExists : FrostingTask {
     public override bool ShouldRun(ICakeContext context) {
-      var props = GetProperties(context);
-
+      var props = context.GetProps<IISApplicationProps>();
       return context.PoolExists(props.IISApplicationPoolSettings.Name);
     }
     
     public override void Run(ICakeContext context) {
-      var props = GetProperties(context);
-
+      var props = context.GetProps<IISApplicationProps>();
       context.DeletePool(props.IISApplicationPoolSettings.Name);
     }
   }
