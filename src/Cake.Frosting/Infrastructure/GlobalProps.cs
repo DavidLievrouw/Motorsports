@@ -16,11 +16,12 @@ namespace Build.Infrastructure {
       Target = context.Arguments.GetArgument("target");
       Configuration = context.Arguments.GetArgument("configuration");
       Verbosity = context.Arguments.GetArgument("verbosity");
-
+      AssemblyVersion = new Version(1, 0, 0, 0);
       RepoRootDirectoryPath = "..";
       SourceDirectoryPath = RepoRootDirectoryPath + "/src";
 
       _context.Information("Product name = " + ProductName);
+      _context.Information("Assembly version = " + AssemblyVersion);
       _context.Information("Target = " + Target);
       _context.Information("Configuration = " + Configuration);
       _context.Information("Verbosity = " + Verbosity);
@@ -30,13 +31,14 @@ namespace Build.Infrastructure {
     }
 
     public string ProductName { get; set; }
+    public Version AssemblyVersion { get; set; }
     public string Target { get; }
     public string Configuration { get; }
     public string Verbosity { get; }
 
     public DotNetCoreVerbosity DotNetCoreVerbosity {
       get {
-        switch (Verbosity.ToLower()) {
+        switch (Verbosity?.ToLower()) {
           case "quiet":
             return DotNetCoreVerbosity.Quiet;
           case "minimal":

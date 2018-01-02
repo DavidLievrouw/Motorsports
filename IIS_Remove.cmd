@@ -1,7 +1,4 @@
 @echo off
-:::::::::::::::::::::::::::::::::::::::::
-:: Automatically check & get admin rights
-:::::::::::::::::::::::::::::::::::::::::
 CLS
 ECHO.
 
@@ -25,15 +22,12 @@ ECHO UAC.ShellExecute "!batchPath!", "ELEV", "", "runas", 1 >> "%temp%\OEgetPriv
 exit /B
 
 :gotPrivileges
-::::::::::::::::::::::::::::
-::START
-::::::::::::::::::::::::::::
 setlocal & pushd .
 
-REM Administrator Privileges acquired. Anything beyond this point will run in elevated mode. 
 set "DIR=%~dp0"
 cd %~dp0
 TITLE Motorsports -- Remove IIS application
+cd ./src/Cake.Frosting
 Powershell.exe -File build.ps1 -Target RemoveIISApplication -Verbosity Normal
 CHOICE /T 60 /C yYnN /CS /D y  /M "Should this window close? [Default y, you have 60 seconds]:"
 if errorlevel 2 pause

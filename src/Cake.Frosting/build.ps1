@@ -104,13 +104,12 @@ try {
     Push-Location
     Set-Location .
     Write-Host "Restoring packages..."
-    Invoke-Expression "dotnet restore"
     if($LASTEXITCODE -eq 0) {
         Write-Output "Compiling build..."
         Invoke-Expression "dotnet publish -c $Configuration /v:q /nologo"
         if($LASTEXITCODE -eq 0) {
             Write-Output "Running build..."
-            Invoke-Expression "dotnet bin/Debug/netcoreapp1.1/publish/Build.dll $Arguments"
+            Invoke-Expression "bin/$Configuration/net461/publish/Build.exe $Arguments"
         }
     }
 }
