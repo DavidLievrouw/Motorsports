@@ -96,3 +96,7 @@ div .nextUpDetailItem {
 div .disabledLink {
   color: silver;
 }
+
+div .padded {
+  padding: 10px;
+}
