@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Motorsports.Scaffolding.Core.Dapper;
 
 namespace Motorsports.Scaffolding.Core.Security {
@@ -9,17 +10,15 @@ namespace Motorsports.Scaffolding.Core.Security {
   }
 
   public class UserDataService : IUserDataService {
-    readonly PasswordHashingConfig _passwordHashingConfig;
     readonly IQueryExecutor _queryExecutor;
 
-    public UserDataService(IQueryExecutor queryExecutor, PasswordHashingConfig passwordHashingConfig) {
+    public UserDataService(IQueryExecutor queryExecutor) {
       _queryExecutor = queryExecutor ?? throw new ArgumentNullException(nameof(queryExecutor));
-      _passwordHashingConfig = passwordHashingConfig ?? throw new ArgumentNullException(nameof(passwordHashingConfig));
     }
 
     public async Task<UserForAuthentication> GetUserForAuthentication(string username) {
       var query = @"
-        SELECT [Id], [Username], [PasswordHash], [Salt], [Title], [GivenName], [FamilyName], [EmailAddress]
+        SELECT [Id], [Username], [PasswordHash], [Salt], [Iterations], [Prf], [ForceChangePassword], [Title], [GivenName], [FamilyName], [EmailAddress]
         FROM [dbo].[User] 
         WHERE [Username] = @Username AND [IsDeleted] = 0";
       var results = await _queryExecutor.NewQuery(query)
@@ -30,7 +29,12 @@ namespace Motorsports.Scaffolding.Core.Security {
           _ => new UserForAuthentication {
             Id = _.Id,
             Username = _.Username,
-            Password = new HashedPassword(_.PasswordHash, _.Salt, _passwordHashingConfig.Iterations, _passwordHashingConfig.KeyDerivationPrf),
+            Password = new HashedPassword(
+              _.PasswordHash, 
+              _.Salt, 
+              _.Iterations, 
+              (KeyDerivationPrf) Enum.Parse(typeof(KeyDerivationPrf), _.Prf)),
+            ForceChangePassword = _.ForceChangePassword,
             Title = _.Title,
             FirstName = _.GivenName,
             LastName = _.FamilyName,
