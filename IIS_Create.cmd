@@ -33,7 +33,7 @@ setlocal & pushd .
 REM Administrator Privileges acquired. Anything beyond this point will run in elevated mode. 
 set "DIR=%~dp0"
 cd %~dp0
-TITLE Motorsports -- Publish
-Powershell.exe -File build.ps1 -Target CreateRelease -Verbosity Normal
+TITLE Motorsports -- Create IIS application
+Powershell.exe -File build.ps1 -Target CreateIISApplication -Verbosity Normal
 CHOICE /T 60 /C yYnN /CS /D y  /M "Should this window close? [Default y, you have 60 seconds]:"
 if errorlevel 2 pause
