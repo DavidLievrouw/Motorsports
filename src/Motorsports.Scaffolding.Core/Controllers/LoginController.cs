@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Motorsports.Scaffolding.Core.Models;
 using Motorsports.Scaffolding.Core.Models.DisplayModels;
 using Motorsports.Scaffolding.Core.Models.EditModels;
 using Motorsports.Scaffolding.Core.Security;
@@ -58,6 +60,11 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     public async Task<IActionResult> Logout() {
       await HttpContext.SignOutAsync();
       return RedirectToAction("Login");
+    }
+    
+    [HttpGet("error")]
+    public IActionResult Error() {
+      return View(new ErrorViewModel {RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier});
     }
   }
 }

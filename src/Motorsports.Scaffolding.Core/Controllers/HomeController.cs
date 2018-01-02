@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Motorsports.Scaffolding.Core.Models;
 using Motorsports.Scaffolding.Core.Models.DisplayModels;
 using Motorsports.Scaffolding.Core.Services;
 
@@ -21,10 +19,6 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       var nextUps = await _nextUpService.GetRoundsNextUp();
       var displayModel = new HomeDisplayModel(nextUps);
       return View(displayModel);
-    }
-
-    public IActionResult Error() {
-      return View(new ErrorViewModel {RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier});
     }
   }
 }
