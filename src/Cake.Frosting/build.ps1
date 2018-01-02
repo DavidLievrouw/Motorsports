@@ -102,7 +102,7 @@ $Arguments = @{
 
 try {
     Push-Location
-    Set-Location src\build
+    Set-Location .
     Write-Host "Restoring packages..."
     Invoke-Expression "dotnet restore"
     if($LASTEXITCODE -eq 0) {
