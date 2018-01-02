@@ -23,4 +23,5 @@ build/deploy-out
 .dotnet
 tools
 src/version.props
-dist
+dist/
+pub/
