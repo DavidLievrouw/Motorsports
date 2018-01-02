@@ -8,22 +8,24 @@ using Cake.Frosting;
 namespace Build.Tasks {
   [TaskName(nameof(Publish))]
   [Dependency(typeof(InitVersion))]
-  public sealed class Publish : FrostingTask<Context> {
-    public override void Run(Context context) {
-      context.CleanDirectory(Lifetime._Props.PublishTargetDirectory);
-      context.DotNetCoreRestore(Lifetime._Props.ScaffoldingProjectFile.FullPath);
+  public sealed class Publish : FrostingTask<FrostingContext> {
+    public override void Run(FrostingContext context) {
+      var props = new PublishProps(context);
+
+      context.CleanDirectory(props.PublishTargetDirectory);
+      context.DotNetCoreRestore(props.ScaffoldingProjectFile.FullPath);
       context.DotNetCoreClean(
-        Lifetime._Props.ScaffoldingProjectFile.FullPath,
+        props.ScaffoldingProjectFile.FullPath,
         new DotNetCoreCleanSettings {
-          Verbosity = Lifetime._Props.DotNetCoreVerbosity,
-          Configuration = Lifetime._Props.Configuration
+          Verbosity = props.GlobalProps.DotNetCoreVerbosity,
+          Configuration = props.GlobalProps.Configuration
         });
       context.DotNetCorePublish(
-        Lifetime._Props.ScaffoldingProjectFile.FullPath,
+        props.ScaffoldingProjectFile.FullPath,
         new DotNetCorePublishSettings {
-          Configuration = Lifetime._Props.Configuration,
-          OutputDirectory = Lifetime._Props.PublishTargetDirectory,
-          Verbosity = Lifetime._Props.DotNetCoreVerbosity,
+          Configuration = props.GlobalProps.Configuration,
+          OutputDirectory = props.PublishTargetDirectory,
+          Verbosity = props.GlobalProps.DotNetCoreVerbosity,
           ArgumentCustomization = args => args.Append("--no-restore")
         });
     }
