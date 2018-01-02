@@ -92,7 +92,7 @@ namespace Motorsports.Scaffolding.Core {
         app.UseDeveloperExceptionPage();
         app.UseBrowserLink();
       }
-      else app.UseExceptionHandler("/Home/Error");
+      else app.UseExceptionHandler("/error");
 
       app
         .UseStaticFiles()
