@@ -29,7 +29,7 @@ namespace Build.Tasks {
             <Version>{0}</Version>
             <InformationalVersion>{1}</InformationalVersion>
           </PropertyGroup>
-        </Project>".Replace("			", "").Trim(),
+        </Project>".Trim(),
         assemblyVersion,
         assemblyVersion);
 
