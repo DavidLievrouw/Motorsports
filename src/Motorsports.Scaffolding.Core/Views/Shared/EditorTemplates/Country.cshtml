@@ -8,9 +8,6 @@
   var targetProperty = ViewData["TargetProperty"] ?? "Country";
 }
 
-<link href="/css/select2.css" rel="stylesheet" />
-<script src="/js/select2.full.js"></script>
-
 <select name="@targetProperty" id="slcCountries" class="form-control">
   @{
     foreach (var country in allCountries) {
