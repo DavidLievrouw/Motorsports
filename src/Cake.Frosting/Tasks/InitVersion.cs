@@ -1,18 +1,18 @@
+using Build.Infrastructure;
 using Cake.Common.Diagnostics;
 using Cake.FileHelpers;
 using Cake.Frosting;
 
 namespace Build.Tasks {
   [TaskName(nameof(InitVersion))]
-  public sealed class InitVersion : FrostingTask<FrostingContext> {
+  public sealed class InitVersion : FrostingTaskWithProps<InitVersionProps> {
     /// <summary>
     /// - Updates version.props
     /// - Adds key to _Props.Items: AssemblyVersion
     /// </summary>
-    public override void Run(FrostingContext context) {
-      var productVersion = context.FileReadText(Lifetime.GlobalOptions.VersionFile);
+    public override void RunCore(FrostingContext context) {
+      var productVersion = context.FileReadText(Props.VersionFile);
       var assemblyVersion = $"{productVersion}.0";
-      Lifetime.GlobalOptions.Items.Add("AssemblyVersion", assemblyVersion);
       context.Information("Product version   = " + productVersion);
       context.Information("Assembly version  = " + assemblyVersion);
       
@@ -27,7 +27,7 @@ namespace Build.Tasks {
         assemblyVersion,
         assemblyVersion);
 
-      context.FileWriteText(Lifetime.GlobalOptions.VersionPropsFile, content);
+      context.FileWriteText(Props.VersionPropsFile, content);
     }
   }
 }

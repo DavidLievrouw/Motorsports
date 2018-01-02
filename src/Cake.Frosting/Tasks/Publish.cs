@@ -1,3 +1,4 @@
+using Build.Infrastructure;
 using Cake.Common.IO;
 using Cake.Common.Tools.DotNetCore;
 using Cake.Common.Tools.DotNetCore.Clean;
@@ -8,24 +9,22 @@ using Cake.Frosting;
 namespace Build.Tasks {
   [TaskName(nameof(Publish))]
   [Dependency(typeof(InitVersion))]
-  public sealed class Publish : FrostingTask<FrostingContext> {
-    public override void Run(FrostingContext context) {
-      var props = new PublishProps(context);
-
-      context.CleanDirectory(props.PublishTargetDirectory);
-      context.DotNetCoreRestore(props.ScaffoldingProjectFile.FullPath);
+  public sealed class Publish : FrostingTaskWithProps<PublishProps> {
+    public override void RunCore(FrostingContext context) {
+      context.CleanDirectory(Props.PublishTargetDirectory);
+      context.DotNetCoreRestore(Props.ScaffoldingProjectFile.FullPath);
       context.DotNetCoreClean(
-        props.ScaffoldingProjectFile.FullPath,
+        Props.ScaffoldingProjectFile.FullPath,
         new DotNetCoreCleanSettings {
-          Verbosity = props.GlobalProps.DotNetCoreVerbosity,
-          Configuration = props.GlobalProps.Configuration
+          Verbosity = Props.GlobalProps.DotNetCoreVerbosity,
+          Configuration = Props.GlobalProps.Configuration
         });
       context.DotNetCorePublish(
-        props.ScaffoldingProjectFile.FullPath,
+        Props.ScaffoldingProjectFile.FullPath,
         new DotNetCorePublishSettings {
-          Configuration = props.GlobalProps.Configuration,
-          OutputDirectory = props.PublishTargetDirectory,
-          Verbosity = props.GlobalProps.DotNetCoreVerbosity,
+          Configuration = Props.GlobalProps.Configuration,
+          OutputDirectory = Props.PublishTargetDirectory,
+          Verbosity = Props.GlobalProps.DotNetCoreVerbosity,
           ArgumentCustomization = args => args.Append("--no-restore")
         });
     }

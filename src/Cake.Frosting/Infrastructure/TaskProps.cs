@@ -1,6 +1,7 @@
 using System;
+using Build.Tasks;
 
-namespace Build.Tasks {
+namespace Build.Infrastructure {
   public abstract class TaskProps {
     protected TaskProps(GlobalProps globalProps) {
       GlobalProps = globalProps ?? throw new ArgumentNullException(nameof(globalProps));
