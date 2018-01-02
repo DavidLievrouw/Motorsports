@@ -133,6 +133,9 @@ Task("Publish")
         Verbosity = DotNetCoreVerbosity,
         ArgumentCustomization = args => args.Append("--no-restore")
       });
+  })
+  .Does(() => {
+    if (PoolExists(IISApplicationPoolSettings.Name)) StartPool(IISApplicationPoolSettings.Name);
   });
 
 Task("RemoveIISApplicationIfExists")
