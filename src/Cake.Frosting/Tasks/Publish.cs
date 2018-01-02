@@ -10,22 +10,22 @@ namespace Build.Tasks {
   [Dependency(typeof(InitVersion))]
   [Dependency(typeof(RestorePackages))]
   public sealed class Publish : FrostingTaskWithProps<PublishProps> {
-    public override void Run(FrostingContext context) {
+    public override void Run(ICakeContext context) {
       var props = GetProperties(context);
 
       context.CleanDirectory(props.PublishTargetDirectory);
       context.DotNetCoreClean(
         props.ScaffoldingProjectFile.FullPath,
         new DotNetCoreCleanSettings {
-          Verbosity = props.GlobalProps.DotNetCoreVerbosity,
-          Configuration = props.GlobalProps.Configuration
+          Verbosity = props.DotNetCoreVerbosity,
+          Configuration = props.Configuration
         });
       context.DotNetCorePublish(
         props.ScaffoldingProjectFile.FullPath,
         new DotNetCorePublishSettings {
-          Configuration = props.GlobalProps.Configuration,
+          Configuration = props.Configuration,
           OutputDirectory = props.PublishTargetDirectory,
-          Verbosity = props.GlobalProps.DotNetCoreVerbosity,
+          Verbosity = props.DotNetCoreVerbosity,
           ArgumentCustomization = args => args.Append("--no-restore")
         });
     }

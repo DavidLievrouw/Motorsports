@@ -1,5 +1,6 @@
 using System;
 using Cake.Common.Diagnostics;
+using Cake.Core;
 using Cake.FileHelpers;
 using Cake.Frosting;
 
@@ -10,13 +11,13 @@ namespace Build.Tasks {
     /// - Updates version.props
     /// - Adds key to _Props.Items: AssemblyVersion
     /// </summary>
-    public override void Run(FrostingContext context) {
+    public override void Run(ICakeContext context) {
       var props = GetProperties(context);
 
       var productVersion = context.FileReadText(props.VersionFile);
       var assemblyVersion = $"{productVersion}.0";
 
-      props.GlobalProps.AssemblyVersion = new Version(assemblyVersion);
+      props.AssemblyVersion = new Version(assemblyVersion);
       
       context.Information("Product version   = " + productVersion);
       context.Information("Assembly version  = " + assemblyVersion);

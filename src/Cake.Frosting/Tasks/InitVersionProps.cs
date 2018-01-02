@@ -1,18 +1,18 @@
 using System;
 using Cake.Common.Diagnostics;
 using Cake.Common.IO;
+using Cake.Core;
 using Cake.Core.IO;
-using Cake.Frosting;
 
 namespace Build.Tasks {
-  public sealed class InitVersionProps : TaskProps {
-    readonly FrostingContext _context;
+  public sealed class InitVersionProps : GlobalProps {
+    readonly ICakeContext _context;
 
-    public InitVersionProps(FrostingContext context) : base(new GlobalProps(context)) {
+    public InitVersionProps(ICakeContext context) : base(context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
 
-      VersionFilePath = GlobalProps.RepoRootDirectoryPath + "/version.txt";
-      VersionPropsFilePath = GlobalProps.RepoRootDirectoryPath + "/version.props";
+      VersionFilePath = RepoRootDirectoryPath + "/version.txt";
+      VersionPropsFilePath = RepoRootDirectoryPath + "/version.props";
       
       _context.Information("Version file = " + VersionFile);
       _context.Information("Version props file = " + VersionPropsFilePath);
