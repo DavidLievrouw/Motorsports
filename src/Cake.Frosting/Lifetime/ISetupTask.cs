@@ -1,7 +1,8 @@
-﻿using Cake.Frosting;
+﻿using Cake.Core;
 
 namespace Build.Lifetime {
   public interface ISetupTask {
-    void Run(FrostingContext context);
+    void Run(ICakeContext context);
+    string Name { get; }
   }
 }
