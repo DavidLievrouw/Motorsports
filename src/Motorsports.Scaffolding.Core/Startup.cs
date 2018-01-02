@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -68,6 +69,18 @@ namespace Motorsports.Scaffolding.Core {
         new RandomHashedPasswordProvider(provider.GetRequiredService<IHashPasswordService>()),
         provider.GetRequiredService<IHashPasswordService>(),
         new UsernamePasswordCredentialsValidator()));
+
+      // Authentication
+      services
+        .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+        .AddCookie(
+          CookieAuthenticationDefaults.AuthenticationScheme,
+          options => {
+            options.ReturnUrlParameter = "returnUrl";
+            options.LoginPath = "/login";
+            options.LogoutPath = "/logout";
+            options.AccessDeniedPath = "/accessdenied";
+          });
     }
 
     public void Configure(IApplicationBuilder app, IHostingEnvironment env) {
@@ -79,9 +92,9 @@ namespace Motorsports.Scaffolding.Core {
       }
       else app.UseExceptionHandler("/Home/Error");
 
-      app.UseStaticFiles();
-
-      app.UseMvc(
+      app
+        .UseStaticFiles()
+        .UseMvc(
         routes => {
           routes.MapRoute(
             name: "default",
