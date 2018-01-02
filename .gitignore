@@ -20,3 +20,5 @@ node_modules/
 build/log
 build/build-out
 build/deploy-out
+.dotnet
+tools
