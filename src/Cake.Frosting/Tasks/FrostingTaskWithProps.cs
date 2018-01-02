@@ -2,9 +2,11 @@ using Cake.Core;
 using Cake.Frosting;
 
 namespace Build.Tasks {
-  public abstract class FrostingTaskWithProps<TProps> : FrostingTask<FrostingContext> where TProps : TaskProps {
+  public abstract class FrostingTaskWithProps<TProps> : FrostingTask<ICakeContext> where TProps : GlobalProps {
+    TProps _props;
+
     public TProps GetProperties(ICakeContext context) {
-      return  (TProps) typeof(TProps).GetConstructor(new[] {typeof(FrostingContext)}).Invoke(new [] { context });
+      return _props ?? (_props = context.GetProps<TProps>());
     }
   }
 }

@@ -2,14 +2,14 @@ using System;
 using Cake.Common.Diagnostics;
 using Cake.Common.IO;
 using Cake.Common.Tools.DotNetCore;
+using Cake.Core;
 using Cake.Core.IO;
-using Cake.Frosting;
 
 namespace Build.Tasks {
-  public sealed class GlobalProps {
-    readonly FrostingContext _context;
+  public class GlobalProps {
+    readonly ICakeContext _context;
 
-    public GlobalProps(FrostingContext context) {
+    public GlobalProps(ICakeContext context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
 
       ProductName = "Motorsports";

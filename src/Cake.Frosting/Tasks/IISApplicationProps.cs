@@ -1,20 +1,20 @@
 using System;
 using Cake.Common.IO;
+using Cake.Core;
 using Cake.Core.IO;
-using Cake.Frosting;
 using Cake.IIS;
 
 namespace Build.Tasks {
-  public sealed class IISApplicationProps : TaskProps {
-    readonly FrostingContext _context;
+  public sealed class IISApplicationProps : GlobalProps {
+    readonly ICakeContext _context;
 
-    public IISApplicationProps(FrostingContext context) : base(new GlobalProps(context)) {
+    public IISApplicationProps(ICakeContext context) : base(context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
 
-      PublishTargetDirectoryPath = GlobalProps.RepoRootDirectoryPath + "/pub";
+      PublishTargetDirectoryPath = RepoRootDirectoryPath + "/pub";
 
       IISApplicationPoolSettings = new ApplicationPoolSettings {
-        Name = GlobalProps.ProductName,
+        Name = ProductName,
         Autostart = true
       };
       IISApplicationSettings = new ApplicationSettings() {
