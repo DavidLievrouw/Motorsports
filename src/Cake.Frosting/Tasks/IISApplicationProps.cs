@@ -11,7 +11,7 @@ namespace Build.Tasks {
     public IISApplicationProps(ICakeContext context) : base(context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
 
-      PublishTargetDirectoryPath = RepoRootDirectoryPath + "/pub";
+      PublishTargetDirectoryPath = RepoRootDirectoryPath + "/dist";
 
       IISApplicationPoolSettings = new ApplicationPoolSettings {
         Name = ProductName,
