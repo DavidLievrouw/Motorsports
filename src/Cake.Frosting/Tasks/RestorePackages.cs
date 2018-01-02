@@ -1,5 +1,4 @@
-﻿using Build.Infrastructure;
-using Cake.Common.Tools.DotNetCore;
+﻿using Cake.Common.Tools.DotNetCore;
 using Cake.Frosting;
 
 namespace Build.Tasks {
