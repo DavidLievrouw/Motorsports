@@ -12,7 +12,7 @@ namespace Build.Tasks {
       _context = context ?? throw new ArgumentNullException(nameof(context));
 
       VersionFilePath = RepoRootDirectoryPath + "/version.txt";
-      VersionPropsFilePath = RepoRootDirectoryPath + "/version.props";
+      VersionPropsFilePath = SourceDirectoryPath + "/version.props";
       
       _context.Information("Version file = " + VersionFile);
       _context.Information("Version props file = " + VersionPropsFilePath);

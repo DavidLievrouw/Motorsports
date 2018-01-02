@@ -4,6 +4,8 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
 
+  <Import Project="../version.props" Condition="Exists('../version.props')" />
+
   <ItemGroup>
     <Content Remove="web.beforetransform.config" />
   </ItemGroup>
@@ -28,8 +30,6 @@
   <ItemGroup>
     <None Include="web.beforetransform.config" />
   </ItemGroup>
-
-  <Import Project="../version.props" Condition="Exists('../version.props')" />
 
   <!-- Transform web.config using web.beforetransform.config -->
   <Target Name="ApplyXdtConfigTransformBefore" BeforeTargets="_TransformWebConfig">
