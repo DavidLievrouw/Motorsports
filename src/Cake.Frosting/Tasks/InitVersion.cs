@@ -4,16 +4,15 @@ using Cake.Frosting;
 
 namespace Build.Tasks {
   [TaskName(nameof(InitVersion))]
-  public sealed class InitVersion : FrostingTask<Context> {
+  public sealed class InitVersion : FrostingTask<FrostingContext> {
     /// <summary>
     /// - Updates version.props
     /// - Adds key to _Props.Items: AssemblyVersion
     /// </summary>
-    public override void Run(Context context) {
-      var productVersion = context.FileReadText(Lifetime._Props.VersionFilePath);
-      const int buildNumber = 0;
-      var assemblyVersion = string.Format("{0}.{1}", productVersion, buildNumber.ToString());
-      Lifetime._Props.Items.Add("AssemblyVersion", assemblyVersion);
+    public override void Run(FrostingContext context) {
+      var productVersion = context.FileReadText(Lifetime.GlobalOptions.VersionFile);
+      var assemblyVersion = $"{productVersion}.0";
+      Lifetime.GlobalOptions.Items.Add("AssemblyVersion", assemblyVersion);
       context.Information("Product version   = " + productVersion);
       context.Information("Assembly version  = " + assemblyVersion);
       
@@ -28,7 +27,7 @@ namespace Build.Tasks {
         assemblyVersion,
         assemblyVersion);
 
-      context.FileWriteText("./version.props", content);
+      context.FileWriteText(Lifetime.GlobalOptions.VersionPropsFile, content);
     }
   }
 }

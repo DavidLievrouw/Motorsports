@@ -3,7 +3,7 @@ using Cake.Frosting;
 // ReSharper disable once CheckNamespace
 public class Program : IFrostingStartup {
   public void Configure(ICakeServices services) {
-    services.UseContext<Context>();
+    services.UseContext<FrostingContext>();
     services.UseLifetime<Lifetime>();
     services.UseWorkingDirectory("..");
   }
