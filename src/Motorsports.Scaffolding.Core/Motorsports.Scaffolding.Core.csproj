@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="web.beforetransform.config" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Dapper" Version="1.50.4" />
     <PackageReference Include="FluentValidation" Version="7.3.3" />
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.3" />
@@ -18,8 +22,23 @@
 
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.1" />
+    <DotNetCliToolReference Include="Microsoft.DotNet.Xdt.Tools" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="web.beforetransform.config" />
   </ItemGroup>
 
   <Import Project="../version.props" Condition="Exists('../version.props')" />
+
+  <!-- Transform web.config using web.beforetransform.config -->
+  <Target Name="ApplyXdtConfigTransformBefore" BeforeTargets="_TransformWebConfig">
+    <PropertyGroup>
+      <_SourceWebConfig>$(MSBuildProjectDirectory)\web.config</_SourceWebConfig>
+      <_XdtTransform>$(MSBuildProjectDirectory)\web.beforetransform.config</_XdtTransform>
+      <_TargetWebConfig>$(PublishDir)web.config</_TargetWebConfig>
+    </PropertyGroup>
+    <Exec Command="dotnet transform-xdt --xml &quot;$(_SourceWebConfig)&quot; --transform &quot;$(_XdtTransform)&quot; --output &quot;$(_TargetWebConfig)&quot;" Condition="Exists('$(_XdtTransform)')" />
+  </Target>
 
 </Project>
