@@ -8,6 +8,7 @@ namespace Motorsports.Scaffolding.Core.Security {
     public Guid Id { get; set; }
     public string Username { get; set; }
     public HashedPassword Password { get; set; }
+    public bool ForceChangePassword { get; set; }
     public string Title { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
@@ -31,6 +32,7 @@ namespace Motorsports.Scaffolding.Core.Security {
       return Id.Equals(other.Id) &&
              Username.Equals(other.Username) &&
              Equals(Password, other.Password) &&
+             ForceChangePassword == other.ForceChangePassword &&
              Title.Equals(other.Title) &&
              FirstName.Equals(other.FirstName) &&
              LastName.Equals(other.LastName) &&
@@ -45,6 +47,7 @@ namespace Motorsports.Scaffolding.Core.Security {
                    (Password != null
                      ? Password.GetHashCode()
                      : 0);
+        hashCode = (hashCode * 397) ^ ForceChangePassword.GetHashCode();
         hashCode = (hashCode * 397) ^ Title.GetHashCode();
         hashCode = (hashCode * 397) ^ FirstName.GetHashCode();
         hashCode = (hashCode * 397) ^ LastName.GetHashCode();
