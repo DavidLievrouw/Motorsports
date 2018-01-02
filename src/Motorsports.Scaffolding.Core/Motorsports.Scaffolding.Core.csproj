@@ -19,17 +19,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="wwwroot\css\select2.css" />
-    <None Include="wwwroot\css\select2.min.css" />
-    <None Include="wwwroot\js\select2.full.js" />
-    <None Include="wwwroot\js\select2.full.min.js" />
+    <None Include="wwwroot\lib\select2\dist\select2.css" />
+    <None Include="wwwroot\lib\select2\dist\select2.min.css" />
+    <None Include="wwwroot\lib\select2\dist\select2.full.js" />
+    <None Include="wwwroot\lib\select2\dist\select2.full.min.js" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="wwwroot\css\select2.css">
+    <Content Update="wwwroot\lib\select2\dist\select2.css">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\js\select2.full.js">
+    <Content Update="wwwroot\lib\select2\dist\select2.full.js">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
