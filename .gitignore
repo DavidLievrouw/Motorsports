@@ -25,3 +25,4 @@ tools
 src/version.props
 dist/
 pub/
+*.pubxml
