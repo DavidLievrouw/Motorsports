@@ -13,7 +13,7 @@ namespace Build.Tasks {
   [Dependency(typeof(RestorePackages))]
   public sealed class Publish : FrostingTask {
     public override void Run(ICakeContext context) {
-      var props = context.GetProps<PublishProps>();
+      var props = context.BuildProps<PublishProps>();
 
       context.CleanDirectory(props.PublishTargetDirectory);
       context.DotNetCoreClean(
