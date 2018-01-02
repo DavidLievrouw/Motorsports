@@ -4,12 +4,12 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>@ViewData["Title"] - Motorsports</title>
-  <link rel="stylesheet" href="~/css/site.css" />
-  <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css"/>
-  <link rel="stylesheet" href="~/lib/bootstrap-slider/dist/bootstrap-slider.css"/>
-  <link rel="stylesheet" href="~/lib/bootstrap-datetimepicker/dist/css/bootstrap-datetimepicker.min.css"/>
-  <link rel="stylesheet" href="~/lib/select2/dist/select2.css" />
-  <script src="~/lib/jquery/dist/jquery.js"></script>
+  <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+  <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" asp-append-version="true" />
+  <link rel="stylesheet" href="~/lib/bootstrap-slider/dist/bootstrap-slider.css" asp-append-version="true" />
+  <link rel="stylesheet" href="~/lib/bootstrap-datetimepicker/dist/css/bootstrap-datetimepicker.min.css" asp-append-version="true" />
+  <link rel="stylesheet" href="~/lib/select2/dist/select2.css" asp-append-version="true" />
+  <script src="~/lib/jquery/dist/jquery.js" asp-append-version="true"></script>
 </head>
 <body>
 @if (User.Identity.IsAuthenticated) {
@@ -36,13 +36,13 @@
   </footer>
 </div>
 
-<script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.js" asp-append-version="true"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
-<script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
-<script src="~/lib/bootstrap-slider/dist/bootstrap-slider.js"></script>
-<script src="~/lib/momentjs/dist/js/moment-with-locales.js"></script>
-<script src="~/lib/bootstrap-datetimepicker/dist/js/bootstrap-datetimepicker.min.js"></script>
-<script src="~/lib/select2/dist/select2.full.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.js" asp-append-version="true"></script>
+<script src="~/lib/bootstrap-slider/dist/bootstrap-slider.js" asp-append-version="true"></script>
+<script src="~/lib/momentjs/dist/js/moment-with-locales.js" asp-append-version="true"></script>
+<script src="~/lib/bootstrap-datetimepicker/dist/js/bootstrap-datetimepicker.min.js" asp-append-version="true"></script>
+<script src="~/lib/select2/dist/select2.full.js" asp-append-version="true"></script>
 
 @RenderSection("Scripts", required: false)
 
