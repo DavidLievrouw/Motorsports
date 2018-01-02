@@ -113,7 +113,7 @@ namespace Motorsports.Scaffolding.Core.Services {
     }
 
     public async Task<RoundDisplayModel> LoadDisplayModel(int roundId) {
-      var seasonDataModel = await _context.Round
+      var roundDataModel = await _context.Round
         .Include(r => r.RelatedSeason)
         .Include(r => r.RelatedRoundResult)
         .ThenInclude(rr => rr.RelatedWinningTeam)
@@ -123,9 +123,9 @@ namespace Motorsports.Scaffolding.Core.Services {
         .SingleOrDefaultAsync(m => m.Id == roundId);
 
       return new RoundDisplayModel(
-        seasonDataModel,
+        roundDataModel,
         _context.Season.Include(s => s.RelatedRounds).OrderBy(season => season.Sport),
-        _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
+        _context.Team.Where(team => team.Sport == roundDataModel.RelatedSeason.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
         _context.Status,
         _context.Venue.OrderBy(v => v.Name));
