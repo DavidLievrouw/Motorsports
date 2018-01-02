@@ -64,7 +64,7 @@ namespace Motorsports.Scaffolding.Core {
       services.TryAddSingleton(provider => new PasswordHashingConfig());
       services.TryAddSingleton<IHashPasswordService>(provider => new HashPasswordService(provider.GetRequiredService<PasswordHashingConfig>()));
       services.TryAddSingleton<IAuthenticateUserService<UsernamePasswordCredentials>>(provider => new UsernamePasswordAuthenticateUserService(
-        new UserDataService(provider.GetRequiredService<IQueryExecutor>(), provider.GetRequiredService<PasswordHashingConfig>()), 
+        new UserDataService(provider.GetRequiredService<IQueryExecutor>()), 
         new RandomHashedPasswordProvider(provider.GetRequiredService<IHashPasswordService>()),
         provider.GetRequiredService<IHashPasswordService>(),
         new UsernamePasswordCredentialsValidator()));
