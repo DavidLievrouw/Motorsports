@@ -5,7 +5,7 @@ using Cake.Common.Tools.DotNetCore;
 using Cake.Core.IO;
 using Cake.Frosting;
 
-namespace Build.Tasks {
+namespace Build.Infrastructure {
   public sealed class GlobalProps {
     readonly FrostingContext _context;
 
