@@ -4,10 +4,9 @@ using Cake.Frosting;
 
 namespace Build.Tasks {
   [TaskName(nameof(RestorePackages))]
-  public sealed class RestorePackages : FrostingTaskWithProps<RestorePackagesProps> {
+  public sealed class RestorePackages : FrostingTask {
     public override void Run(ICakeContext context) {
-      var props = GetProperties(context);
-
+      var props = context.GetProps<RestorePackagesProps>();
       context.DotNetCoreRestore(props.ScaffoldingProjectFile.FullPath);
     }
   }

@@ -5,9 +5,9 @@ using Cake.IIS;
 namespace Build.Tasks {
   [TaskName(nameof(CreateIISApplication))]
   [Dependency(typeof(RemoveIISApplication))]
-  public sealed class CreateIISApplication : FrostingTaskWithProps<IISApplicationProps> {
+  public sealed class CreateIISApplication : FrostingTask {
     public override void Run(ICakeContext context) {
-      var props = GetProperties(context);
+      var props = context.GetProps<IISApplicationProps>();
 
       context.CreatePool(props.IISApplicationPoolSettings);
       context.AddSiteApplication(props.IISApplicationSettings); 

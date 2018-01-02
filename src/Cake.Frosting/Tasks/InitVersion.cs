@@ -6,13 +6,13 @@ using Cake.Frosting;
 
 namespace Build.Tasks {
   [TaskName(nameof(InitVersion))]
-  public sealed class InitVersion : FrostingTaskWithProps<InitVersionProps> {
+  public sealed class InitVersion : FrostingTask {
     /// <summary>
     /// - Updates version.props
     /// - Adds key to _Props.Items: AssemblyVersion
     /// </summary>
     public override void Run(ICakeContext context) {
-      var props = GetProperties(context);
+      var props = context.GetProps<InitVersionProps>();
 
       var productVersion = context.FileReadText(props.VersionFile);
       var assemblyVersion = $"{productVersion}.0";

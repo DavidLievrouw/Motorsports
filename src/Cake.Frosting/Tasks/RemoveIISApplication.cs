@@ -5,5 +5,5 @@ namespace Build.Tasks {
   [Dependency(typeof(StopIISApplicationPoolIfExists))]
   [Dependency(typeof(RemoveIISApplicationIfExists))]
   [Dependency(typeof(RemoveIISApplicationPoolIfExists))]
-  public sealed class RemoveIISApplication : FrostingTaskWithProps<IISApplicationProps> { }
+  public sealed class RemoveIISApplication : FrostingTask { }
 }
