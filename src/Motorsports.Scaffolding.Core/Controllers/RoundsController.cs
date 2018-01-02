@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Motorsports.Scaffolding.Core.Models;
+using Motorsports.Scaffolding.Core.Models.DisplayModels;
 using Motorsports.Scaffolding.Core.Models.EditModels;
 using Motorsports.Scaffolding.Core.Models.Validators;
 using Motorsports.Scaffolding.Core.Services;
@@ -12,21 +13,31 @@ namespace Motorsports.Scaffolding.Core.Controllers {
   [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
   public class RoundsController : Controller {
     readonly IRoundService _roundService;
+    readonly ISeasonService _seasonService;
     readonly IModelStatePopulator<Round> _roundModelStatePopulator;
 
-    public RoundsController(IRoundService roundService, IModelStatePopulator<Round> roundModelStatePopulator) {
+    public RoundsController(
+      IRoundService roundService, 
+      ISeasonService seasonService,
+      IModelStatePopulator<Round> roundModelStatePopulator) {
       _roundService = roundService ?? throw new ArgumentNullException(nameof(roundService));
+      _seasonService = seasonService ?? throw new ArgumentNullException(nameof(seasonService));
       _roundModelStatePopulator = roundModelStatePopulator ?? throw new ArgumentNullException(nameof(roundModelStatePopulator));
     }
 
     // GET: /Rounds/Season/5
     public async Task<IActionResult> Index(int? id) {
       if (id == null) return NotFound();
-      
+
+      var season = await _seasonService.LoadDataRecord(id.Value);
       var roundsForSeason = await _roundService.LoadRoundList(id.Value);
       if (roundsForSeason == null) return NotFound();
 
-      return View(roundsForSeason);
+      var displayModel = new RoundsIndexDisplayModel {
+        Season = season,
+        Rounds = roundsForSeason
+      };
+      return View(displayModel);
     }
 
     // GET: Rounds/Details/5

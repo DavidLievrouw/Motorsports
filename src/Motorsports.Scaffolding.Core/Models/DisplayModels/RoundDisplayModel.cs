@@ -86,7 +86,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     [DisplayName("Winning team")]
     public int? WinningTeamId => DataModel.RelatedRoundResult?.WinningTeam;
 
-    [DisplayName("Winning participant(s)")]
+    [DisplayName("Winner(s)")]
     public int[] WinningParticipantIds { get; }
     
     [DisplayFormat(NullDisplayText = "/")]
