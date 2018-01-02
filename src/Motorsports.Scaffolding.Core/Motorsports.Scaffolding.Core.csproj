@@ -19,24 +19,6 @@
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="wwwroot\lib\select2\dist\select2.css" />
-    <None Include="wwwroot\lib\select2\dist\select2.min.css" />
-    <None Include="wwwroot\lib\select2\dist\select2.full.js" />
-    <None Include="wwwroot\lib\select2\dist\select2.full.min.js" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Update="wwwroot\lib\select2\dist\select2.css">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
-    <Content Update="wwwroot\lib\select2\dist\select2.full.js">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="wwwroot\images\" />
-  </ItemGroup>
+  <Import Project="../version.props" Condition="Exists('../version.props')" />
 
 </Project>
