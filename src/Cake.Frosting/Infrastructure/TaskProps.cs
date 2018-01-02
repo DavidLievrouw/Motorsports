@@ -1,5 +1,4 @@
 using System;
-using Build.Tasks;
 
 namespace Build.Infrastructure {
   public abstract class TaskProps {
