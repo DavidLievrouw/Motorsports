@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +11,7 @@ using Motorsports.Scaffolding.Core.Models.Validators;
 using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
+  [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
   public class VenuesController : Controller {
     readonly IVenueService _venueService;
     readonly IModelStatePopulator<Venue> _venueModelStatePopulator;
