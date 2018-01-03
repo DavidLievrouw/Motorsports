@@ -3,11 +3,11 @@
 namespace Motorsports.Scaffolding.Core.Models {
   public partial class Status {
     public Status() {
-      RelatedRoundResults = new HashSet<RoundResult>();
+      RelatedRounds = new HashSet<Round>();
     }
 
     public string Name { get; set; }
 
-    public ICollection<RoundResult> RelatedRoundResults { get; set; }
+    public ICollection<Round> RelatedRounds { get; set; }
   }
 }

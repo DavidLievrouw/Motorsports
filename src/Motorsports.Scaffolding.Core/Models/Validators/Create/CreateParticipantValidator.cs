@@ -20,10 +20,6 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
       RuleFor(_ => _.LastName)
         .NotEmpty()
         .WithMessage("A last name is required.");
-
-      RuleFor(_ => _.Country)
-        .NotEmpty()
-        .WithMessage("A country is required.");
       
       RuleFor(_ => _.Country)
         .NotEmpty()

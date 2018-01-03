@@ -13,10 +13,15 @@ namespace Motorsports.Scaffolding.Core.Models {
     public string Name { get; set; }
     public int Season { get; set; }
     public string Venue { get; set; }
+    public string Status { get; set; }
+    public decimal? Rating { get; set; }
+    public decimal? Rain { get; set; }
+    public int? WinningTeam { get; set; }
 
     public Season RelatedSeason { get; set; }
     public Venue RelatedVenue { get; set; }
-    public RoundResult RelatedRoundResult { get; set; }
     public ICollection<RoundWinner> RelatedRoundWinners { get; set; }
+    public Status RelatedStatus { get; set; }
+    public Team RelatedWinningTeam { get; set; }
   }
 }

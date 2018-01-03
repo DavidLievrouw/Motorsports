@@ -27,6 +27,12 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
         .Must(VenueExists)
         .WithMessage("The specified venue does not exist.");
       
+      RuleFor(_ => _.Status)
+        .NotEmpty()
+        .WithMessage("A status is required.")
+        .Must(StatusExists)
+        .WithMessage("The specified status does not exist.");
+
       RuleFor(_ => _.Season)
         .NotEmpty()
         .WithMessage("A season is required.")
@@ -41,7 +47,11 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
     bool VenueExists(Round round, string venue) {
       return _context.Venue.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, venue));
     }
-    
+        
+    bool StatusExists(Round round, string status) {
+      return _context.Status.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, status));
+    }
+
     bool SeasonExists(Round round, int season) {
       return _context.Season.Any(_ => _.Id == season);
     }

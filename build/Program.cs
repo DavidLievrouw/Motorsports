@@ -1,4 +1,3 @@
-using Build.Tasks;
 using Cake.Frosting;
 
 namespace Build {
@@ -6,8 +5,8 @@ namespace Build {
     public void Configure(ICakeServices services) {
       services.UseContext<FrostingContext>();
       services.UseLifetime<Lifetime.Lifetime>();
-      services.RegisterInstance(new RestorePackages());
-      services.UseWorkingDirectory("..");
+      services.UseTaskLifetime<Lifetime.TaskLifetime>();
+      services.UseWorkingDirectory(".");
     }
 
     public static int Main(string[] args) {

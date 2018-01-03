@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Motorsports.Scaffolding.Core", "Motorsports.Scaffolding.Core\Motorsports.Scaffolding.Core.csproj", "{CFC8D2E7-AD6E-4AA6-9D20-647C97C6C896}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Build", "Cake.Frosting\Build.csproj", "{3818A39F-EC24-4D7F-965B-9C259330995F}"
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "Db", "Db\Db.sqlproj", "{EDA0B22A-9312-435E-AAF3-F8BCB8CED2D7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,12 @@ Global
 		{CFC8D2E7-AD6E-4AA6-9D20-647C97C6C896}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CFC8D2E7-AD6E-4AA6-9D20-647C97C6C896}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CFC8D2E7-AD6E-4AA6-9D20-647C97C6C896}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3818A39F-EC24-4D7F-965B-9C259330995F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3818A39F-EC24-4D7F-965B-9C259330995F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3818A39F-EC24-4D7F-965B-9C259330995F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3818A39F-EC24-4D7F-965B-9C259330995F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EDA0B22A-9312-435E-AAF3-F8BCB8CED2D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EDA0B22A-9312-435E-AAF3-F8BCB8CED2D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EDA0B22A-9312-435E-AAF3-F8BCB8CED2D7}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{EDA0B22A-9312-435E-AAF3-F8BCB8CED2D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EDA0B22A-9312-435E-AAF3-F8BCB8CED2D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EDA0B22A-9312-435E-AAF3-F8BCB8CED2D7}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

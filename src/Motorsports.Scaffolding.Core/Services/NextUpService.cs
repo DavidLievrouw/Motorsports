@@ -31,9 +31,8 @@ namespace Motorsports.Scaffolding.Core.Services {
             FROM
 	            [dbo].[Round] R
 	            INNER JOIN [dbo].[Season] S ON S.[Id] = R.[Season]
-	            LEFT JOIN [dbo].[RoundResult] RR ON RR.[Round] = R.[Id]
             WHERE
-	            ISNULL(RR.[Status], 'Scheduled') = 'Scheduled'
+	            R.[Status] = 'Scheduled'
           )
           SELECT 
             P.[Sport],

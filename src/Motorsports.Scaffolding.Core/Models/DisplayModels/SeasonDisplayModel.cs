@@ -45,7 +45,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public IEnumerable<Participant> WinningParticipants => DataModel.RelatedSeasonWinners?.Select(sw => sw.RelatedParticipant);
     
     [DisplayFormat(NullDisplayText = "/")]
-    public Team WinningTeam => DataModel.RelatedSeasonResult?.RelatedWinningTeam;
+    public Team WinningTeam => DataModel.RelatedWinningTeam;
 
     [DisplayName("Start date")]
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", NullDisplayText = "/")]
@@ -60,7 +60,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public IEnumerable<Sport> AvailableSports { get; }
 
     [DisplayName("Winning team")]
-    public int? WinningTeamId => DataModel.RelatedSeasonResult?.WinningTeam;
+    public int? WinningTeamId => DataModel.WinningTeam;
 
     [DisplayName("Winner(s)")]
     public int[] WinningParticipantIds { get; }

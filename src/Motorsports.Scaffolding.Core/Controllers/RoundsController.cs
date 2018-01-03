@@ -59,18 +59,16 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     // POST: Rounds/Create/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(int? id,[Bind("Date,Number,Name,Venue")] Round round) {
+    public async Task<IActionResult> Create(int? id,[Bind("Season,Date,Number,Name,Venue,Status")] Round round) {
       if (id == null) return NotFound();
       
-      round.Season = id.Value;
-
       await _roundModelStatePopulator.ValidateAndPopulateForCreate(ModelState, round);
       if (ModelState.IsValid) {
         await _roundService.PersistRound(round);
         return RedirectToAction(nameof(Index), new { id = id.Value});
       }
 
-      var roundDisplayModel = await _roundService.CreateForRound(round, id.Value);
+      var roundDisplayModel = await _roundService.CreateForRound(round);
       if (roundDisplayModel == null) return NotFound();
       return View(roundDisplayModel);
     }
@@ -90,6 +88,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       if (id != round.Id) return NotFound();
 
       var roundForValidation = await _roundService.LoadDataRecord(id);
+      roundForValidation.Season = round.Season;
       roundForValidation.Name = round.Name;
       roundForValidation.Date = round.Date;
       roundForValidation.Number = round.Number;

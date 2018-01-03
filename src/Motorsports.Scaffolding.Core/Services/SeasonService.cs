@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Motorsports.Scaffolding.Core.Dapper;
 using Motorsports.Scaffolding.Core.Models;
 using Motorsports.Scaffolding.Core.Models.DisplayModels;
 using Motorsports.Scaffolding.Core.Models.EditModels;
@@ -20,16 +22,19 @@ namespace Motorsports.Scaffolding.Core.Services {
 
   public class SeasonService : ISeasonService {
     readonly MotorsportsContext _context;
+    readonly IQueryExecutor _queryExecutor;
 
-    public SeasonService(MotorsportsContext context) {
+    public SeasonService(
+      MotorsportsContext context,
+      IQueryExecutor queryExecutor) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
+      _queryExecutor = queryExecutor ?? throw new ArgumentNullException(nameof(queryExecutor));
     }
 
     public Task<Season> LoadDataRecord(int seasonId) {
       return _context.Season
         .Include(s => s.RelatedSport)
-        .Include(s => s.RelatedSeasonResult)
-        .ThenInclude(s => s.RelatedWinningTeam)
+        .Include(s => s.RelatedWinningTeam)
         .Include(s => s.RelatedSeasonWinners)
         .ThenInclude(sw => sw.RelatedParticipant)
         .Include(s => s.RelatedRounds)
@@ -48,8 +53,7 @@ namespace Motorsports.Scaffolding.Core.Services {
     public Task<List<SeasonDisplayModel>> LoadSeasonList() {
       return _context.Season
         .Include(s => s.RelatedSport)
-        .Include(s => s.RelatedSeasonResult)
-        .ThenInclude(s => s.RelatedWinningTeam)
+        .Include(s => s.RelatedWinningTeam)
         .Include(s => s.RelatedSeasonWinners)
         .ThenInclude(sw => sw.RelatedParticipant)
         .Include(s => s.RelatedRounds)
@@ -60,8 +64,7 @@ namespace Motorsports.Scaffolding.Core.Services {
     public async Task<SeasonDisplayModel> LoadDisplayModel(int seasonId) {
       var seasonDataModel = await _context.Season
         .Include(s => s.RelatedSport)
-        .Include(s => s.RelatedSeasonResult)
-        .ThenInclude(s => s.RelatedWinningTeam)
+        .Include(s => s.RelatedWinningTeam)
         .Include(s => s.RelatedSeasonWinners)
         .ThenInclude(sw => sw.RelatedParticipant)
         .Include(s => s.RelatedRounds)
@@ -78,43 +81,47 @@ namespace Motorsports.Scaffolding.Core.Services {
       if (season == null) throw new ArgumentNullException(nameof(season));
 
       // Find record to update
-      var seasonToUpdate = _context.Season
-        .Include(s => s.RelatedSeasonResult)
-        .AsNoTracking()
-        .Include(s => s.RelatedSeasonWinners)
-        .AsNoTracking()
-        .Single(s => s.Id == season.Id);
+      var seasonToUpdate = _context.Season.Single(s => s.Id == season.Id);
 
-      // Update winning team
-      if (seasonToUpdate.RelatedSeasonResult == null && season.WinningTeamId.HasValue ||
-          seasonToUpdate.RelatedSeasonResult?.WinningTeam != season.WinningTeamId) {
-        var resultToUpdate = _context.SeasonResult.SingleOrDefault(r => r.Season == seasonToUpdate.Id);
-        if (resultToUpdate == null) {
-          seasonToUpdate.RelatedSeasonResult = new SeasonResult {
-            Season = season.Id,
-            WinningTeam = season.WinningTeamId
-          };
-          _context.SeasonResult.Add(seasonToUpdate.RelatedSeasonResult);
-        }
-        else resultToUpdate.WinningTeam = season.WinningTeamId;
-      }
-
-      // Update winners
-      var winnersToRemove = _context.SeasonWinner.AsNoTracking().Where(sw => sw.Season == seasonToUpdate.Id);
-      var winnersToAdd = season.WinningParticipantIds.Select(
-        wp => new SeasonWinner {
-          Season = season.Id,
-          Participant = wp
-        });
-      _context.SeasonWinner.RemoveRange(winnersToRemove);
-      seasonToUpdate.RelatedSeasonWinners = winnersToAdd.ToList();
-
-      // Update label
+      // Update own props
       seasonToUpdate.Label = season.Label;
-
-      // Commit
+      seasonToUpdate.WinningTeam = season.WinningTeamId;
       _context.Update(seasonToUpdate);
       await _context.SaveChangesAsync();
+
+      // Update winners
+      using (var transactionalQueryExecutor = _queryExecutor.BeginTransaction()) {
+        try {
+          await transactionalQueryExecutor
+            .NewQuery("DELETE FROM [dbo].[SeasonWinner] WHERE [Season]=@Season")
+            .WithCommandType(CommandType.Text)
+            .WithParameters(new {Season = season.Id})
+            .ExecuteAsync();
+          var winnersToAdd = season.WinningParticipantIds.Select(
+            wp => new SeasonWinner {
+              Season = season.Id,
+              Participant = wp
+            });
+          foreach (var winner in winnersToAdd) {
+            await transactionalQueryExecutor
+              .NewQuery(
+                @"
+              INSERT INTO [dbo].[SeasonWinner]
+                         ([Season]
+                         ,[Participant])
+                   VALUES
+                         (@Season
+                         ,@Participant)")
+              .WithCommandType(CommandType.Text)
+              .WithParameters(new {Season = winner.Season, Participant = winner.Participant})
+              .ExecuteAsync();
+          }
+          transactionalQueryExecutor.Commit();
+        } catch {
+          transactionalQueryExecutor.Rollback();
+          throw;
+        }
+      }
     }
 
     public async Task PersistSeason(Season season) {

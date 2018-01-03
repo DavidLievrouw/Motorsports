@@ -1,0 +1,40 @@
+﻿IF COL_LENGTH('dbo.Season', 'WinningTeam') IS NULL BEGIN
+  ALTER TABLE [dbo].[Season] ADD [WinningTeam] INT NULL;
+END
+GO
+
+IF NOT EXISTS(SELECT * FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_NAME='FK_Team_Season') BEGIN
+  ALTER TABLE [dbo].[Season] ADD CONSTRAINT	FK_Team_Season FOREIGN KEY ([WinningTeam])
+  REFERENCES [dbo].[Team] (Id)
+  ON UPDATE NO ACTION 
+  ON DELETE NO ACTION;
+END
+GO
+
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'SeasonResult') BEGIN
+  UPDATE
+      [dbo].[Season]
+  SET
+      [dbo].[Season].[WinningTeam] = [dbo].[SeasonResult].[WinningTeam]
+  FROM
+      [dbo].[Season]
+      INNER JOIN [dbo].[SeasonResult] ON [dbo].[Season].[Id] = [dbo].[SeasonResult].[Season]
+  WHERE
+      [dbo].[Season].[WinningTeam] IS NULL;
+END
+GO
+
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_NAME='FK_Team_SeasonResult') BEGIN
+  ALTER TABLE [dbo].[SeasonResult] DROP CONSTRAINT FK_Team_SeasonResult;
+END
+GO
+
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_NAME='FK_Season_SeasonResult') BEGIN
+  ALTER TABLE [dbo].[SeasonResult] DROP CONSTRAINT FK_Season_SeasonResult;
+END
+GO
+
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'SeasonResult') BEGIN
+  DROP TABLE [dbo].[SeasonResult];
+END
+GO
