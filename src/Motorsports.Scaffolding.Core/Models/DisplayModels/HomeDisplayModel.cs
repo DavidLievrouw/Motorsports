@@ -10,7 +10,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
         .Select(n => new NextUpDisplayModel(n))
         .ToList();
       VeryNextUp = NextUpPerSport
-        .Where(n => n.Date.Date >= DateTime.Now.Date)
+        .Where(n => n.Date.Date <= DateTime.Now.Date)
         .OrderBy(n => n.Date)
         .FirstOrDefault();
     }
