@@ -8,13 +8,11 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
   public class RoundDisplayModel {
     public RoundDisplayModel(
       Round round,
-      IEnumerable<Season> seasons = null,
       IEnumerable<Team> teams = null,
       IEnumerable<Participant> participants = null,
       IEnumerable<Status> statuses = null,
       IEnumerable<Venue> venues = null) {
       DataModel = round ?? throw new ArgumentNullException(nameof(round));
-      AvailableSeasons = seasons;
       AvailableTeams = teams;
       AvailableParticipants = participants;
       AvailableStatuses = statuses;
@@ -79,7 +77,6 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public IEnumerable<Team> AvailableTeams { get; }
     public IEnumerable<Participant> AvailableParticipants { get; }
     public IEnumerable<Status> AvailableStatuses { get; }
-    public IEnumerable<Season> AvailableSeasons { get; }
     public IEnumerable<Venue> AvailableVenues { get; }
     public IEnumerable<RainLevel> AvailableRainLevels => Enum.GetValues(typeof(RainLevel)).OfType<RainLevel>();
 
