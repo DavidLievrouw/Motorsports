@@ -5,36 +5,34 @@ using Motorsports.Scaffolding.Core.Models.Validators.Create;
 using Motorsports.Scaffolding.Core.Models.Validators.Update;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators {
-  public interface IModelStatePopulator<in T> {
-    Task ValidateAndPopulateForCreate(ModelStateDictionary modelState, T instance);
-    Task ValidateAndPopulateForUpdate(ModelStateDictionary modelState, T instance);
+  public interface IModelStatePopulator<in TModel, in TKey> {
+    Task ValidateAndPopulateForCreate(ModelStateDictionary modelState, TModel instance);
+    Task ValidateAndPopulateForUpdate(ModelStateDictionary modelState, TKey key, TModel instance);
   }
 
-  public class ModelStatePopulator<T> : IModelStatePopulator<T> {
-    readonly ICreateValidator<T> _createValidator;
-    readonly IUpdateValidator<T> _updateValidator;
+  public class ModelStatePopulator<TModel, TKey> : IModelStatePopulator<TModel, TKey> {
+    readonly ICreateValidator<TModel> _createValidator;
+    readonly IUpdateValidator<TModel, TKey> _updateValidator;
 
-    public ModelStatePopulator(ICreateValidator<T> createValidator, IUpdateValidator<T> updateValidator) {
+    public ModelStatePopulator(ICreateValidator<TModel> createValidator, IUpdateValidator<TModel, TKey> updateValidator) {
       _createValidator = createValidator ?? throw new ArgumentNullException(nameof(createValidator));
       _updateValidator = updateValidator ?? throw new ArgumentNullException(nameof(updateValidator));
     }
 
-    public Task ValidateAndPopulateForCreate(ModelStateDictionary modelState, T instance) {
+    public async Task ValidateAndPopulateForCreate(ModelStateDictionary modelState, TModel instance) {
       if (modelState == null) throw new ArgumentNullException(nameof(modelState));
-      return Populate(modelState, instance, _createValidator);
+      ProcessResult(modelState, await _createValidator.ValidateAsync(instance));
     }
     
-    public Task ValidateAndPopulateForUpdate(ModelStateDictionary modelState, T instance) {
+    public async Task ValidateAndPopulateForUpdate(ModelStateDictionary modelState, TKey key, TModel instance) {
       if (modelState == null) throw new ArgumentNullException(nameof(modelState));
-      return Populate(modelState, instance, _updateValidator);
+      ProcessResult(modelState, await _updateValidator.ValidateAsync(key, instance));
     }
 
-    static async Task Populate(ModelStateDictionary modelState, T instance, IValidator<T> validator) {
-      var validationResult = await validator.ValidateAsync(instance);
-      if (!validationResult.IsValid) {
-        foreach (var validationError in validationResult.Errors) {
-          modelState.AddModelError(validationError.PropertyName, validationError.ErrorMessage);
-        }
+    static void ProcessResult(ModelStateDictionary modelState, ValidationResult validationResult) {
+      if (validationResult.IsValid) return;
+      foreach (var validationError in validationResult.Errors) {
+        modelState.AddModelError(validationError.PropertyName, validationError.ErrorMessage);
       }
     }
   }

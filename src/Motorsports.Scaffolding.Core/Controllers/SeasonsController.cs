@@ -12,9 +12,9 @@ namespace Motorsports.Scaffolding.Core.Controllers {
   [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
   public class SeasonsController : Controller {
     readonly ISeasonService _seasonService;
-    readonly IModelStatePopulator<Season> _seasonModelStatePopulator;
+    readonly IModelStatePopulator<Season, int> _seasonModelStatePopulator;
 
-    public SeasonsController(ISeasonService seasonService, IModelStatePopulator<Season> seasonModelStatePopulator) {
+    public SeasonsController(ISeasonService seasonService, IModelStatePopulator<Season, int> seasonModelStatePopulator) {
       _seasonService = seasonService ?? throw new ArgumentNullException(nameof(seasonService));
       _seasonModelStatePopulator = seasonModelStatePopulator ?? throw new ArgumentNullException(nameof(seasonModelStatePopulator));
     }
@@ -69,7 +69,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
       var seasonForValidation = await _seasonService.LoadDataRecord(id);
       seasonForValidation.Label = season.Label;
-      await _seasonModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, seasonForValidation);
+      await _seasonModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, id, seasonForValidation);
 
       if (ModelState.IsValid) {
         await _seasonService.UpdateSeason(season);

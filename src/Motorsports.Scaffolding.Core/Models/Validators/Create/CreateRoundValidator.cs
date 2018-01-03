@@ -3,7 +3,7 @@ using System.Linq;
 using FluentValidation;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
-  public class CreateRoundValidator : MotorsportsValidator<Round>, ICreateValidator<Round> {
+  public class CreateRoundValidator : MotorsportsValidator<Round, int>, ICreateValidator<Round> {
     readonly MotorsportsContext _context;
 
     public CreateRoundValidator(MotorsportsContext context) {

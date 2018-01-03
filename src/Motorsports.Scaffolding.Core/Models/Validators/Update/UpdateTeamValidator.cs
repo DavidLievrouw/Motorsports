@@ -3,7 +3,7 @@ using System.Linq;
 using FluentValidation;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
-  public class UpdateTeamValidator : MotorsportsValidator<Team>, IUpdateValidator<Team> {
+  public class UpdateTeamValidator : MotorsportsValidator<Team, int>, IUpdateValidator<Team, int> {
     readonly MotorsportsContext _context;
 
     public UpdateTeamValidator(MotorsportsContext context) {

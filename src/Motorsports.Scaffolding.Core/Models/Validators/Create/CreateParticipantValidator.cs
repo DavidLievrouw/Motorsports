@@ -3,7 +3,7 @@ using System.Linq;
 using FluentValidation;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
-  public class CreateParticipantValidator : MotorsportsValidator<Participant>, ICreateValidator<Participant> {
+  public class CreateParticipantValidator : MotorsportsValidator<Participant, int>, ICreateValidator<Participant> {
     readonly MotorsportsContext _context;
 
     public CreateParticipantValidator(MotorsportsContext context) {

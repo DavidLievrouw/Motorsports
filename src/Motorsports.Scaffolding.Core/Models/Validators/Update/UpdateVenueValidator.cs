@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Linq;
 using FluentValidation;
+using FluentValidation.Validators;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
-  public class UpdateVenueValidator : MotorsportsValidator<Venue>, IUpdateValidator<Venue> {
+  public class UpdateVenueValidator : MotorsportsValidator<Venue, string>, IUpdateValidator<Venue, string> {
     readonly MotorsportsContext _context;
 
     public UpdateVenueValidator(MotorsportsContext context) {
@@ -25,8 +26,9 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
         .When(_ => !string.IsNullOrEmpty(_.Name));
     }
 
-    bool MustExist(Venue venue, string name) {
-      return _context.Venue.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, name));
+    bool MustExist(Venue venue, string name, PropertyValidatorContext context) {
+      var existingKey = GetKey(context.ParentContext);
+      return _context.Venue.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, existingKey));
     }
     
     bool CountryExists(Venue venue, string country) {

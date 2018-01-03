@@ -13,9 +13,9 @@ namespace Motorsports.Scaffolding.Core.Controllers {
   [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
   public class ParticipantsController : Controller {
     readonly MotorsportsContext _context;
-    readonly IModelStatePopulator<Participant> _participantModelStatePopulator;
+    readonly IModelStatePopulator<Participant, int> _participantModelStatePopulator;
 
-    public ParticipantsController(MotorsportsContext context, IModelStatePopulator<Participant> participantModelStatePopulator) {
+    public ParticipantsController(MotorsportsContext context, IModelStatePopulator<Participant, int> participantModelStatePopulator) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
       _participantModelStatePopulator = participantModelStatePopulator ?? throw new ArgumentNullException(nameof(participantModelStatePopulator));
     }
@@ -74,7 +74,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     public async Task<IActionResult> Edit(int id, [Bind("Id,Title,FirstName,LastName,Country")] Participant participant) {
       if (id != participant.Id) return NotFound();
 
-      await _participantModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, participant);
+      await _participantModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, id, participant);
       if (ModelState.IsValid) {
         try {
           _context.Update(participant);

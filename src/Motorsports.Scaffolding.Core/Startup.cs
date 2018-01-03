@@ -43,22 +43,22 @@ namespace Motorsports.Scaffolding.Core {
       services.TryAddScoped<IRoundService>(provider => new RoundService(provider.GetService<MotorsportsContext>(), provider.GetRequiredService<IQueryExecutor>()));
 
       // Validators
-      services.TryAddScoped<IModelStatePopulator<Sport>>(provider => new ModelStatePopulator<Sport>(
+      services.TryAddScoped<IModelStatePopulator<Sport, string>>(provider => new ModelStatePopulator<Sport, string>(
         new CreateSportValidator(provider.GetService<MotorsportsContext>()),
         new UpdateSportValidator(provider.GetService<MotorsportsContext>())));
-      services.TryAddScoped<IModelStatePopulator<Venue>>(provider => new ModelStatePopulator<Venue>(
+      services.TryAddScoped<IModelStatePopulator<Venue, string>>(provider => new ModelStatePopulator<Venue, string>(
         new CreateVenueValidator(provider.GetService<MotorsportsContext>()),
         new UpdateVenueValidator(provider.GetService<MotorsportsContext>())));
-      services.TryAddScoped<IModelStatePopulator<Team>>(provider => new ModelStatePopulator<Team>(
+      services.TryAddScoped<IModelStatePopulator<Team, int>>(provider => new ModelStatePopulator<Team, int>(
         new CreateTeamValidator(provider.GetService<MotorsportsContext>()),
         new UpdateTeamValidator(provider.GetService<MotorsportsContext>())));
-      services.TryAddScoped<IModelStatePopulator<Participant>>(provider => new ModelStatePopulator<Participant>(
+      services.TryAddScoped<IModelStatePopulator<Participant, int>>(provider => new ModelStatePopulator<Participant, int>(
         new CreateParticipantValidator(provider.GetService<MotorsportsContext>()),
         new UpdateParticipantValidator(provider.GetService<MotorsportsContext>())));
-      services.TryAddScoped<IModelStatePopulator<Season>>(provider => new ModelStatePopulator<Season>(
+      services.TryAddScoped<IModelStatePopulator<Season, int>>(provider => new ModelStatePopulator<Season, int>(
         new CreateSeasonValidator(provider.GetService<MotorsportsContext>()),
         new UpdateSeasonValidator(provider.GetService<MotorsportsContext>())));
-      services.TryAddScoped<IModelStatePopulator<Round>>(provider => new ModelStatePopulator<Round>(
+      services.TryAddScoped<IModelStatePopulator<Round, int>>(provider => new ModelStatePopulator<Round, int>(
         new CreateRoundValidator(provider.GetService<MotorsportsContext>()),
         new UpdateRoundValidator(provider.GetService<MotorsportsContext>())));
 
