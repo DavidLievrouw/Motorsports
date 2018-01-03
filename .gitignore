@@ -26,3 +26,6 @@ src/version.props
 dist/
 pub/
 *.pubxml
+Import Schema Logs/
+*.dbmdl
+*.jfm

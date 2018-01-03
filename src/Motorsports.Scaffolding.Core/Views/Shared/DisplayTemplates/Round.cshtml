@@ -1,5 +1,3 @@
-﻿@using Motorsports.Scaffolding.Core.Models.EditModels
+﻿@model Round
 
-@model Round
-
-<div>@Model.Number - @Model.RelatedVenue.Name @Model.RelatedVenue.Country (@($"{Model.Date:d MMM yyyy}")) - @(Model.RelatedRoundResult?.Status ?? RoundStatus.Scheduled.ToString())</div>
+<div>@Model.Number - @Model.RelatedVenue.Name @Model.RelatedVenue.Country (@($"{Model.Date:d MMM yyyy}")) - @Model.Status</div>

@@ -1,5 +1,4 @@
 @echo off
-
 CLS
 ECHO.
 
@@ -27,8 +26,8 @@ setlocal & pushd .
 
 set "DIR=%~dp0"
 cd %~dp0
-TITLE Motorsports -- Create IIS application
+TITLE Motorsports -- RestorePackages
 cd ./build
-Powershell.exe -File build.ps1 -Target CreateIISApplication -Verbosity Normal
+Powershell.exe -File build.ps1 -Target RestorePackages -Verbosity Normal
 CHOICE /T 60 /C yYnN /CS /D y  /M "Should this window close? [Default y, you have 60 seconds]:"
 if errorlevel 2 pause

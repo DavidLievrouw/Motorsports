@@ -7,10 +7,8 @@ namespace Motorsports.Scaffolding.Core.Models {
     public virtual DbSet<Country> Country { get; set; }
     public virtual DbSet<Participant> Participant { get; set; }
     public virtual DbSet<Round> Round { get; set; }
-    public virtual DbSet<RoundResult> RoundResult { get; set; }
     public virtual DbSet<RoundWinner> RoundWinner { get; set; }
     public virtual DbSet<Season> Season { get; set; }
-    public virtual DbSet<SeasonResult> SeasonResult { get; set; }
     public virtual DbSet<SeasonWinner> SeasonWinner { get; set; }
     public virtual DbSet<Sport> Sport { get; set; }
     public virtual DbSet<Status> Status { get; set; }
@@ -85,37 +83,26 @@ namespace Motorsports.Scaffolding.Core.Models {
             .HasForeignKey(d => d.Venue)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_Venue_Round");
-        });
-
-      modelBuilder.Entity<RoundResult>(
-        entity => {
-          entity.HasKey(e => e.Round);
-
-          entity.Property(e => e.Round).ValueGeneratedNever();
 
           entity.Property(e => e.Rain).HasColumnType("decimal(1, 0)");
 
           entity.Property(e => e.Rating).HasColumnType("decimal(2, 1)");
 
           entity.Property(e => e.Status)
+            .HasDefaultValue("Scheduled")
             .IsRequired()
             .HasMaxLength(20);
 
           entity.HasOne(d => d.RelatedStatus)
-            .WithMany(p => p.RelatedRoundResults)
+            .WithMany(p => p.RelatedRounds)
             .HasForeignKey(d => d.Status)
             .OnDelete(DeleteBehavior.ClientSetNull)
-            .HasConstraintName("FK_Status_RoundResult");
-
-          entity.HasOne(d => d.RelatedRound)
-            .WithOne(p => p.RelatedRoundResult)
-            .HasForeignKey<RoundResult>(d => d.Round)
-            .HasConstraintName("FK_Round_RoundResult");
+            .HasConstraintName("FK_Status_Round");
 
           entity.HasOne(d => d.RelatedWinningTeam)
-            .WithMany(p => p.RelatedRoundResults)
+            .WithMany(p => p.RelatedRounds)
             .HasForeignKey(d => d.WinningTeam)
-            .HasConstraintName("FK_Team_RoundResult");
+            .HasConstraintName("FK_Team_Round");
         });
 
       modelBuilder.Entity<RoundWinner>(
@@ -144,23 +131,11 @@ namespace Motorsports.Scaffolding.Core.Models {
             .HasForeignKey(d => d.Sport)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_Sport_Season");
-        });
-
-      modelBuilder.Entity<SeasonResult>(
-        entity => {
-          entity.HasKey(e => e.Season);
-
-          entity.Property(e => e.Season).ValueGeneratedNever();
-
-          entity.HasOne(d => d.RelatedSeason)
-            .WithOne(p => p.RelatedSeasonResult)
-            .HasForeignKey<SeasonResult>(d => d.Season)
-            .HasConstraintName("FK_Season_SeasonResult");
 
           entity.HasOne(d => d.RelatedWinningTeam)
-            .WithMany(p => p.RelatedSeasonResults)
+            .WithMany(p => p.RelatedSeasons)
             .HasForeignKey(d => d.WinningTeam)
-            .HasConstraintName("FK_Team_SeasonResult");
+            .HasConstraintName("FK_Team_Season");
         });
 
       modelBuilder.Entity<SeasonWinner>(

@@ -66,14 +66,14 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       set => DataModel.RelatedVenue = value;
     }
 
-    public string Status => DataModel.RelatedRoundResult?.Status ?? RoundStatus.Scheduled.ToString();
+    public string Status => DataModel.Status;
     
     [DisplayFormat(NullDisplayText = "?")]
-    public short? Rating => (short?) DataModel.RelatedRoundResult?.Rating;
+    public short? Rating => (short?) DataModel.Rating;
 
     [DisplayFormat(NullDisplayText = "?")]
-    public RainLevel? Rain => DataModel.RelatedRoundResult?.Rain.HasValue ?? false
-      ? Enum.Parse<RainLevel>(Enum.GetName(typeof(RainLevel), (int)DataModel.RelatedRoundResult.Rain))
+    public RainLevel? Rain => DataModel.Rain.HasValue
+      ? Enum.Parse<RainLevel>(Enum.GetName(typeof(RainLevel), (int)DataModel.Rain))
       : new RainLevel?();
 
     public IEnumerable<Team> AvailableTeams { get; }
@@ -84,13 +84,13 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public IEnumerable<RainLevel> AvailableRainLevels => Enum.GetValues(typeof(RainLevel)).OfType<RainLevel>();
 
     [DisplayName("Winning team")]
-    public int? WinningTeamId => DataModel.RelatedRoundResult?.WinningTeam;
+    public int? WinningTeamId => DataModel.WinningTeam;
 
     [DisplayName("Winner(s)")]
     public int[] WinningParticipantIds { get; }
     
     [DisplayFormat(NullDisplayText = "/")]
-    public Team WinningTeam => DataModel.RelatedRoundResult?.RelatedWinningTeam;
+    public Team WinningTeam => DataModel.RelatedWinningTeam;
 
     [DisplayFormat(NullDisplayText = "/")]
     public IEnumerable<Participant> WinningParticipants => DataModel.RelatedRoundWinners?.Select(rw => rw.RelatedParticipant);

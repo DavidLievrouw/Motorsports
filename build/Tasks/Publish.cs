@@ -1,3 +1,4 @@
+using Build.Lifetime;
 using Cake.Common.Diagnostics;
 using Cake.Common.IO;
 using Cake.Common.Tools.DotNetCore;
@@ -8,7 +9,7 @@ using Cake.Frosting;
 
 namespace Build.Tasks {
   [TaskName(nameof(Publish))]
-  [Dependency(typeof(StopIISApplicationPoolIfExists))]
+  [TaskLifetime(typeof(PublishTaskLifetime))]
   [Dependency(typeof(InitVersion))]
   [Dependency(typeof(RestorePackages))]
   public sealed class Publish : FrostingTask {

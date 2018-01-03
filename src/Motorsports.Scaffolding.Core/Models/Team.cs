@@ -3,8 +3,8 @@
 namespace Motorsports.Scaffolding.Core.Models {
   public partial class Team {
     public Team() {
-      RelatedRoundResults = new HashSet<RoundResult>();
-      RelatedSeasonResults = new HashSet<SeasonResult>();
+      RelatedRounds = new HashSet<Round>();
+      RelatedSeasons = new HashSet<Season>();
     }
 
     public int Id { get; set; }
@@ -14,7 +14,7 @@ namespace Motorsports.Scaffolding.Core.Models {
 
     public Country RelatedCountry { get; set; }
     public Sport RelatedSport { get; set; }
-    public ICollection<RoundResult> RelatedRoundResults { get; set; }
-    public ICollection<SeasonResult> RelatedSeasonResults { get; set; }
+    public ICollection<Round> RelatedRounds { get; set; }
+    public ICollection<Season> RelatedSeasons { get; set; }
   }
 }
