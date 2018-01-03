@@ -14,12 +14,12 @@ namespace Motorsports.Scaffolding.Core.Controllers {
   public class SportsController : Controller {
     readonly MotorsportsContext _context;
     readonly ISportService _sportService;
-    readonly IModelStatePopulator<Sport> _sportModelStatePopulator;
+    readonly IModelStatePopulator<Sport, string> _sportModelStatePopulator;
 
     public SportsController(
       MotorsportsContext context, 
       ISportService sportService,
-      IModelStatePopulator<Sport> sportModelStatePopulator) {
+      IModelStatePopulator<Sport, string> sportModelStatePopulator) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
       _sportService = sportService ?? throw new ArgumentNullException(nameof(sportService));
       _sportModelStatePopulator = sportModelStatePopulator ?? throw new ArgumentNullException(nameof(sportModelStatePopulator));
@@ -72,7 +72,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(string id, [Bind("Name,FullName")] Sport sport) {
-      await _sportModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, sport);
+      await _sportModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, id, sport);
       if (ModelState.IsValid) {
         try {
           // EF does not allow updating the primary key.

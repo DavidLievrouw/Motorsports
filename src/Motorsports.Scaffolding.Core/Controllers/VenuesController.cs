@@ -14,13 +14,13 @@ namespace Motorsports.Scaffolding.Core.Controllers {
   [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
   public class VenuesController : Controller {
     readonly IVenueService _venueService;
-    readonly IModelStatePopulator<Venue> _venueModelStatePopulator;
+    readonly IModelStatePopulator<Venue, string> _venueModelStatePopulator;
     readonly MotorsportsContext _context;
 
     public VenuesController(
       MotorsportsContext context,
       IVenueService venueService,
-      IModelStatePopulator<Venue> venueModelStatePopulator) {
+      IModelStatePopulator<Venue, string> venueModelStatePopulator) {
       _venueService = venueService ?? throw new ArgumentNullException(nameof(venueService));
       _venueModelStatePopulator = venueModelStatePopulator ?? throw new ArgumentNullException(nameof(venueModelStatePopulator));
       _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -78,7 +78,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(string id, [Bind("Name,Country")] Venue venue) {
-      await _venueModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, venue);
+      await _venueModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, id, venue);
       if (ModelState.IsValid) {
         try {
           // EF does not allow updating the primary key.

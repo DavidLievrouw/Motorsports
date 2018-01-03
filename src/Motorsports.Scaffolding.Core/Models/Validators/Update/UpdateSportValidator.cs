@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Linq;
 using FluentValidation;
+using FluentValidation.Validators;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
-  public class UpdateSportValidator : MotorsportsValidator<Sport>, IUpdateValidator<Sport> {
+  public class UpdateSportValidator : MotorsportsValidator<Sport, string>, IUpdateValidator<Sport, string> {
     readonly MotorsportsContext _context;
 
     public UpdateSportValidator(MotorsportsContext context) {
@@ -19,8 +20,9 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
         .When(_ => !string.IsNullOrEmpty(_.Name));
     }
 
-    bool MustExist(Sport sport, string name) {
-      return _context.Sport.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, name));
+    bool MustExist(Sport sport, string name, PropertyValidatorContext context) {
+      var existingKey = GetKey(context.ParentContext);
+      return _context.Sport.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, existingKey));
     }
   }
 }

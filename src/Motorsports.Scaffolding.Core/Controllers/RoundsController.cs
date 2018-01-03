@@ -14,12 +14,12 @@ namespace Motorsports.Scaffolding.Core.Controllers {
   public class RoundsController : Controller {
     readonly IRoundService _roundService;
     readonly ISeasonService _seasonService;
-    readonly IModelStatePopulator<Round> _roundModelStatePopulator;
+    readonly IModelStatePopulator<Round, int> _roundModelStatePopulator;
 
     public RoundsController(
       IRoundService roundService, 
       ISeasonService seasonService,
-      IModelStatePopulator<Round> roundModelStatePopulator) {
+      IModelStatePopulator<Round, int> roundModelStatePopulator) {
       _roundService = roundService ?? throw new ArgumentNullException(nameof(roundService));
       _seasonService = seasonService ?? throw new ArgumentNullException(nameof(seasonService));
       _roundModelStatePopulator = roundModelStatePopulator ?? throw new ArgumentNullException(nameof(roundModelStatePopulator));
@@ -84,7 +84,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     // POST: Rounds/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id,[Bind("Id,Name,Date,Number,Venue,Rain,Rating,Status,WinningTeamId,WinningParticipantIds[]")] [ModelBinder(typeof(RoundEditModel.RoundEditModelBinder))] RoundEditModel round) {
+    public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Date,Number,Venue,Rain,Rating,Status,WinningTeamId,WinningParticipantIds[]")] [ModelBinder(typeof(RoundEditModel.RoundEditModelBinder))] RoundEditModel round) {
       if (id != round.Id) return NotFound();
 
       var roundForValidation = await _roundService.LoadDataRecord(id);
@@ -93,7 +93,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       roundForValidation.Date = round.Date;
       roundForValidation.Number = round.Number;
       roundForValidation.Venue = round.Venue;
-      await _roundModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, roundForValidation);
+      await _roundModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, id, roundForValidation);
       
       if (ModelState.IsValid) {
         await _roundService.UpdateRound(round);
