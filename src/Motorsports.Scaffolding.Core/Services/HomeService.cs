@@ -58,22 +58,22 @@ namespace Motorsports.Scaffolding.Core.Services {
 
     public async Task<HomeDisplayModel> GetHomeDisplayModel() {
       var roundsNextUp = (await GetRoundsNextUp()).ToList();
+      var roundsNextUpDisplayModels = roundsNextUp
+        .OrderBy(n => n.Date)
+        .Select(n => new NextUpDisplayModel(n, roundsNextUp))
+        .ToList();
+      var veryNextUp = roundsNextUpDisplayModels
+        .FirstOrDefault(n => n.IsVeryNextUp);
       var allSeasons = await _context.Season
         .Include(s => s.RelatedSport)
         .Include(s => s.RelatedRounds)
         .Select(s => new HomeDisplayModel.SeasonDisplayModelForHome(s))
         .ToListAsync();
-      return new HomeDisplayModel() {
-        NextUpPerSport = roundsNextUp
-          .OrderBy(n => n.Date)
-          .Select(n => new NextUpDisplayModel(n))
+      return new HomeDisplayModel {
+        VeryNextUp = veryNextUp,
+        NextUpPerSport = roundsNextUpDisplayModels
+          .Where(n => veryNextUp == null || n != veryNextUp)
           .ToList(),
-        VeryNextUp = roundsNextUp
-          .OrderBy(n => n.Date)
-          .Select(n => new NextUpDisplayModel(n))
-          .Where(n => n.Date.Date <= DateTime.Now.Date)
-          .OrderBy(n => n.Date)
-          .FirstOrDefault(),
         LatestSeasons = allSeasons
           .GroupBy(s => s.RelatedSport)
           .Select(

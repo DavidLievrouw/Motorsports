@@ -9,11 +9,11 @@
     <h4>Next up</h4>
   </blockquote>
   @if (Model.HasVeryNextUp) {
-    @Html.Partial("VeryNextUp", Model.VeryNextUp)
+    @Html.Partial("NextUp", Model.VeryNextUp)
   }
   @if (Model.HasNextUpPerSport) {
     foreach (var nextUp in Model.NextUpPerSport) {
-      @Html.Partial("NextUpForSport", nextUp)
+      @Html.Partial("NextUp", nextUp)
     }
   }
   else {
