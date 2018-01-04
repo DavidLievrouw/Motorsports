@@ -54,40 +54,31 @@ div .formLabelWithLink {
   justify-content: space-between;
 }
 
-div .veryNextUp {
-  margin: 20px;
+div .nextUp {
+  margin-bottom: 20px;
   padding: 10px;
+}
+
+div .veryNextUp {
   background: #eee;
 }
 
-div .nextUp {
-  margin: 20px;
-  padding: 10px;
-}
-
-div .veryNextUp .veryNextUpTitle {
+div .nextUp .nextUpTitle {
   font-weight: bold;
   font-size: 20px;
   display: inline-grid;
 }
 
-div .nextUp .nextUpTitle {
-  display: table-row;
+div .nextUpSport {
+  font-style: italic;
+  text-align: center;
+  font-weight: bolder;
 }
 
-div .nextUp .nextUpSport {
-  display: table-cell;
-  width: 100px;
-}
-
-div .veryNextUpTagLine {
+div .nextUpTagLine {
   font-size: 18px;
   font-weight: 500;
   text-align: center;
-}
-
-div .veryNextUpLink {
-  float: right;
 }
 
 div .nextUpDetail {
