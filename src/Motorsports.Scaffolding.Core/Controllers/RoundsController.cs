@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -35,7 +36,8 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
       var displayModel = new RoundsIndexDisplayModel {
         Season = season,
-        Rounds = roundsForSeason
+        Rounds = roundsForSeason,
+        LastRound = roundsForSeason.LastOrDefault()
       };
       return View(displayModel);
     }
