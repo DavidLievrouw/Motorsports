@@ -78,19 +78,17 @@ namespace Motorsports.Scaffolding.Core.Services {
     }
 
     public async Task<RoundDisplayModel> GetNew(int seasonId) {
-      var lastRoundDateInSeason = await _context.Round
+      var lastRoundInSeason = await _context.Round
         .Where(r => r.Season == seasonId)
         .OrderByDescending(r => r.Date)
-        .Select(r => r.Date)
         .FirstOrDefaultAsync();
       return new RoundDisplayModel(
         new Round {
-          Date = lastRoundDateInSeason == default(DateTime)
-            ? DateTime.Now.Date
-            : lastRoundDateInSeason,
+          Date = lastRoundInSeason?.Date ?? DateTime.Now.Date,
           Season = seasonId,
           RelatedSeason = _context.Season.Include(s => s.RelatedRounds).Single(s => s.Id == seasonId),
-          Status = RoundStatus.Scheduled.ToString()
+          Status = RoundStatus.Scheduled.ToString(),
+          Number = (short)((lastRoundInSeason?.Number ?? 0) + 1),
         },
         _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
