@@ -89,7 +89,8 @@ namespace Motorsports.Scaffolding.Core.Services {
             ? DateTime.Now.Date
             : lastRoundDateInSeason,
           Season = seasonId,
-          RelatedSeason = _context.Season.Include(s => s.RelatedRounds).Single(s => s.Id == seasonId)
+          RelatedSeason = _context.Season.Include(s => s.RelatedRounds).Single(s => s.Id == seasonId),
+          Status = RoundStatus.Scheduled.ToString()
         },
         _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
