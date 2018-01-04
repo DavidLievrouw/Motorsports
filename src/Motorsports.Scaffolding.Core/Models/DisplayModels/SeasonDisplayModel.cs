@@ -41,10 +41,10 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       set => DataModel.RelatedSport = value;
     }
     
-    [DisplayFormat(NullDisplayText = "/")]
+    [DisplayFormat(NullDisplayText = "?")]
     public IEnumerable<Participant> WinningParticipants => DataModel.RelatedSeasonWinners?.Select(sw => sw.RelatedParticipant);
     
-    [DisplayFormat(NullDisplayText = "/")]
+    [DisplayFormat(NullDisplayText = "?")]
     public Team WinningTeam => DataModel.RelatedWinningTeam;
 
     [DisplayName("Start date")]

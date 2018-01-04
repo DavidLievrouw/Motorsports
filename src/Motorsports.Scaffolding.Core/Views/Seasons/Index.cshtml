@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Motorsports.Scaffolding.Core.Models.DisplayModels.SeasonDisplayModel>
+﻿@model Motorsports.Scaffolding.Core.Models.DisplayModels.SeasonsIndexDisplayModel
 
 @{
   ViewData["Title"] = "Index";
@@ -9,58 +9,62 @@
 <p>
   <a asp-action="Create">Create New</a>
 </p>
-<table class="table">
-  <thead>
+
+@foreach (var seasonsForSport in Model.SeasonsPerSport) {
+  <blockquote><h4>@seasonsForSport.Key.FullName</h4></blockquote>
+  <table class="table">
+    <thead>
     <tr>
       <th>
-        @Html.DisplayNameFor(model => model.Sport)
+        @Html.DisplayNameFor(model => seasonsForSport.Value.First().Sport)
       </th>
       <th>
-        @Html.DisplayNameFor(model => model.Label)
+        @Html.DisplayNameFor(model => seasonsForSport.Value.First().Label)
       </th>
       <th>
-        @Html.DisplayNameFor(model => model.StartDate)
+        @Html.DisplayNameFor(model => seasonsForSport.Value.First().StartDate)
       </th>
       <th>
-        @Html.DisplayNameFor(model => model.EndDate)
+        @Html.DisplayNameFor(model => seasonsForSport.Value.First().EndDate)
       </th>
       <th>
-        @Html.DisplayNameFor(model => model.WinningParticipantIds)
+        @Html.DisplayNameFor(model => seasonsForSport.Value.First().WinningParticipantIds)
       </th>
       <th>
-        @Html.DisplayNameFor(model => model.WinningTeamId)
+        @Html.DisplayNameFor(model => seasonsForSport.Value.First().WinningTeamId)
       </th>
       <th></th>
     </tr>
-  </thead>
-  <tbody>
-  @foreach (var item in Model) {
-    <tr>
-      <td>
-        @Html.DisplayFor(modelItem => item.RelatedSport.Name)
-      </td>
-      <td>
-        @Html.DisplayFor(modelItem => item.Label)
-      </td>
-      <td>
-        @Html.DisplayFor(modelItem => item.StartDate)
-      </td>
-      <td>
-        @Html.DisplayFor(modelItem => item.EndDate)
-      </td>
-      <td>
-        @Html.DisplayFor(modelItem => item.WinningParticipants, nameof(item.WinningParticipants))
-      </td>
-      <td>
-        @Html.DisplayFor(modelItem => item.WinningTeam, nameof(item.WinningTeam))
-      </td>
-      <td>
-        <a asp-action="Index" asp-controller="Rounds" asp-route-id="@item.Id">Rounds</a> |
-        <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-        <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-        <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-      </td>
-    </tr>
-  }
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+    @foreach (var item in seasonsForSport.Value) {
+      <tr>
+        <td>
+          @Html.DisplayFor(modelItem => item.RelatedSport.Name)
+        </td>
+        <td>
+          @Html.DisplayFor(modelItem => item.Label)
+        </td>
+        <td>
+          @Html.DisplayFor(modelItem => item.StartDate)
+        </td>
+        <td>
+          @Html.DisplayFor(modelItem => item.EndDate)
+        </td>
+        <td>
+          @Html.DisplayFor(modelItem => item.WinningParticipants, nameof(item.WinningParticipants))
+        </td>
+        <td>
+          @Html.DisplayFor(modelItem => item.WinningTeam, nameof(item.WinningTeam))
+        </td>
+        <td>
+          <a asp-action="Index" asp-controller="Rounds" asp-route-id="@item.Id">Rounds</a> |
+          <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+          <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+          <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+        </td>
+      </tr>
+    }
+    </tbody>
+  </table>
+}

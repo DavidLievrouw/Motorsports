@@ -86,10 +86,10 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     [DisplayName("Winner(s)")]
     public int[] WinningParticipantIds { get; }
     
-    [DisplayFormat(NullDisplayText = "/")]
+    [DisplayFormat(NullDisplayText = "?")]
     public Team WinningTeam => DataModel.RelatedWinningTeam;
 
-    [DisplayFormat(NullDisplayText = "/")]
+    [DisplayFormat(NullDisplayText = "?")]
     public IEnumerable<Participant> WinningParticipants => DataModel.RelatedRoundWinners?.Select(rw => rw.RelatedParticipant);
   }
 }

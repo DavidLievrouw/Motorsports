@@ -13,7 +13,7 @@ namespace Motorsports.Scaffolding.Core.Services {
   public interface ISeasonService {
     Task<Season> LoadDataRecord(int seasonId);
     Task<SeasonDisplayModel> GetNew();
-    Task<List<SeasonDisplayModel>> LoadSeasonList();
+    Task<SeasonsIndexDisplayModel> LoadSeasonList();
     Task<SeasonDisplayModel> LoadDisplayModel(int seasonId);
     Task UpdateSeason(SeasonEditModel season);
     Task PersistSeason(Season season);
@@ -50,8 +50,8 @@ namespace Motorsports.Scaffolding.Core.Services {
           _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
 
-    public Task<List<SeasonDisplayModel>> LoadSeasonList() {
-      return _context.Season
+    public async Task<SeasonsIndexDisplayModel> LoadSeasonList() {
+      var allSeasons = await _context.Season
         .Include(s => s.RelatedSport)
         .Include(s => s.RelatedWinningTeam)
         .Include(s => s.RelatedSeasonWinners)
@@ -59,6 +59,17 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Include(s => s.RelatedRounds)
         .Select(s => new SeasonDisplayModel(s, null, null, null))
         .ToListAsync();
+
+      return new SeasonsIndexDisplayModel {
+        SeasonsPerSport = allSeasons
+          .GroupBy(s => s.RelatedSport)
+          .Select(
+            group => new {
+              Sport = group.Key,
+              Seasons = group.OrderByDescending(s => s.StartDate ?? DateTime.MaxValue).AsEnumerable()
+            })
+          .ToDictionary(_ => _.Sport, _ => _.Seasons)
+      };
     }
 
     public async Task<SeasonDisplayModel> LoadDisplayModel(int seasonId) {
