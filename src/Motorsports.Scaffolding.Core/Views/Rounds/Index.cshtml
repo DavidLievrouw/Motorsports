@@ -9,15 +9,9 @@
 <p>
   <a asp-action="Create" asp-route-id="@Url.ActionContext.RouteData.Values["id"]">Create New</a>
 </p>
-<table class="table">
-  <tbody>
-  <tr>
-    <td>
-      @Html.DisplayFor(model => model.Season)
-    </td>
-  </tr>
-  </tbody>
-</table>
+
+<blockquote><h4>@Html.DisplayFor(model => model.Season)</h4></blockquote>
+
 @if (Model.Rounds.Any()) {
   <table class="table">
     <thead>
