@@ -1,26 +1,55 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
 namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
   public class HomeDisplayModel {
-    public HomeDisplayModel(IEnumerable<NextUp> roundsNextUp) {
-      NextUpPerSport = roundsNextUp
-        .OrderBy(n => n.Date)
-        .Select(n => new NextUpDisplayModel(n))
-        .ToList();
-      VeryNextUp = NextUpPerSport
-        .Where(n => n.Date.Date <= DateTime.Now.Date)
-        .OrderBy(n => n.Date)
-        .FirstOrDefault();
-    }
-
     public NextUpDisplayModel VeryNextUp { get; set; }
-
     public bool HasVeryNextUp => VeryNextUp != null;
 
     public IEnumerable<NextUpDisplayModel> NextUpPerSport { get; set; }
-
     public bool HasNextUpPerSport => NextUpPerSport.Any();
+    
+    public IEnumerable<SeasonDisplayModelForHome> LatestSeasons { get; set; }
+    public bool HasLatestSeasons => LatestSeasons.Any();
+
+    public class SeasonDisplayModelForHome {
+      public SeasonDisplayModelForHome(Season season) {
+        DataModel = season ?? throw new ArgumentNullException(nameof(season));
+      }
+
+      public Season DataModel { get; }
+
+      public int Id {
+        get => DataModel.Id;
+        set => DataModel.Id = value;
+      }
+
+      public string Sport {
+        get => DataModel.Sport;
+        set => DataModel.Sport = value;
+      }
+
+      [DisplayFormat(NullDisplayText = "/")]
+      public string Label {
+        get => DataModel.Label;
+        set => DataModel.Label = value;
+      }
+
+      public Sport RelatedSport {
+        get => DataModel.RelatedSport;
+        set => DataModel.RelatedSport = value;
+      }
+
+      [DisplayName("Start date")]
+      [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", NullDisplayText = "/")]
+      public DateTime? StartDate => DataModel.RelatedRounds.FirstOrDefault()?.Date;
+
+      [DisplayName("End date")]
+      [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", NullDisplayText = "/")]
+      public DateTime? EndDate => DataModel.RelatedRounds.LastOrDefault()?.Date;
+    }
   }
 }

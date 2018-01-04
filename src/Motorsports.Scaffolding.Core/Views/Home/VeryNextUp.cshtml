@@ -2,14 +2,13 @@
 
 <div class="veryNextUp">
   <div class="veryNextUpTitle">
-    <a asp-controller="Rounds" asp-action="Edit" asp-route-id="@Model.Id">Next up</a>
-    <div class="veryNextUpSport">@Model.Sport</div>
+    @Model.Sport
+    <div class="veryNextUpTagLine"><a asp-controller="Rounds" asp-action="Edit" asp-route-id="@Model.Id">Round @(Model.Number)</a></div>
   </div>
   <div class="nextUpDetail">
     <div class="nextUpDetailItem">
-      Round @Model.Number
       @if (!string.IsNullOrEmpty(Model.Name)) {
-        <span>(@Model.Name)</span>
+        <span>@Model.Name</span>
       }
     </div>
     <div class="nextUpDetailItem">@Model.Date.ToString("ddd d MMM yyyy")</div>
