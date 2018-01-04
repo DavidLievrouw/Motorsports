@@ -16,9 +16,6 @@
     <thead>
     <tr>
       <th>
-        @Html.DisplayNameFor(model => seasonsForSport.Value.First().Sport)
-      </th>
-      <th>
         @Html.DisplayNameFor(model => seasonsForSport.Value.First().Label)
       </th>
       <th>
@@ -39,9 +36,6 @@
     <tbody>
     @foreach (var item in seasonsForSport.Value) {
       <tr>
-        <td>
-          @Html.DisplayFor(modelItem => item.RelatedSport.Name)
-        </td>
         <td>
           @Html.DisplayFor(modelItem => item.Label)
         </td>

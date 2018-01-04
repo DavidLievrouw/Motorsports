@@ -57,7 +57,12 @@ div .formLabelWithLink {
 div .veryNextUp {
   margin: 20px;
   padding: 10px;
-  background: lightgray;
+  background: #eee;
+}
+
+div .nextUp {
+  margin: 20px;
+  padding: 10px;
 }
 
 div .veryNextUp .veryNextUpTitle {
@@ -75,7 +80,7 @@ div .nextUp .nextUpSport {
   width: 100px;
 }
 
-div .veryNextUpSport {
+div .veryNextUpTagLine {
   font-size: 18px;
   font-weight: 500;
   text-align: center;
@@ -99,4 +104,8 @@ div .disabledLink {
 
 div .padded {
   padding: 10px;
+}
+
+blockquote.homeHeader {
+  margin-top: 30px;
 }
