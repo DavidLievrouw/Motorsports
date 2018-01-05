@@ -1,4 +1,8 @@
-﻿@model Team
+﻿@using Motorsports.Scaffolding.Core.Services
+
+@model Team
+
+@inject IImageService _imageService
 
 @{
   ViewData["Title"] = "Edit";
@@ -7,7 +11,10 @@
 <h2>Edit</h2>
 
 <blockquote>
-  <h4>Team</h4>
+  <div class="sportlogoContainer">
+    <img class="sportlogo" src="@_imageService.GetSportLogo(Model.Sport)" alt="@Model.Sport" />
+  </div>
+  <h4 class="sportlogoName">Team</h4>
 </blockquote>
 <hr/>
 <div class="row">

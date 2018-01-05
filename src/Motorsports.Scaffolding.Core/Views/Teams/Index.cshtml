@@ -1,4 +1,8 @@
-﻿@model IEnumerable<Team>
+﻿@using Motorsports.Scaffolding.Core.Services
+
+@model IEnumerable<Team>
+
+@inject IImageService _imageService
 
 @{
   ViewData["Title"] = "Index";
@@ -34,7 +38,14 @@
         @Html.DisplayFor(modelItem => item.RelatedCountry.NiceName)
       </td>
       <td>
-        @Html.DisplayFor(modelItem => item.RelatedSport.Name)
+        <div>
+          <div class="latestSeasonLogo">
+            <img class="sportlogo" src="@_imageService.GetSportLogo(item.Sport)" alt="@item.Sport"/>
+          </div>
+          <div class="latestSeasonName">
+            @Html.DisplayFor(modelItem => item.RelatedSport.Name)
+          </div>
+        </div>
       </td>
       <td>
         <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
