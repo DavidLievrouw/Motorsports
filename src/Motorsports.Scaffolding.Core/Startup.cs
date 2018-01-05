@@ -46,7 +46,7 @@ namespace Motorsports.Scaffolding.Core {
       // Services
       services.TryAddSingleton<ISportService>(provider => new SportService(provider.GetRequiredService<IQueryExecutor>()));
       services.TryAddSingleton<IVenueService>(provider => new VenueService(provider.GetRequiredService<IQueryExecutor>()));
-      services.TryAddScoped<IHomeService>(provider => new HomeService(provider.GetService<MotorsportsContext>(), provider.GetRequiredService<IQueryExecutor>(), provider.GetRequiredService<IRoundService>()));
+      services.TryAddScoped<IHomeService>(provider => new HomeService(provider.GetService<MotorsportsContext>(), provider.GetRequiredService<IQueryExecutor>(), provider.GetRequiredService<IRoundService>(), provider.GetRequiredService<IHostingEnvironment>()));
       services.TryAddScoped<ISeasonService>(provider => new SeasonService(provider.GetService<MotorsportsContext>(), provider.GetRequiredService<IQueryExecutor>()));
       services.TryAddScoped<IRoundService>(provider => new RoundService(provider.GetService<MotorsportsContext>(), provider.GetRequiredService<IQueryExecutor>()));
 
@@ -95,7 +95,7 @@ namespace Motorsports.Scaffolding.Core {
 
     public void Configure(IApplicationBuilder app, IHostingEnvironment env) {
       CurrentEnvironment = env;
-
+      
       if (env.IsDevelopment()) {
         app.UseDeveloperExceptionPage();
         app.UseBrowserLink();

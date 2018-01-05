@@ -4,7 +4,14 @@
                 ? "veryNextUp"
                 : string.Empty) nextUp">
   <div class="nextUpTitle">
-    <div class="nextUpSport">@Model.Sport</div>
+    <div class="nextUpSport">
+      @if (System.IO.File.Exists(Model.LogoImagePhysicalPath)) {
+        <img class="sportlogo" src="@Url.Content(Model.LogoImageHtmlPath)" alt="@Model.Sport"/>
+      }
+      else {
+        <div>@Model.Sport</div>
+      }
+    </div>
     <div class="nextUpTagLine">
       @if (Model.IsInPast) {
         <a asp-controller="Rounds" asp-action="Edit" asp-route-id="@Model.Id">Round @(Model.Number)</a>
