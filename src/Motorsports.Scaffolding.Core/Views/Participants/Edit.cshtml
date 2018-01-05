@@ -31,7 +31,7 @@
       <div class="form-group">
         <label asp-for="Country" class="control-label"></label>
         @Html.EditorFor(_ => _.Country, nameof(Model.Country), new {
-          Countries = ((SelectList) ViewBag.Country).Items,
+          Countries = ((SelectList) ViewBag.Country).Items.OfType<Country>(),
           SelectedCountry = Model.Country,
           TargetProperty = nameof(Model.Country)
         })

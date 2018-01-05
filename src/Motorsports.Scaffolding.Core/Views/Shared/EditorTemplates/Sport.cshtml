@@ -4,7 +4,7 @@
 @model string
 
 @{
-  var allSports = ((IEnumerable) ViewData["Sports"]).OfType<Sport>();
+  var allSports = ((IEnumerable) ViewData["Sports"]).OfType<Sport>().ToList();
   var selectedSport = (string) ViewData["SelectedSport"];
   var targetProperty = ViewData["TargetProperty"] ?? "Sport";
 
