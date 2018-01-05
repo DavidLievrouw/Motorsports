@@ -1,7 +1,11 @@
 ﻿@using System.Collections
+@using System.IO
+@using Motorsports.Scaffolding.Core.Services
 @using Newtonsoft.Json
 
 @model string
+
+@inject IPhysicalPathResolver _physicalPathResolver
 
 @{
   var allSports = ((IEnumerable) ViewData["Sports"]).OfType<Sport>().ToList();
@@ -9,10 +13,16 @@
   var targetProperty = ViewData["TargetProperty"] ?? "Sport";
 
   var sportsData = allSports
-    .Select(sport => new {
-      id = sport.Name,
-      text = sport.Name,
-      logo = Url.Content("~/img/" + sport.Name + ".png")
+    .Select(sport => {
+      var logoPath = "~/img/" + sport.Name + ".png";
+      var physicalLogoPath = _physicalPathResolver.Resolve(logoPath);
+      return new {
+        id = sport.Name,
+        text = sport.Name,
+        logo = File.Exists(physicalLogoPath)
+          ? Url.Content(logoPath)
+          : Url.Content("~/img/notfound.png")
+      };
     }).ToArray();
 }
 
@@ -33,8 +43,12 @@
     sports.trigger("change"); // Notify any JS components that the value changed
   });
 
-  function formatState (state) {
+  function formatState(state) {
     if (!state.id) return state.text;
-    return $('<div><div class="sportoptionlogo"><img src="' + state.logo + '" /></div><div class="sportoptiontext">' + state.text + '</div></div>');
+    return $('<div><div class="sportoptionlogo"><img src="' +
+      state.logo +
+      '" /></div><div class="sportoptiontext">' +
+      state.text +
+      '</div></div>');
   };
 </script>

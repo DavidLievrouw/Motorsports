@@ -7,8 +7,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public NextUpDisplayModel(
       NextUp nextUp, 
       IEnumerable<NextUp> allRoundsNextUp, 
-      IEnumerable<EventHistoryItem> eventHistory,
-      string webRoot) {
+      IEnumerable<EventHistoryItem> eventHistory) {
       Id = nextUp.Id;
       Sport = nextUp.Sport;
       Number = nextUp.Number;
@@ -23,8 +22,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
         .Where(eh => eh.Id != nextUp.Id)
         .Select(eh => new EventHistoryItemDisplayModel(eh))
         .ToList();
-      LogoImagePhysicalPath = System.IO.Path.Combine(webRoot, "img", nextUp.Sport + ".png");
-      LogoImageHtmlPath = "~/img/" + nextUp.Sport + ".png";
+      Logo = "~/img/" + nextUp.Sport + ".png";
     }
     
     public int Id { get; set; }
@@ -35,8 +33,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public string Venue { get; set; }
     public bool IsVeryNextUp { get; set; }
     public IEnumerable<EventHistoryItemDisplayModel> EventHistory { get; set; }
-    public string LogoImagePhysicalPath { get; set; }
-    public string LogoImageHtmlPath { get; set; }
+    public string Logo { get; set; }
 
     public bool IsInPast => Date.Date <= DateTime.Now.Date;
 

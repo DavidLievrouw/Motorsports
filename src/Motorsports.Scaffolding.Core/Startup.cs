@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -46,9 +49,14 @@ namespace Motorsports.Scaffolding.Core {
       // Services
       services.TryAddSingleton<ISportService>(provider => new SportService(provider.GetRequiredService<IQueryExecutor>()));
       services.TryAddSingleton<IVenueService>(provider => new VenueService(provider.GetRequiredService<IQueryExecutor>()));
-      services.TryAddScoped<IHomeService>(provider => new HomeService(provider.GetService<MotorsportsContext>(), provider.GetRequiredService<IQueryExecutor>(), provider.GetRequiredService<IRoundService>(), provider.GetRequiredService<IHostingEnvironment>()));
+      services.TryAddScoped<IHomeService>(provider => new HomeService(provider.GetService<MotorsportsContext>(), provider.GetRequiredService<IQueryExecutor>(), provider.GetRequiredService<IRoundService>()));
       services.TryAddScoped<ISeasonService>(provider => new SeasonService(provider.GetService<MotorsportsContext>(), provider.GetRequiredService<IQueryExecutor>()));
       services.TryAddScoped<IRoundService>(provider => new RoundService(provider.GetService<MotorsportsContext>(), provider.GetRequiredService<IQueryExecutor>()));
+
+      // Helpers for requests
+      services.TryAddSingleton<IActionContextAccessor>(provider => new ActionContextAccessor());
+      services.TryAddScoped<IUrlHelper>(provider => new UrlHelper(provider.GetService<IActionContextAccessor>().ActionContext));
+      services.TryAddScoped<IPhysicalPathResolver>(provider => new PhysicalPathResolver(provider.GetRequiredService<IUrlHelper>(), CurrentEnvironment));
 
       // Validators
       services.TryAddScoped<IModelStatePopulator<Sport, string>>(provider => new ModelStatePopulator<Sport, string>(
