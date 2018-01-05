@@ -18,6 +18,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public class SeasonDisplayModelForHome {
       public SeasonDisplayModelForHome(Season season) {
         DataModel = season ?? throw new ArgumentNullException(nameof(season));
+        Logo = "~/img/" + season.Sport + ".png";
       }
 
       public Season DataModel { get; }
@@ -50,6 +51,8 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       [DisplayName("End date")]
       [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", NullDisplayText = "/")]
       public DateTime? EndDate => DataModel.RelatedRounds.LastOrDefault()?.Date;
+      
+      public string Logo { get; set; }
     }
   }
 }
