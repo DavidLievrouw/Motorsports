@@ -1,11 +1,10 @@
 ﻿@using System.Collections
-@using System.IO
 @using Motorsports.Scaffolding.Core.Services
 @using Newtonsoft.Json
 
 @model string
 
-@inject IPhysicalPathResolver _physicalPathResolver
+@inject IImageService _imageService
 
 @{
   var allSports = ((IEnumerable) ViewData["Sports"]).OfType<Sport>().ToList();
@@ -13,16 +12,10 @@
   var targetProperty = ViewData["TargetProperty"] ?? "Sport";
 
   var sportsData = allSports
-    .Select(sport => {
-      var logoPath = "~/img/" + sport.Name + ".png";
-      var physicalLogoPath = _physicalPathResolver.Resolve(logoPath);
-      return new {
-        id = sport.Name,
-        text = sport.Name,
-        logo = File.Exists(physicalLogoPath)
-          ? Url.Content(logoPath)
-          : Url.Content("~/img/notfound.png")
-      };
+    .Select(sport => new {
+      id = sport.Name,
+      text = sport.Name,
+      logo = _imageService.GetSportLogo(sport.Name)
     }).ToArray();
 }
 
