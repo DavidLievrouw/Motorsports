@@ -20,7 +20,7 @@ namespace Motorsports.Scaffolding.Core.Services {
     Task UpdateRound(RoundEditModel round);
     Task PersistRound(Round round);
     Task DeleteRound(int roundId);
-    Task<IEnumerable<EventHistoryItem>> GetEventHistory(string venue, string sport);
+    Task<IEnumerable<EventHistoryItem>> GetEventHistory(int roundId);
   }
 
   public class RoundService : IRoundService {
@@ -190,8 +190,14 @@ namespace Motorsports.Scaffolding.Core.Services {
       }
     }
     
-    public Task<IEnumerable<EventHistoryItem>> GetEventHistory(string venue, string sport) {
-      return _queryExecutor.NewQuery(@"
+    public async Task<IEnumerable<EventHistoryItem>> GetEventHistory(int roundId) {
+      var round = await _context.Round
+        .Include(r => r.RelatedSeason)
+        .Where(r => r.Id == roundId)
+        .FirstOrDefaultAsync();
+      if (round == null) throw new ArgumentException("The specified round was not found.", nameof(roundId));
+
+      return await _queryExecutor.NewQuery(@"
         SELECT TOP 5
 	        R.[Id],
 	        R.[Date],
@@ -209,6 +215,7 @@ namespace Motorsports.Scaffolding.Core.Services {
 	        R.[Venue] = @Venue
 	        AND R.[Status] <> 'Scheduled'
 	        AND S.[Sport] = @Sport
+          AND R.[Date] < @Date
         GROUP BY
 	        R.[Id],
 	        R.[Date],
@@ -219,8 +226,9 @@ namespace Motorsports.Scaffolding.Core.Services {
         	R.[Date] DESC")
         .WithCommandType(CommandType.Text)
         .WithParameters(new {
-          Venue = venue,
-          Sport = sport
+          Venue = round.Venue,
+          Sport = round.RelatedSeason.Sport,
+          Date = round.Date.Date
         })
         .ExecuteAsync<EventHistoryItem>();
     }
