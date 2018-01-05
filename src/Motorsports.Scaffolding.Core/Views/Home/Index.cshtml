@@ -17,7 +17,9 @@
     }
   }
   else {
-    <div class="disabledLink">[No next up rounds]</div>
+    if (!Model.HasVeryNextUp) {
+      <div class="disabledLink">[No rounds next up]</div>
+    }
   }
   @if (Model.HasLatestSeasons) {
     <blockquote class="homeHeader">

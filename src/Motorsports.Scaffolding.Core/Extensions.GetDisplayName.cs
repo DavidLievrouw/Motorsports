@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Motorsports.Scaffolding.Core.Views {
+namespace Motorsports.Scaffolding.Core {
   public static partial class Extensions {
     public static string GetDisplayName(this Enum enumVal) {
       var displayAttrib = enumVal.GetAttributeOfType<DisplayAttribute>();

@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
   public class NextUpDisplayModel {
-    public NextUpDisplayModel(NextUp nextUp, IEnumerable<NextUp> allRoundsNextUp) {
+    public NextUpDisplayModel(NextUp nextUp, IEnumerable<NextUp> allRoundsNextUp, IEnumerable<EventHistoryItem> eventHistory) {
       Id = nextUp.Id;
       Sport = nextUp.Sport;
       Number = nextUp.Number;
@@ -14,9 +14,11 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       IsVeryNextUp = allRoundsNextUp
                        .Where(n => n.Date.Date <= DateTime.Now.Date)
                        .OrderBy(n => n.Date)
-                       .FirstOrDefault() == nextUp;
+                       .FirstOrDefault() ==
+                     nextUp;
+      EventHistory = eventHistory.Select(eh => new EventHistoryItemDisplayModel(eh));
     }
-
+    
     public int Id { get; set; }
     public string Sport { get; set; }
     public short Number { get; set; }
@@ -24,6 +26,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public string Name { get; set; }
     public string Venue { get; set; }
     public bool IsVeryNextUp { get; set; }
+    public IEnumerable<EventHistoryItemDisplayModel> EventHistory { get; set; }
 
     public bool IsInPast => Date.Date <= DateTime.Now.Date;
 

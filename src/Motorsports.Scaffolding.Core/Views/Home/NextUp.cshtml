@@ -1,6 +1,8 @@
 ﻿@model Motorsports.Scaffolding.Core.Models.DisplayModels.NextUpDisplayModel
 
-<div class="@(Model.IsVeryNextUp ? "veryNextUp" : string.Empty) nextUp">
+<div class="@(Model.IsVeryNextUp
+                ? "veryNextUp"
+                : string.Empty) nextUp">
   <div class="nextUpTitle">
     <div class="nextUpSport">@Model.Sport</div>
     <div class="nextUpTagLine">
@@ -38,5 +40,12 @@
     </div>
     <div class="nextUpDetailItem">@Model.Date.ToString("ddd d MMM yyyy")</div>
     <div class="nextUpDetailItem">@Model.Venue</div>
+    <div class="nextUpDetailItem">&nbsp;</div>
+    @if (Model.EventHistory.Any()) {
+      <div class="nextUpDetailItem">Event history</div>
+      foreach (var eventHistoryItem in Model.EventHistory) {
+        <div class="nextUpDetailItem nextUpEventHistoryItem">@Html.DisplayFor(model => eventHistoryItem.Date) - @Html.DisplayFor(model => eventHistoryItem.WinningParticipants) - @Html.DisplayFor(model => eventHistoryItem.WinningTeam) - @Html.DisplayFor(model => eventHistoryItem.Rain) - @Html.DisplayFor(model => eventHistoryItem.Rating)/10</div>
+      }
+    }
   </div>
 </div>
