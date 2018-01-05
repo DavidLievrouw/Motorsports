@@ -127,3 +127,18 @@ div.sportoptionlogo img {
   max-width: 50px;
   max-height: 25px;
 }
+
+div.latestSeasonLogo {
+  display: inline-block;
+  width: 50px;
+  text-align: center;
+}
+
+div.latestSeasonLogo img {
+  max-width: 50px;
+  max-height: 1.5em;
+}
+
+div.latestSeasonName {
+  display: inline-block;
+}
