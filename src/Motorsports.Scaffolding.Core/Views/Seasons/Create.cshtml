@@ -6,7 +6,9 @@
 
 <h2>Create</h2>
 
-<blockquote><h4>Season</h4></blockquote>
+<blockquote>
+  <h4>Season</h4>
+</blockquote>
 <hr/>
 <div class="row">
   <div class="col-md-4">
@@ -15,16 +17,11 @@
       <div class="form-group">
         <label asp-for="Sport" class="control-label"></label>
         <div>
-          @Html.DropDownListFor(
-            m => m.Sport,
-            @Model.AvailableSports.Select(sport => new SelectListItem {
-              Text = sport.FullName,
-              Value = sport.Name,
-              Selected = sport.Name == @Model.Sport
-            }),
-            null,
-            new {@class = "form-control"}
-            )
+          @Html.EditorFor(_ => _.Sport, typeof(Sport).Name, new {
+            Sports = Model.AvailableSports,
+            SelectedSport = Model.Sport,
+            TargetProperty = nameof(Model.Sport)
+          })
         </div>
         <span asp-validation-for="Sport" class="text-danger"></span>
       </div>

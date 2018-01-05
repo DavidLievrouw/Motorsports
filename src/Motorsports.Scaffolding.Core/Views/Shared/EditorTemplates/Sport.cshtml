@@ -1,0 +1,40 @@
+﻿@using System.Collections
+@using Newtonsoft.Json
+
+@model string
+
+@{
+  var allSports = ((IEnumerable) ViewData["Sports"]).OfType<Sport>();
+  var selectedSport = (string) ViewData["SelectedSport"];
+  var targetProperty = ViewData["TargetProperty"] ?? "Sport";
+
+  var sportsData = allSports
+    .Select(sport => new {
+      id = sport.Name,
+      text = sport.Name,
+      logo = Url.Content("~/img/" + sport.Name + ".png")
+    }).ToArray();
+}
+
+<select name="@targetProperty" id="slcSports" class="form-control"></select>
+
+<script>
+  $(document).ready(function() {
+    var sports = $("#slcSports");
+    sports.select2({
+      placeholder: "Select a sport",
+      data: @Html.Raw(JsonConvert.SerializeObject(sportsData)),
+      templateResult: formatState,
+      templateSelection: formatState
+    });
+    sports.val(@Html.Raw(string.IsNullOrEmpty(selectedSport)
+                 ? "null"
+                 : "\"" + selectedSport + "\""));
+    sports.trigger("change"); // Notify any JS components that the value changed
+  });
+
+  function formatState (state) {
+    if (!state.id) return state.text;
+    return $('<div><div class="sportoptionlogo"><img src="' + state.logo + '" /></div><div class="sportoptiontext">' + state.text + '</div></div>');
+  };
+</script>

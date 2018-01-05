@@ -112,3 +112,18 @@ img.sportlogo {
   max-width: 100px;
   max-height: 50px;
 }
+
+div.sportoptionlogo {
+  width: 65px;
+  text-align: center;
+  display: inline-block;
+}
+
+div.sportoptiontext {
+  display: inline-block;
+}
+
+div.sportoptionlogo img {
+  max-width: 50px;
+  max-height: 25px;
+}
