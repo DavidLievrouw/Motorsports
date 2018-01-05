@@ -1,4 +1,8 @@
-﻿@model Motorsports.Scaffolding.Core.Models.DisplayModels.SeasonsIndexDisplayModel
+﻿@using Motorsports.Scaffolding.Core.Services
+
+@model Motorsports.Scaffolding.Core.Models.DisplayModels.SeasonsIndexDisplayModel
+
+@inject IImageService _imageService
 
 @{
   ViewData["Title"] = "Index";
@@ -11,7 +15,12 @@
 </p>
 
 @foreach (var seasonsForSport in Model.SeasonsPerSport) {
-  <blockquote><h4>@seasonsForSport.Key.FullName</h4></blockquote>
+  <blockquote>
+    <div class="sportlogoContainer">
+      <img class="sportlogo" src="@_imageService.GetSportLogo(seasonsForSport.Key.Name)" alt="@seasonsForSport.Key.Name"/>
+    </div>
+    <h4 class="sportlogoName">@seasonsForSport.Key.FullName</h4>
+  </blockquote>
   <table class="table">
     <thead>
     <tr>

@@ -108,6 +108,16 @@ blockquote.homeHeader {
   margin-top: 30px;
 }
 
+div.sportlogoContainer {
+  width: 125px;
+  display: inline-block;
+  text-align: center;
+}
+
+h4.sportlogoName {
+  display: inline-block;
+}
+
 img.sportlogo {
   max-width: 100px;
   max-height: 50px;
