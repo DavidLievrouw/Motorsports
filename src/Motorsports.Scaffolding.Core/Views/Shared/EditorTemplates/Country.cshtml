@@ -3,7 +3,7 @@
 @model string
 
 @{
-  var allCountries = ((IEnumerable)ViewData["Countries"]).OfType<Country>();
+  var allCountries = ((IEnumerable)ViewData["Countries"]).OfType<Country>().ToList();
   var selectedCountry = (string)ViewData["SelectedCountry"];
   var targetProperty = ViewData["TargetProperty"] ?? "Country";
 }
