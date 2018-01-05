@@ -57,6 +57,7 @@ namespace Motorsports.Scaffolding.Core {
       services.TryAddSingleton<IActionContextAccessor>(provider => new ActionContextAccessor());
       services.TryAddScoped<IUrlHelper>(provider => new UrlHelper(provider.GetService<IActionContextAccessor>().ActionContext));
       services.TryAddScoped<IPhysicalPathResolver>(provider => new PhysicalPathResolver(provider.GetRequiredService<IUrlHelper>(), CurrentEnvironment));
+      services.TryAddScoped<IImageService>(provider => new ImageService(provider.GetRequiredService<IPhysicalPathResolver>(), provider.GetRequiredService<IUrlHelper>()));
 
       // Validators
       services.TryAddScoped<IModelStatePopulator<Sport, string>>(provider => new ModelStatePopulator<Sport, string>(

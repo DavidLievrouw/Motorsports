@@ -1,8 +1,8 @@
-﻿@using System.IO
-@using Motorsports.Scaffolding.Core.Services
+﻿@using Motorsports.Scaffolding.Core.Services
+
 @model Motorsports.Scaffolding.Core.Models.DisplayModels.HomeDisplayModel
 
-@inject IPhysicalPathResolver _physicalPathResolver
+@inject IImageService _imageService
 
 @{
   ViewData["Title"] = "Home";
@@ -53,13 +53,7 @@
             <a asp-action="Index" asp-controller="Rounds" asp-route-id="@season.Id">
               <div>
                 <div class="latestSeasonLogo">
-                  @if (File.Exists(_physicalPathResolver.Resolve(season.Logo))) {
-                    <img class="sportlogo" src="@Url.Content(season.Logo)" alt="@season.Sport"/>
-                  }
-                  else {
-                    <img class="sportlogo" src="~/img/notfound.png" alt="@season.Sport"/>
-                    <div>@season.Sport</div>
-                  }
+                  <img class="sportlogo" src="@_imageService.GetSportLogo(season.Sport)" alt="@season.Sport"/>
                 </div>
                 <div class="latestSeasonName">
                   @Html.DisplayFor(modelItem => season.RelatedSport.Name)
