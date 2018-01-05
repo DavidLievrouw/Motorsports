@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Dapper;
 using Motorsports.Scaffolding.Core.Models;
@@ -18,14 +19,17 @@ namespace Motorsports.Scaffolding.Core.Services {
     readonly MotorsportsContext _context;
     readonly IQueryExecutor _queryExecutor;
     readonly IRoundService _roundService;
+    readonly IHostingEnvironment _env;
 
     public HomeService(
       MotorsportsContext context,
       IQueryExecutor queryExecutor,
-      IRoundService roundService) {
+      IRoundService roundService,
+      IHostingEnvironment env) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
       _queryExecutor = queryExecutor ?? throw new ArgumentNullException(nameof(queryExecutor));
       _roundService = roundService ?? throw new ArgumentNullException(nameof(roundService));
+      _env = env ?? throw new ArgumentNullException(nameof(env));
     }
 
     public Task<IEnumerable<NextUp>> GetRoundsNextUp() {
@@ -65,7 +69,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .OrderBy(n => n.Date)
         .SelectAsync(async n => {
           var eventHistory = await _roundService.GetEventHistory(n.Venue, n.Sport);
-          return new NextUpDisplayModel(n, roundsNextUp, eventHistory);
+          return new NextUpDisplayModel(n, roundsNextUp, eventHistory, _env.WebRootPath);
         }))
         .ToList();
       var veryNextUp = roundsNextUpDisplayModels
