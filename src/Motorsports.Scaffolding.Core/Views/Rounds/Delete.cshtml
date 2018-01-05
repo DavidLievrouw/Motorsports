@@ -1,4 +1,8 @@
-﻿@model Motorsports.Scaffolding.Core.Models.DisplayModels.RoundDisplayModel
+﻿@using Motorsports.Scaffolding.Core.Services
+
+@model Motorsports.Scaffolding.Core.Models.DisplayModels.RoundDisplayModel
+
+@inject IImageService _imageService
 
 @{
   ViewData["Title"] = "Delete";
@@ -8,8 +12,13 @@
 
 <h3>Are you sure you want to delete this?</h3>
 <div>
-  <blockquote><h4>Round</h4></blockquote>
-  <hr/>
+  <blockquote>
+    <div class="sportlogoContainer">
+      <img class="sportlogo" src="@_imageService.GetSportLogo(Model.RelatedSeason.Sport)" alt="@Model.RelatedSeason.Sport" />
+    </div>
+    <h4 class="sportlogoName">Round</h4>
+  </blockquote>
+  <hr />
   <dl class="dl-horizontal">
     <dt>
       @Html.DisplayNameFor(model => model.Season)
@@ -73,8 +82,8 @@
     </dd>
   </dl>
   <form asp-action="Delete">
-    <input type="hidden" asp-for="Id"/>
-    <input type="submit" value="Delete" class="btn btn-default"/> |
+    <input type="hidden" asp-for="Id" />
+    <input type="submit" value="Delete" class="btn btn-default" /> |
     <a asp-action="Index" asp-route-id="@Model.Season">Back to List</a>
   </form>
 </div>

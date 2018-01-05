@@ -1,4 +1,8 @@
-﻿@model Motorsports.Scaffolding.Core.Models.DisplayModels.RoundDisplayModel
+﻿@using Motorsports.Scaffolding.Core.Services
+
+@model Motorsports.Scaffolding.Core.Models.DisplayModels.RoundDisplayModel
+
+@inject IImageService _imageService
 
 @{
   ViewData["Title"] = "Edit";
@@ -6,7 +10,12 @@
 
 <h2>Edit</h2>
 
-<blockquote><h4>Round</h4></blockquote>
+<blockquote>
+  <div class="sportlogoContainer">
+    <img class="sportlogo" src="@_imageService.GetSportLogo(Model.RelatedSeason.Sport)" alt="@Model.RelatedSeason.Sport" />
+  </div>
+  <h4 class="sportlogoName">Round</h4>
+</blockquote>
 <hr/>
 <div class="row">
   <div class="col-md-4">
