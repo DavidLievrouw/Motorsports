@@ -20,6 +20,7 @@ namespace Motorsports.Scaffolding.Core.Services {
     Task UpdateRound(RoundEditModel round);
     Task PersistRound(Round round);
     Task DeleteRound(int roundId);
+    Task<IEnumerable<EventHistoryItem>> GetEventHistory(string venue, string sport);
   }
 
   public class RoundService : IRoundService {
@@ -187,6 +188,41 @@ namespace Motorsports.Scaffolding.Core.Services {
           throw;
         }
       }
+    }
+    
+    public Task<IEnumerable<EventHistoryItem>> GetEventHistory(string venue, string sport) {
+      return _queryExecutor.NewQuery(@"
+        SELECT TOP 5
+	        R.[Id],
+	        R.[Date],
+	        R.[Rating],
+	        R.[Rain],
+	        T.[Name] AS WinningTeam,
+	        STRING_AGG(P.[FirstName] + ' ' + P.[LastName], ', ') WITHIN GROUP (ORDER BY P.[LastName] ASC, P.[FirstName] ASC) AS WinningParticipants
+        FROM
+	        [dbo].[Round] R
+	        INNER JOIN [dbo].[Season] S ON R.[Season] = S.[Id]
+	        LEFT JOIN [dbo].[Team] T ON R.[WinningTeam] = T.[Id]
+	        LEFT JOIN [dbo].[RoundWinner] RW ON R.[Id] = RW.[Round]
+	        LEFT JOIN [dbo].[Participant] P ON P.[Id] = RW.[Participant]
+        WHERE
+	        R.[Venue] = @Venue
+	        AND R.[Status] <> 'Scheduled'
+	        AND S.[Sport] = @Sport
+        GROUP BY
+	        R.[Id],
+	        R.[Date],
+	        R.[Rating],
+	        R.[Rain],
+	        T.[Name]
+        ORDER BY
+        	R.[Date] DESC")
+        .WithCommandType(CommandType.Text)
+        .WithParameters(new {
+          Venue = venue,
+          Sport = sport
+        })
+        .ExecuteAsync<EventHistoryItem>();
     }
 
     public async Task PersistRound(Round round) {

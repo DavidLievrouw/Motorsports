@@ -1,4 +1,4 @@
-﻿@model Motorsports.Scaffolding.Core.Models.DisplayModels.RoundDisplayModel
+﻿@model Motorsports.Scaffolding.Core.Models.DisplayModels.RoundDetailDisplayModel
 
 @{
   ViewData["Title"] = "Details";
@@ -11,68 +11,79 @@
   <hr/>
   <dl class="dl-horizontal">
     <dt>
-      @Html.DisplayNameFor(model => model.Season)
+      @Html.DisplayNameFor(model => model.Round.Season)
     </dt>
     <dd>
-      @Html.DisplayFor(model => model.RelatedSeason)
+      @Html.DisplayFor(model => model.Round.RelatedSeason)
     </dd>
     <dt>
-      @Html.DisplayNameFor(model => model.Number)
+      @Html.DisplayNameFor(model => model.Round.Number)
     </dt>
     <dd>
-      @Html.DisplayFor(model => model.Number)
+      @Html.DisplayFor(model => model.Round.Number)
     </dd>
     <dt>
-      @Html.DisplayNameFor(model => model.Date)
+      @Html.DisplayNameFor(model => model.Round.Date)
     </dt>
     <dd>
-      @Html.DisplayFor(model => model.Date)
+      @Html.DisplayFor(model => model.Round.Date)
     </dd>
     <dt>
-      @Html.DisplayNameFor(model => model.Name)
+      @Html.DisplayNameFor(model => model.Round.Name)
     </dt>
     <dd>
-      @Html.DisplayFor(model => model.Name)
+      @Html.DisplayFor(model => model.Round.Name)
     </dd>
     <dt>
-      @Html.DisplayNameFor(model => model.Venue)
+      @Html.DisplayNameFor(model => model.Round.Venue)
     </dt>
     <dd>
-      @Html.DisplayFor(model => model.RelatedVenue)
+      @Html.DisplayFor(model => model.Round.RelatedVenue)
     </dd>
     <dt>
-      @Html.DisplayNameFor(model => model.Status)
+      @Html.DisplayNameFor(model => model.Round.Status)
     </dt>
     <dd>
-      @Html.DisplayFor(model => model.Status)
+      @Html.DisplayFor(model => model.Round.Status)
     </dd>
     <dt>
-      @Html.DisplayNameFor(model => model.Rating)
+      @Html.DisplayNameFor(model => model.Round.Rating)
     </dt>
     <dd>
-      @Html.DisplayFor(model => model.Rating)
+      @Html.DisplayFor(model => model.Round.Rating)/10
     </dd>
     <dt>
-      @Html.DisplayNameFor(model => model.Rain)
+      @Html.DisplayNameFor(model => model.Round.Rain)
     </dt>
     <dd>
-      @Html.DisplayFor(model => model.Rain)
+      @Html.DisplayFor(model => model.Round.Rain)
     </dd>
     <dt>
-      @Html.DisplayNameFor(model => model.WinningTeamId)
+      @Html.DisplayNameFor(model => model.Round.WinningTeamId)
     </dt>
     <dd>
-      @Html.DisplayFor(model => model.WinningTeam, nameof(Model.WinningTeam))
+      @Html.DisplayFor(model => model.Round.WinningTeam, nameof(Model.Round.WinningTeam))
     </dd>
     <dt>
-      @Html.DisplayNameFor(model => model.WinningParticipantIds)
+      @Html.DisplayNameFor(model => model.Round.WinningParticipantIds)
     </dt>
     <dd>
-      @Html.DisplayFor(model => model.WinningParticipants, nameof(Model.WinningParticipants))
+      @Html.DisplayFor(model => model.Round.WinningParticipants, nameof(Model.Round.WinningParticipants))
+    </dd>
+    <dt>
+      @Html.DisplayNameFor(model => model.EventHistory)
+    </dt>
+    <dd>
+      @foreach (var eventHistoryItem in Model.EventHistory) {
+        <div>@Html.DisplayFor(model => eventHistoryItem.Date) - @Html.DisplayFor(model => eventHistoryItem.WinningParticipants) - @Html.DisplayFor(model => eventHistoryItem.WinningTeam) - @Html.DisplayFor(model => eventHistoryItem.Rain) - @Html.DisplayFor(model => eventHistoryItem.Rating)/10</div>
+      }
+      @if (!Model.EventHistory.Any()) {
+        <div class="disabledLink">No event history available</div>
+      }
     </dd>
   </dl>
 </div>
 <div>
-  <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> |
-  <a asp-action="Index" asp-route-id="@Model.Season">Back to List</a>
+  <a asp-action="Edit" asp-route-id="@Model.Round.Id">Edit</a> |
+  <a asp-action="Index" asp-route-id="@Model.Round.Season">Back to List</a>
 </div>

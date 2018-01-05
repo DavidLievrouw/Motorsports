@@ -49,7 +49,10 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       var round = await _roundService.LoadDisplayModel(id.Value);
       if (round == null) return NotFound();
 
-      return View(round);
+      var eventHistory = await _roundService.GetEventHistory(round.Venue, round.RelatedSeason.Sport);
+      var displayModel = new RoundDetailDisplayModel(round, eventHistory);
+
+      return View(displayModel);
     }
 
     // GET: Rounds/Create/5

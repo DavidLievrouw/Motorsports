@@ -14,9 +14,11 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       IsVeryNextUp = allRoundsNextUp
                        .Where(n => n.Date.Date <= DateTime.Now.Date)
                        .OrderBy(n => n.Date)
-                       .FirstOrDefault() ==
-                     nextUp;
-      EventHistory = eventHistory.Select(eh => new EventHistoryItemDisplayModel(eh));
+                       .FirstOrDefault() == nextUp;
+      EventHistory = eventHistory
+        .Where(eh => eh.Id != nextUp.Id)
+        .Select(eh => new EventHistoryItemDisplayModel(eh))
+        .ToList();
     }
     
     public int Id { get; set; }
