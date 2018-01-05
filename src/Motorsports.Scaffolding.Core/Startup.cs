@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using System.Collections.Generic;
+using System.Globalization;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +31,11 @@ namespace Motorsports.Scaffolding.Core {
     public IConfiguration Configuration { get; }
 
     public void ConfigureServices(IServiceCollection services) {
+      services.Configure<RequestLocalizationOptions>(
+        options => {
+          options.DefaultRequestCulture = new RequestCulture("en-US");
+          options.SupportedCultures = new List<CultureInfo> {new CultureInfo("en-US")};
+        });
       services.AddMvc();
 
       // Lowest level data access
@@ -95,6 +103,7 @@ namespace Motorsports.Scaffolding.Core {
       else app.UseExceptionHandler("/error");
 
       app
+        .UseRequestLocalization()
         .UseStaticFiles()
         .UseMvc(
         routes => {

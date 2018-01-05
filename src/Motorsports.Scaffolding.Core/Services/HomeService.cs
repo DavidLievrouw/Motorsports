@@ -11,6 +11,7 @@ using Motorsports.Scaffolding.Core.Models.DisplayModels;
 namespace Motorsports.Scaffolding.Core.Services {
   public interface IHomeService {
     Task<IEnumerable<NextUp>> GetRoundsNextUp();
+    Task<IEnumerable<EventHistoryItem>> GetEventHistory(string venue, string sport);
     Task<HomeDisplayModel> GetHomeDisplayModel();
   }
 
@@ -56,11 +57,49 @@ namespace Motorsports.Scaffolding.Core.Services {
         .ExecuteAsync<NextUp>();
     }
 
+    public Task<IEnumerable<EventHistoryItem>> GetEventHistory(string venue, string sport) {
+      return _queryExecutor.NewQuery(@"
+        SELECT TOP 5
+	        R.[Id],
+	        R.[Date],
+	        R.[Rating],
+	        R.[Rain],
+	        T.[Name] AS WinningTeam,
+	        STRING_AGG(P.[FirstName] + ' ' + P.[LastName], ', ') WITHIN GROUP (ORDER BY P.[LastName] ASC, P.[FirstName] ASC) AS WinningParticipants
+        FROM
+	        [dbo].[Round] R
+	        INNER JOIN [dbo].[Season] S ON R.[Season] = S.[Id]
+	        LEFT JOIN [dbo].[Team] T ON R.[WinningTeam] = T.[Id]
+	        LEFT JOIN [dbo].[RoundWinner] RW ON R.[Id] = RW.[Round]
+	        LEFT JOIN [dbo].[Participant] P ON P.[Id] = RW.[Participant]
+        WHERE
+	        R.[Venue] = @Venue
+	        AND R.[Status] <> 'Scheduled'
+	        AND S.[Sport] = @Sport
+        GROUP BY
+	        R.[Id],
+	        R.[Date],
+	        R.[Rating],
+	        R.[Rain],
+	        T.[Name]
+        ORDER BY
+        	R.[Date] DESC")
+        .WithCommandType(CommandType.Text)
+        .WithParameters(new {
+          Venue = venue,
+          Sport = sport
+        })
+        .ExecuteAsync<EventHistoryItem>();
+    }
+
     public async Task<HomeDisplayModel> GetHomeDisplayModel() {
       var roundsNextUp = (await GetRoundsNextUp()).ToList();
-      var roundsNextUpDisplayModels = roundsNextUp
+      var roundsNextUpDisplayModels = (await roundsNextUp
         .OrderBy(n => n.Date)
-        .Select(n => new NextUpDisplayModel(n, roundsNextUp))
+        .SelectAsync(async n => {
+          var eventHistory = await GetEventHistory(n.Venue, n.Sport);
+          return new NextUpDisplayModel(n, roundsNextUp, eventHistory);
+        }))
         .ToList();
       var veryNextUp = roundsNextUpDisplayModels
         .FirstOrDefault(n => n.IsVeryNextUp);

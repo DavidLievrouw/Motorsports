@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Html;
 
-namespace Motorsports.Scaffolding.Core.Views {
+namespace Motorsports.Scaffolding.Core {
   public static partial class Extensions {
     public static string ToHtmlString(this IHtmlContent htmlContent) {
       var builder = new StringBuilder();

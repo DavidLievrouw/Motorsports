@@ -55,6 +55,8 @@ div .formLabelWithLink {
 }
 
 div .nextUp {
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
   margin-bottom: 20px;
   padding: 10px;
 }
@@ -67,12 +69,17 @@ div .nextUp .nextUpTitle {
   font-weight: bold;
   font-size: 20px;
   display: inline-grid;
+  width: 100px;
 }
 
 div .nextUpSport {
   font-style: italic;
   text-align: center;
   font-weight: bolder;
+}
+
+div .nextUpEventHistoryItem {
+  border-top: 1px solid #ddd;
 }
 
 div .nextUpTagLine {
