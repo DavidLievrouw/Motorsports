@@ -64,7 +64,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       var roundsNextUpDisplayModels = (await roundsNextUp
         .OrderBy(n => n.Date)
         .SelectAsync(async n => {
-          var eventHistory = await _roundService.GetEventHistory(n.Venue, n.Sport);
+          var eventHistory = await _roundService.GetEventHistory(n.Id);
           return new NextUpDisplayModel(n, roundsNextUp, eventHistory);
         }))
         .ToList();
