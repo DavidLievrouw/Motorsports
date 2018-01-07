@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
+using Motorsports.Scaffolding.Core.Models.DisplayModels;
 using Motorsports.Scaffolding.Core.Models.Validators;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
@@ -22,8 +23,17 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
     // GET: Teams
     public async Task<IActionResult> Index() {
-      var motorsportsContext = _context.Team.Include(t => t.RelatedCountry).Include(t => t.RelatedSport);
-      return View(await motorsportsContext.ToListAsync());
+      var allTeams = await _context.Team.Include(t => t.RelatedCountry).Include(t => t.RelatedSport).ToListAsync();
+      return View(new TeamsIndexDisplayModel {
+        TeamsPerSport = allTeams
+          .GroupBy(s => s.RelatedSport)
+          .Select(
+            group => new {
+              Sport = group.Key,
+              Teams = group.OrderBy(s => s.Name).AsEnumerable()
+            })
+          .ToDictionary(_ => _.Sport, _ => _.Teams)
+      });
     }
 
     // GET: Teams/Details/5
