@@ -74,7 +74,7 @@ namespace Motorsports.Scaffolding.Core.Services {
           },
           _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
           _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
-          _context.Status,
+          _context.Status.OrderBy(s => s.Step).ThenBy(s => s.Name),
           _context.Venue.OrderBy(v => v.Name)));
     }
 
@@ -93,7 +93,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         },
         _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
-        _context.Status,
+        _context.Status.OrderBy(s => s.Step).ThenBy(s => s.Name),
         _context.Venue.OrderBy(v => v.Name));
     }
 
@@ -135,7 +135,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         roundDataModel,
         _context.Team.Where(team => team.Sport == roundDataModel.RelatedSeason.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
-        _context.Status,
+        _context.Status.OrderBy(s => s.Step).ThenBy(s => s.Name),
         _context.Venue.OrderBy(v => v.Name));
     }
 
