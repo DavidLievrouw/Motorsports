@@ -158,3 +158,19 @@ div.latestSeasonName {
   display: inline-block;
   margin-left: 10px;
 }
+
+div.roundsToAcquireLogo {
+  display: inline-block;
+  width: 50px;
+  text-align: center;
+}
+
+div.roundsToAcquireLogo img {
+  max-width: 50px;
+  max-height: 1.5em;
+}
+
+div.roundsToAcquireName {
+  display: inline-block;
+  margin-left: 10px;
+}

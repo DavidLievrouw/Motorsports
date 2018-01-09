@@ -1,18 +1,18 @@
 ﻿@using System.Collections
 @using Newtonsoft.Json
 
-@model string
+@model RoundStatus
 
 @{
   var allStatuses = ((IEnumerable) ViewData["Statuses"]).OfType<Status>().ToList();
-  var selectedStatus = (string) ViewData["SelectedStatus"];
+  var selectedStatus = (RoundStatus) ViewData["SelectedStatus"];
   var targetProperty = ViewData["TargetProperty"] ?? "Status";
   var autofocus = bool.Parse(ViewData["Autofocus"]?.ToString() ?? "false");
 
   var statusesData = allStatuses
     .Select(_ => new {
       id = _.Name,
-      text = _.Name
+      text = $"{_.Step} - {Enum.Parse<RoundStatus>(_.Name, true).GetDisplayName()}"
     }).ToArray();
 }
 
@@ -26,9 +26,7 @@
       data: @Html.Raw(JsonConvert.SerializeObject(statusesData)),
       escapeMarkup: function(markup) { return markup; }
     });
-    statuses.val(@Html.Raw(string.IsNullOrEmpty(selectedStatus)
-                   ? "null"
-                   : "\"" + selectedStatus + "\""));
+    statuses.val(@Html.Raw("\"" + selectedStatus + "\""));
     statuses.trigger("change"); // Notify any JS components that the value changed
   });
 </script>

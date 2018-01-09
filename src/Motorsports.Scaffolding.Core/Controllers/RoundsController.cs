@@ -131,5 +131,17 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       await _roundService.DeleteRound(id);
       return RedirectToAction(nameof(Index), new { id = round.Season });
     }
+
+    // GET: Rounds/MarkReadyToWatch/5
+    public async Task<IActionResult> MarkReadyToWatch(int? id) {
+      if (id == null) return NotFound();
+
+      var round = await _roundService.LoadDataRecord(id.Value);
+      if (round == null) return NotFound();
+
+      await _roundService.MarkReadyToWatch(round);
+
+      return RedirectToAction("Index", "Home");
+    }
   }
 }
