@@ -22,8 +22,13 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
     // GET: Participants
     public async Task<IActionResult> Index() {
-      var motorsportsContext = _context.Participant.Include(p => p.RelatedCountry);
-      return View(await motorsportsContext.ToListAsync());
+      var participants = await _context.Participant
+        .Include(p => p.RelatedCountry)
+        .OrderBy(p => p.LastName)
+        .ThenBy(p => p.FirstName)
+        .ThenBy(p => p.Country)
+        .ToListAsync();
+      return View(participants);
     }
 
     // GET: Participants/Details/5
