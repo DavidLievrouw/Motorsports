@@ -20,6 +20,7 @@ namespace Motorsports.Scaffolding.Core.Services {
     Task UpdateRound(RoundEditModel round);
     Task PersistRound(Round round);
     Task DeleteRound(int roundId);
+    Task MarkReadyToWatch(Round round);
     Task<IEnumerable<EventHistoryItem>> GetEventHistory(int roundId);
   }
 
@@ -36,6 +37,7 @@ namespace Motorsports.Scaffolding.Core.Services {
 
     public Task<Round> LoadDataRecord(int roundId) {
       return _context.Round
+        .Include(r => r.RelatedStatus)
         .Include(r => r.RelatedSeason)
         .Include(r => r.RelatedWinningTeam)
         .Include(r => r.RelatedRoundWinners)
@@ -99,6 +101,7 @@ namespace Motorsports.Scaffolding.Core.Services {
 
     public Task<List<RoundDisplayModel>> LoadRoundList() {
       return _context.Round
+        .Include(r => r.RelatedStatus)
         .Include(r => r.RelatedSeason)
         .Include(r => r.RelatedWinningTeam)
         .Include(r => r.RelatedRoundWinners)
@@ -111,6 +114,7 @@ namespace Motorsports.Scaffolding.Core.Services {
 
     public Task<List<RoundDisplayModel>> LoadRoundList(int seasonId) {
       return _context.Round
+        .Include(r => r.RelatedStatus)
         .Include(r => r.RelatedSeason)
         .Include(r => r.RelatedWinningTeam)
         .Include(r => r.RelatedRoundWinners)
@@ -124,6 +128,7 @@ namespace Motorsports.Scaffolding.Core.Services {
 
     public async Task<RoundDisplayModel> LoadDisplayModel(int roundId) {
       var roundDataModel = await _context.Round
+        .Include(r => r.RelatedStatus)
         .Include(r => r.RelatedSeason)
         .Include(r => r.RelatedWinningTeam)
         .Include(r => r.RelatedRoundWinners)
@@ -192,7 +197,15 @@ namespace Motorsports.Scaffolding.Core.Services {
         }
       }
     }
-    
+
+    public async Task MarkReadyToWatch(Round round) {
+      if (round.RelatedStatus.Step < (byte)RoundStatus.ReadyToWatch) {
+        round.Status = RoundStatus.ReadyToWatch.ToString();
+        _context.Update(round);
+        await _context.SaveChangesAsync();
+      }
+    }
+
     public async Task<IEnumerable<EventHistoryItem>> GetEventHistory(int roundId) {
       var round = await _context.Round
         .AsNoTracking()
@@ -219,7 +232,7 @@ namespace Motorsports.Scaffolding.Core.Services {
 	        LEFT JOIN [dbo].[Participant] P ON P.[Id] = RW.[Participant]
         WHERE
 	        R.[Venue] = @Venue
-	        AND ST.[Step} > 1
+	        AND ST.[Step] > 1
 	        AND S.[Sport] = @Sport
           AND R.[Date] <= @Date
         GROUP BY

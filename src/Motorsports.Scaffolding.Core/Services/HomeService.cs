@@ -11,6 +11,7 @@ using Motorsports.Scaffolding.Core.Models.DisplayModels;
 namespace Motorsports.Scaffolding.Core.Services {
   public interface IHomeService {
     Task<IEnumerable<NextUp>> GetRoundsNextUp();
+    Task<IEnumerable<RoundToAcquire>> GetRoundsToAcquire();
     Task<HomeDisplayModel> GetHomeDisplayModel();
   }
 
@@ -26,6 +27,27 @@ namespace Motorsports.Scaffolding.Core.Services {
       _context = context ?? throw new ArgumentNullException(nameof(context));
       _queryExecutor = queryExecutor ?? throw new ArgumentNullException(nameof(queryExecutor));
       _roundService = roundService ?? throw new ArgumentNullException(nameof(roundService));
+    }
+
+    public Task<IEnumerable<RoundToAcquire>> GetRoundsToAcquire() {
+      return _queryExecutor.NewQuery(@"
+        SELECT
+          S.[Sport],
+          R.[Id],
+          R.[Number],
+          R.[Date],
+          R.[Name],
+          R.[Venue]
+        FROM
+          [dbo].[Round] R
+          INNER JOIN [dbo].[Season] S ON S.[Id] = R.[Season]
+          INNER JOIN [dbo].[Status] ST ON ST.[Name] = R.[Status]
+        WHERE
+          ST.[Step] = 0 -- Scheduled but not ReadyToWatch
+          AND R.[Date] <= @Today")
+        .WithCommandType(CommandType.Text)
+        .WithParameters(new { Today = DateTime.Now.Date })
+        .ExecuteAsync<RoundToAcquire>();
     }
 
     public Task<IEnumerable<NextUp>> GetRoundsNextUp() {
@@ -75,10 +97,16 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Include(s => s.RelatedRounds)
         .Select(s => new HomeDisplayModel.SeasonDisplayModelForHome(s))
         .ToListAsync();
+      var roundsToAcquire = (await GetRoundsToAcquire()).ToList();
       return new HomeDisplayModel {
         VeryNextUp = veryNextUp,
         NextUpPerSport = roundsNextUpDisplayModels
           .Where(n => veryNextUp == null || n != veryNextUp)
+          .ToList(),
+        RoundsToAcquire = roundsToAcquire
+          .Select(r => new RoundToAcquireDisplayModel(r))
+          .OrderBy(r => r.Date)
+          .ThenBy(r => r.Sport)
           .ToList(),
         LatestSeasons = allSeasons
           .GroupBy(s => s.Sport)

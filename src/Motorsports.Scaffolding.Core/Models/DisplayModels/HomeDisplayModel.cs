@@ -12,6 +12,10 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public IEnumerable<NextUpDisplayModel> NextUpPerSport { get; set; }
     public bool HasNextUpPerSport => NextUpPerSport.Any();
     
+    [DisplayName("Round")]
+    public IEnumerable<RoundToAcquireDisplayModel> RoundsToAcquire { get; set; }
+    public bool HasRoundsToAcquire => RoundsToAcquire.Any();
+
     [DisplayName("Season")]
     public IEnumerable<SeasonDisplayModelForHome> LatestSeasons { get; set; }
     public bool HasLatestSeasons => LatestSeasons.Any();
@@ -19,7 +23,6 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public class SeasonDisplayModelForHome {
       public SeasonDisplayModelForHome(Season season) {
         DataModel = season ?? throw new ArgumentNullException(nameof(season));
-        Logo = "~/img/" + season.Sport + ".png";
       }
 
       public Season DataModel { get; }
@@ -41,8 +44,6 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       [DisplayName("End date")]
       [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", NullDisplayText = "/")]
       public DateTime? EndDate => DataModel.RelatedRounds?.Select(r => (DateTime?)r.Date).DefaultIfEmpty().Max();
-      
-      public string Logo { get; set; }
     }
   }
 }

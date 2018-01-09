@@ -70,7 +70,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       set => DataModel.Note = value;
     }
 
-    public string Status => DataModel.Status;
+    public RoundStatus Status => Enum.Parse<RoundStatus>(DataModel.Status, true);
     
     [DisplayFormat(NullDisplayText = "?")]
     public short? Rating => (short?) DataModel.Rating;

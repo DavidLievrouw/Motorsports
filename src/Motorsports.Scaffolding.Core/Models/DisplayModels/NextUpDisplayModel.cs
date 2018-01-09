@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
 namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
@@ -22,18 +23,20 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
         .Where(eh => eh.Id != nextUp.Id)
         .Select(eh => new EventHistoryItemDisplayModel(eh))
         .ToList();
-      Logo = "~/img/" + nextUp.Sport + ".png";
     }
     
     public int Id { get; set; }
     public string Sport { get; set; }
     public short Number { get; set; }
-    public DateTime Date { get; set; }
-    public string Name { get; set; }
     public string Venue { get; set; }
     public bool IsVeryNextUp { get; set; }
     public IEnumerable<EventHistoryItemDisplayModel> EventHistory { get; set; }
-    public string Logo { get; set; }
+    
+    [DisplayFormat(NullDisplayText = "/")]
+    public string Name { get; set; }
+
+    [DisplayFormat(DataFormatString = "{0:d MMM yyyy}")]
+    public DateTime Date { get; set; }
 
     public bool IsInPast => Date.Date <= DateTime.Now.Date;
 
