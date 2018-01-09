@@ -2,9 +2,9 @@
 
 @{
   var winningParticipants = (Model ?? Enumerable.Empty<Participant>()).Select(p => $"{p.FirstName} {p.LastName}").ToList();
-  <div>
+  <span>
     @(winningParticipants.Any()
         ? string.Join(", ", winningParticipants)
         : "/")
-  </div>
+  </span>
 }

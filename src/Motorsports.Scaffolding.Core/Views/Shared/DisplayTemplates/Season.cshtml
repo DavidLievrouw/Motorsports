@@ -1,7 +1,7 @@
 ﻿@model Season
 
 @if (!string.IsNullOrWhiteSpace(Model.Label)) {
-  <div>@Model.Label (@Model.Sport)</div>
+  <span>@Model.Label (@Model.Sport)</span>
 }
 else {
   var firstRound = Model.RelatedRounds?.OrderBy(r => r.Number)?.FirstOrDefault()?.Date;
@@ -10,13 +10,13 @@ else {
   var lastYear = lastRound?.Year;
   if (firstYear.HasValue && lastYear.HasValue) {
     if (firstYear.Value == lastYear.Value) {
-      <div>@Model.Sport (@firstYear.Value)</div>
+      <span>@Model.Sport (@firstYear.Value)</span>
     }
     else {
-      <div>@Model.Sport (@firstYear.Value-@lastYear.Value)</div>
+      <span>@Model.Sport (@firstYear.Value-@lastYear.Value)</span>
     }
   }
   else {
-    <div>@Model.Sport (no rounds defined)</div>
+    <span>@Model.Sport (no rounds defined)</span>
   }
 }
