@@ -12,6 +12,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public IEnumerable<NextUpDisplayModel> NextUpPerSport { get; set; }
     public bool HasNextUpPerSport => NextUpPerSport.Any();
     
+    [DisplayName("Season")]
     public IEnumerable<SeasonDisplayModelForHome> LatestSeasons { get; set; }
     public bool HasLatestSeasons => LatestSeasons.Any();
 
@@ -31,17 +32,6 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       public string Sport {
         get => DataModel.Sport;
         set => DataModel.Sport = value;
-      }
-
-      [DisplayFormat(NullDisplayText = "/")]
-      public string Label {
-        get => DataModel.Label;
-        set => DataModel.Label = value;
-      }
-
-      public Sport RelatedSport {
-        get => DataModel.RelatedSport;
-        set => DataModel.RelatedSport = value;
       }
 
       [DisplayName("Start date")]

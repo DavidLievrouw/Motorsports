@@ -45,10 +45,7 @@
       <thead>
       <tr>
         <th>
-          @Html.DisplayNameFor(model => model.LatestSeasons.First().Sport)
-        </th>
-        <th>
-          @Html.DisplayNameFor(model => model.LatestSeasons.First().Label)
+          @Html.DisplayNameFor(model => model.LatestSeasons)
         </th>
         <th>
           @Html.DisplayNameFor(model => model.LatestSeasons.First().StartDate)
@@ -64,19 +61,18 @@
       @foreach (var season in Model.LatestSeasons) {
         <tr>
           <td>
-            <a asp-action="Index" asp-controller="Rounds" asp-route-id="@season.Id">
-              <div>
-                <div class="latestSeasonLogo">
+            <div>
+              <div class="latestSeasonLogo">
+                <a asp-action="Index" asp-controller="Rounds" asp-route-id="@season.Id">
                   <img class="sportlogo" src="@_imageService.GetSportLogo(season.Sport)" alt="@season.Sport"/>
-                </div>
-                <div class="latestSeasonName">
-                  @Html.DisplayFor(modelItem => season.RelatedSport.Name)
-                </div>
+                </a>
               </div>
-            </a>
-          </td>
-          <td>
-            @Html.DisplayFor(modelItem => season.Label)
+              <div class="latestSeasonName">
+                <a asp-action="Index" asp-controller="Rounds" asp-route-id="@season.Id">
+                  @Html.DisplayFor(modelItem => season.DataModel)
+                </a>
+              </div>
+            </div>
           </td>
           <td>
             @Html.DisplayFor(modelItem => season.StartDate)
