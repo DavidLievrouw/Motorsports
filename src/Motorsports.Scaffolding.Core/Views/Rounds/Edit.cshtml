@@ -12,7 +12,7 @@
 
 <blockquote>
   <div class="sportlogoContainer">
-    <img class="sportlogo" src="@_imageService.GetSportLogo(Model.RelatedSeason.Sport)" alt="@Model.RelatedSeason.Sport" />
+    <img class="sportlogo" src="@_imageService.GetSportLogo(Model.RelatedSeason.Sport)" alt="@Model.RelatedSeason.Sport"/>
   </div>
   <h4 class="sportlogoName">Round</h4>
 </blockquote>
@@ -121,6 +121,11 @@
           })
         </div>
         <span asp-validation-for="Rating" class="text-danger"></span>
+      </div>
+      <div class="form-group">
+        <label asp-for="Note" class="control-label"></label>
+        @Html.TextAreaFor(_ => _.Note, new { @class = "form-control", maxlength = 1024 })
+        <span asp-validation-for="Note" class="text-danger"></span>
       </div>
       <div class="form-group">
         <input type="submit" value="Save" class="btn btn-default"/>

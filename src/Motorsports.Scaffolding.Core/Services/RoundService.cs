@@ -146,6 +146,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       var roundToUpdate = _context.Round.Single(s => s.Id == round.Id);
       roundToUpdate.Season = round.Season;
       roundToUpdate.Venue = round.Venue;
+      roundToUpdate.Note = round.Note;
       roundToUpdate.Date = round.Date;
       roundToUpdate.Number = round.Number;
       roundToUpdate.Name = round.Name;

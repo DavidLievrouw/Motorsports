@@ -63,6 +63,11 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       get => DataModel.RelatedVenue;
       set => DataModel.RelatedVenue = value;
     }
+    
+    public string Note {
+      get => DataModel.Note;
+      set => DataModel.Note = value;
+    }
 
     public string Status => DataModel.Status;
     

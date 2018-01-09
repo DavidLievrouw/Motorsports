@@ -4,6 +4,8 @@ using FluentValidation;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
   public class UpdateRoundValidator : MotorsportsValidator<Round, int>, IUpdateValidator<Round, int> {
+    const int MaxNoteLength = 1024;
+
     readonly MotorsportsContext _context;
 
     public UpdateRoundValidator(MotorsportsContext context) {
@@ -38,8 +40,16 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
         .WithMessage("A season is required.")
         .Must(SeasonExists)
         .WithMessage("The specified season does not exist.");
+
+      RuleFor(_ => _.Note)
+        .Must(HaveValidLength)
+        .WithMessage($"The specified note is too long. Maximum number of characters is {MaxNoteLength}.");
     }
-    
+
+    static bool HaveValidLength(Round round, string note) {
+      return string.IsNullOrEmpty(note) || note.Length <= MaxNoteLength;
+    }
+
     bool MustExist(Round round, short number) {
       return _context.Round.Any(_ => round.Id == _.Id);
     }
