@@ -1,5 +1,4 @@
 ﻿@using Motorsports.Scaffolding.Core.Services
-
 @model Motorsports.Scaffolding.Core.Models.DisplayModels.HomeDisplayModel
 
 @inject IImageService _imageService
@@ -44,6 +43,8 @@
         <th>
           @Html.DisplayNameFor(model => model.LatestSeasons.First().EndDate)
         </th>
+        <th>
+        </th>
       </tr>
       </thead>
       <tbody>
@@ -69,6 +70,10 @@
           </td>
           <td>
             @Html.DisplayFor(modelItem => season.EndDate)
+          </td>
+          <td>
+            <a asp-action="Edit" asp-controller="Seasons" asp-route-id="@season.Id">Edit</a> |
+            <a asp-action="Details" asp-controller="Seasons" asp-route-id="@season.Id">Details</a>
           </td>
         </tr>
       }
