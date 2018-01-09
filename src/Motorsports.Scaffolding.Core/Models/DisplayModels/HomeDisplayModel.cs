@@ -46,11 +46,11 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
 
       [DisplayName("Start date")]
       [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", NullDisplayText = "/")]
-      public DateTime? StartDate => DataModel.RelatedRounds.FirstOrDefault()?.Date;
+      public DateTime? StartDate => DataModel.RelatedRounds?.MinOrDefault(r => r.Date);
 
       [DisplayName("End date")]
       [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", NullDisplayText = "/")]
-      public DateTime? EndDate => DataModel.RelatedRounds.LastOrDefault()?.Date;
+      public DateTime? EndDate => DataModel.RelatedRounds?.MaxOrDefault(r => r.Date);
       
       public string Logo { get; set; }
     }
