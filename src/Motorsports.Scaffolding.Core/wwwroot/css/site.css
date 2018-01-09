@@ -101,6 +101,10 @@ a.eventHistoryItemLink {
   padding: 0px 10px 0px 10px;
 }
 
+tr.disabledRow {
+  color: silver;
+}
+
 div.disabledLink {
   color: silver;
 }

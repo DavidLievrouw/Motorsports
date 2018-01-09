@@ -49,33 +49,33 @@
     </tr>
     </thead>
     <tbody>
-    @foreach (var item in Model.Rounds) {
-      <tr>
+    @foreach (var round in Model.Rounds) {
+      <tr class="@(round.Number < 1 ? "disabledRow" : string.Empty)">
         <td>
-          @Html.DisplayFor(modelItem => item.Number)
+          @Html.DisplayFor(modelItem => round.Number)
         </td>
         <td>
-          @Html.DisplayFor(modelItem => item.Date)
+          @Html.DisplayFor(modelItem => round.Date)
         </td>
         <td>
-          @Html.DisplayFor(modelItem => item.Venue)
+          @Html.DisplayFor(modelItem => round.Venue)
         </td>
         <td>
-          @Html.DisplayFor(modelItem => item.Status)
+          @Html.DisplayFor(modelItem => round.Status)
         </td>
         <td>
-          @Html.DisplayFor(modelItem => item.Rating)/10
+          @Html.DisplayFor(modelItem => round.Rating)/10
         </td>
         <td>
-          @Html.DisplayFor(modelItem => item.WinningParticipants, nameof(item.WinningParticipants))
+          @Html.DisplayFor(modelItem => round.WinningParticipants, nameof(round.WinningParticipants))
         </td>
         <td>
-          @Html.DisplayFor(modelItem => item.WinningTeam, nameof(item.WinningTeam))
+          @Html.DisplayFor(modelItem => round.WinningTeam, nameof(round.WinningTeam))
         </td>
         <td>
-          <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-          <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-          <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+          <a asp-action="Edit" asp-route-id="@round.Id">Edit</a> |
+          <a asp-action="Details" asp-route-id="@round.Id">Details</a> |
+          <a asp-action="Delete" asp-route-id="@round.Id">Delete</a>
         </td>
       </tr>
     }
