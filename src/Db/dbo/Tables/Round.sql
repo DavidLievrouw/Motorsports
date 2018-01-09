@@ -6,7 +6,7 @@
     [Season]      INT            NOT NULL,
     [Venue]       NVARCHAR (50)  NOT NULL,
     [Status]      NVARCHAR (20)  NOT NULL CONSTRAINT DF_Round_Status DEFAULT N'Scheduled',
-    [Rating]      DECIMAL (2, 1) NULL,
+    [Rating]      DECIMAL (3, 1) NULL,
     [Rain]        DECIMAL (1)    NULL,
     [WinningTeam] INT            NULL,
     CONSTRAINT [PK_Round] PRIMARY KEY CLUSTERED ([Id] ASC),

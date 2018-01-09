@@ -86,7 +86,7 @@ namespace Motorsports.Scaffolding.Core.Models {
 
           entity.Property(e => e.Rain).HasColumnType("decimal(1, 0)");
 
-          entity.Property(e => e.Rating).HasColumnType("decimal(2, 1)");
+          entity.Property(e => e.Rating).HasColumnType("decimal(3, 1)");
 
           entity.Property(e => e.Status)
             .HasDefaultValue("Scheduled")
