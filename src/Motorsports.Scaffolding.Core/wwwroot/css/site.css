@@ -35,72 +35,79 @@
 }
 
 /* Custom bootstrap-slider for rating editor */
-div .rating {
+div.rating {
   display: flex;
 }
-div .slider {
+div.slider {
   flex-grow: 1;
 }
-div #rangeValue {
+div#rangeValue {
   width: 30px;
   text-align: right;
 }
-div #rngRating .slider-selection {
+div#rngRating .slider-selection {
   background: #BABABA;
 }
 
-div .formLabelWithLink {
+div.formLabelWithLink {
   display: flex;
   justify-content: space-between;
 }
 
-div .nextUp {
+div.nextUp {
   border-top: 1px solid #ddd;
   border-bottom: 1px solid #ddd;
   margin-bottom: 20px;
   padding: 10px;
 }
 
-div .veryNextUp {
+div.veryNextUp {
   background: #eee;
 }
 
-div .nextUp .nextUpTitle {
+div.nextUp .nextUpTitle {
   font-weight: bold;
   font-size: 20px;
   display: inline-grid;
   width: 100px;
 }
 
-div .nextUpSport {
+div.nextUpSport {
   font-style: italic;
   text-align: center;
   font-weight: bolder;
 }
 
-div .nextUpEventHistoryItem {
+div.nextUpEventHistoryItem {
   border-top: 1px solid #ddd;
 }
 
-div .nextUpTagLine {
+div.nextUpTagLine {
   font-size: 18px;
   font-weight: 500;
   text-align: center;
 }
 
-div .nextUpDetail {
+div.nextUpDetail {
   display: inline-table;
 }
 
-div .nextUpDetailItem {
+.nextUpDetailItem {
   margin-left: 30px;
 }
 
-div .disabledLink {
+a.nextUpEventHistoryItemLink, 
+a.eventHistoryItemLink {
+  border-left: 1px solid #ddd;
+  margin: 0px 10px 0px 10px;
+  padding: 0px 10px 0px 10px;
+}
+
+div.disabledLink {
   color: silver;
 }
 
-div .padded {
+div.padded {
   padding: 10px;
 }
 
