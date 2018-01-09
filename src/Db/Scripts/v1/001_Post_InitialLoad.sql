@@ -310,22 +310,29 @@ GO
 
 MERGE [dbo].[Status] AS Target 
 USING (SELECT * FROM (VALUES
-        (N'Cancelled'),
-        (N'Finished'),
-        (N'Interrupted'),
-        (N'Scheduled')
+        (N'Cancelled', 3),
+        (N'Finished', 3),
+        (N'Stopped', 3),
+        (N'Postponed', 2),
+        (N'ReadyToWatch', 1),
+        (N'Scheduled', 0)
     )
     AS s (
-      [Name]
+      [Name],
+      [Step]
 	)) AS Source
 ON Target.[Name] = Source.[Name]
-WHEN NOT MATCHED THEN
+WHEN NOT MATCHED BY TARGET THEN
 INSERT (
-    [Name]
+    [Name],
+    [Step]
 )
 VALUES (
-    Source.[Name]
-);
+    Source.[Name],
+    Source.[Step]
+)
+WHEN MATCHED THEN UPDATE SET [Step] = Source.[Step]
+WHEN NOT MATCHED BY SOURCE THEN DELETE;
 GO
 
 IF NOT EXISTS(SELECT * FROM [dbo].[User] WHERE Id = '8500d15b-7ab3-45a0-9547-00e0f6b4a984') BEGIN

@@ -167,6 +167,8 @@ namespace Motorsports.Scaffolding.Core.Models {
       modelBuilder.Entity<Status>(
         entity => {
           entity.HasKey(e => e.Name);
+          
+          entity.Property(e => e.Step).HasColumnType("tinyint");
 
           entity.Property(e => e.Name)
             .HasMaxLength(20)

@@ -7,6 +7,7 @@ namespace Motorsports.Scaffolding.Core.Models {
     }
 
     public string Name { get; set; }
+    public byte Step { get; set; }
 
     public ICollection<Round> RelatedRounds { get; set; }
   }
