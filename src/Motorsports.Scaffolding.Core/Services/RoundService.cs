@@ -194,7 +194,9 @@ namespace Motorsports.Scaffolding.Core.Services {
     
     public async Task<IEnumerable<EventHistoryItem>> GetEventHistory(int roundId) {
       var round = await _context.Round
+        .AsNoTracking()
         .Include(r => r.RelatedSeason)
+        .AsNoTracking()
         .Where(r => r.Id == roundId)
         .FirstOrDefaultAsync();
       if (round == null) throw new ArgumentException("The specified round was not found.", nameof(roundId));
