@@ -84,7 +84,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       return new SeasonDisplayModel(
         seasonDataModel,
         _context.Sport.OrderBy(sport => sport.Name),
-        _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
+        _context.Team.Where(team => team.Sport == seasonDataModel.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName));
     }
 
