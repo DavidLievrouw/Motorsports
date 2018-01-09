@@ -24,6 +24,19 @@
       <div class="disabledLink">[No rounds next up]</div>
     }
   }
+  <script>
+    $(document).ready(function() {
+      var maxHeight = 0;
+
+      $("div.nextUp").each(function () {
+        if ($(this).height() > maxHeight) {
+          maxHeight = $(this).height();
+        }
+      });
+
+      $("div.nextUp").height(maxHeight);
+    });
+  </script>
   @if (Model.HasLatestSeasons) {
     <blockquote class="homeHeader">
       <h4>Latest seasons</h4>
