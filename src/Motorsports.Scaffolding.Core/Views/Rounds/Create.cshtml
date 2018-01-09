@@ -1,5 +1,4 @@
 ﻿@using Motorsports.Scaffolding.Core.Services
-
 @model Motorsports.Scaffolding.Core.Models.DisplayModels.RoundDisplayModel
 
 @inject IImageService _imageService
@@ -12,17 +11,17 @@
 
 <blockquote>
   <div class="sportlogoContainer">
-    <img class="sportlogo" src="@_imageService.GetSportLogo(Model.RelatedSeason.Sport)" alt="@Model.RelatedSeason.Sport" />
+    <img class="sportlogo" src="@_imageService.GetSportLogo(Model.RelatedSeason.Sport)" alt="@Model.RelatedSeason.Sport"/>
   </div>
   <h4 class="sportlogoName">Create a round for @Html.DisplayFor(model => model.RelatedSeason)</h4>
 </blockquote>
 
-<hr />
+<hr/>
 <div class="row">
   <div class="col-md-4">
     <form asp-action="Create" asp-route-id="@Model.Season">
       <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-      <input type="hidden" asp-for="Season" />
+      <input type="hidden" asp-for="Season"/>
       <div class="form-group">
         <label asp-for="Season" class="control-label"></label>
         <div>@Html.DisplayFor(_ => _.RelatedSeason)</div>
@@ -31,22 +30,22 @@
       <div class="form-group">
         <label asp-for="Date" class="control-label"></label>
         <div>
-          @Html.EditorFor(_ => _.Date, nameof(Model.Date), new
-          {
+          @Html.EditorFor(_ => _.Date, nameof(Model.Date), new {
             SelectedDate = Model.Date,
-            TargetProperty = nameof(Model.Date)
+            TargetProperty = nameof(Model.Date),
+            Autofocus = true
           })
         </div>
         <span asp-validation-for="Date" class="text-danger"></span>
       </div>
       <div class="form-group">
         <label asp-for="Number" class="control-label"></label>
-        <input asp-for="Number" class="form-control" />
+        <input asp-for="Number" class="form-control"/>
         <span asp-validation-for="Number" class="text-danger"></span>
       </div>
       <div class="form-group">
         <label asp-for="Name" class="control-label"></label>
-        <input asp-for="Name" class="form-control" />
+        <input asp-for="Name" class="form-control"/>
         <span asp-validation-for="Name" class="text-danger"></span>
       </div>
       <div class="form-group">
@@ -55,8 +54,7 @@
           <a asp-action="Index" asp-controller="Venues" target="_blank">Edit venues</a>
         </div>
         <div>
-          @Html.EditorFor(_ => _.Venue, typeof(Venue).Name, new
-          {
+          @Html.EditorFor(_ => _.Venue, typeof(Venue).Name, new {
             Venues = Model.AvailableVenues,
             SelectedVenue = Model.Venue,
             TargetProperty = nameof(Model.Venue)
@@ -67,8 +65,7 @@
       <div class="form-group">
         <label asp-for="Status" class="control-label"></label>
         <div>
-          @Html.EditorFor(_ => _.Status, nameof(Model.Status), new
-          {
+          @Html.EditorFor(_ => _.Status, nameof(Model.Status), new {
             Statuses = Model.AvailableStatuses,
             SelectedStatus = Model.Status,
             TargetProperty = nameof(Model.Status)
@@ -77,7 +74,7 @@
         <span asp-validation-for="Status" class="text-danger"></span>
       </div>
       <div class="form-group">
-        <input type="submit" value="Create" class="btn btn-default" />
+        <input type="submit" value="Create" class="btn btn-default"/>
       </div>
     </form>
   </div>

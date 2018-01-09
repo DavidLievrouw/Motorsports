@@ -20,7 +20,8 @@
           @Html.EditorFor(_ => _.Sport, typeof(Sport).Name, new {
             Sports = Model.AvailableSports,
             SelectedSport = Model.Sport,
-            TargetProperty = nameof(Model.Sport)
+            TargetProperty = nameof(Model.Sport),
+            Autofocus = true
           })
         </div>
         <span asp-validation-for="Sport" class="text-danger"></span>

@@ -7,6 +7,7 @@
   var allParticipants = ((IEnumerable) ViewData["Participants"]).OfType<Participant>().ToList();
   var selectedParticipants = (int[]) ViewData["SelectedParticipants"];
   var targetProperty = ViewData["TargetProperty"] ?? "WinningParticipants";
+  var autofocus = bool.Parse(ViewData["Autofocus"]?.ToString() ?? "false");
 
   var participantsData = allParticipants
     .Select(_ => new {
@@ -15,7 +16,7 @@
     }).ToArray();
 }
 
-<select name="@(targetProperty)[]" id="slcWinningParticipants" class="form-control" multiple="multiple"></select>
+<select name="@(targetProperty)[]" id="slcWinningParticipants" class="form-control" multiple="multiple" @(autofocus ? "autofocus=\"autofocus\"" : string.Empty)></select>
 
 <script>
   $(document).ready(function() {

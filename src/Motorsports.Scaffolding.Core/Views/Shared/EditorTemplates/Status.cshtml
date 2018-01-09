@@ -7,6 +7,7 @@
   var allStatuses = ((IEnumerable) ViewData["Statuses"]).OfType<Status>().ToList();
   var selectedStatus = (string) ViewData["SelectedStatus"];
   var targetProperty = ViewData["TargetProperty"] ?? "Status";
+  var autofocus = bool.Parse(ViewData["Autofocus"]?.ToString() ?? "false");
 
   var statusesData = allStatuses
     .Select(_ => new {
@@ -15,7 +16,7 @@
     }).ToArray();
 }
 
-<select name="@targetProperty" id="slcStatuses" class="form-control"></select>
+<select name="@targetProperty" id="slcStatuses" class="form-control" @(autofocus ? "autofocus=\"autofocus\"" : string.Empty)></select>
 
 <script>
   $(document).ready(function() {

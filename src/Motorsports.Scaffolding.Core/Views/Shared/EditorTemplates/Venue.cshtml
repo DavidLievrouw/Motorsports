@@ -7,6 +7,7 @@
   var allVenues = ((IEnumerable) ViewData["Venues"]).OfType<Venue>().ToList();
   var selectedVenue = (string) ViewData["SelectedVenue"];
   var targetProperty = ViewData["TargetProperty"] ?? "Venue";
+  var autofocus = bool.Parse(ViewData["Autofocus"]?.ToString() ?? "false");
 
   var groupedVenues = allVenues
     .GroupBy(venue => venue.Country)
@@ -23,7 +24,7 @@
     }).ToArray();
 }
 
-<select name="@targetProperty" id="slcVenues" class="form-control"></select>
+<select name="@targetProperty" id="slcVenues" class="form-control" @(autofocus ? "autofocus=\"autofocus\"" : string.Empty)></select>
 
 <script>
   $(document).ready(function() {
