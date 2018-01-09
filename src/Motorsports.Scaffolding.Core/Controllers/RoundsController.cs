@@ -98,6 +98,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       roundForValidation.Date = round.Date;
       roundForValidation.Number = round.Number;
       roundForValidation.Venue = round.Venue;
+      roundForValidation.Note = round.Note;
       await _roundModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, id, roundForValidation);
       
       if (ModelState.IsValid) {

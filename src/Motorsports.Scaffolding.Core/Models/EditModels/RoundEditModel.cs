@@ -13,6 +13,7 @@ namespace Motorsports.Scaffolding.Core.Models.EditModels {
     public DateTime Date { get; set; }
     public short Number { get; set; }
     public string Venue { get; set; }
+    public string Note { get; set; }
 
     public int? WinningTeamId { get; set; }
     public IEnumerable<int> WinningParticipantIds { get; set; }
@@ -34,6 +35,7 @@ namespace Motorsports.Scaffolding.Core.Models.EditModels {
         var dateStringStringValues = request.Form[nameof(Date)];
         var numberStringStringValues = request.Form[nameof(Number)];
         var venueStringStringValues = request.Form[nameof(Venue)];
+        var noteStringStringValues = request.Form[nameof(Note)];
         var winningTeamIdStringValues = request.Form[nameof(WinningTeamId)];
         var rainStringValues = request.Form[nameof(Rain)];
         var ratingStringValues = request.Form[nameof(Rating)];
@@ -48,7 +50,9 @@ namespace Motorsports.Scaffolding.Core.Models.EditModels {
             : seasonStringStringValues.Select(int.Parse).First(),
           Name = nameStringStringValues == StringValues.Empty
             ? null
-            : nameStringStringValues.First(),
+            : string.IsNullOrEmpty(nameStringStringValues.First())
+              ? null
+              : nameStringStringValues.First(),
           Date = dateStringStringValues == StringValues.Empty
             ? DateTime.MinValue
             : dateStringStringValues.Select(DateTime.Parse).First().Date,
@@ -58,6 +62,11 @@ namespace Motorsports.Scaffolding.Core.Models.EditModels {
           Venue = venueStringStringValues == StringValues.Empty
             ? null
             : venueStringStringValues.First(),
+          Note = noteStringStringValues == StringValues.Empty
+            ? null
+            : string.IsNullOrEmpty(noteStringStringValues.First())
+              ? null
+              : noteStringStringValues.First(),
           WinningTeamId = winningTeamIdStringValues == StringValues.Empty
             ? new int?()
             : winningTeamIdStringValues.Select(int.Parse).First(),
