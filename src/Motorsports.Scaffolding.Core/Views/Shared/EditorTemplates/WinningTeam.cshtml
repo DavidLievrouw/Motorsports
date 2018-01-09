@@ -7,6 +7,7 @@
   var allTeams = ((IEnumerable) ViewData["Teams"]).OfType<Team>().ToList();
   var selectedTeam = (int?) ViewData["SelectedTeam"];
   var targetProperty = ViewData["TargetProperty"] ?? "Team";
+  var autofocus = bool.Parse(ViewData["Autofocus"]?.ToString() ?? "false");
 
   var groupedTeams = allTeams
     .GroupBy(team => team.Sport)
@@ -23,7 +24,7 @@
     }).ToArray();
 }
 
-<select name="@targetProperty" id="slcTeams" class="form-control"></select>
+<select name="@targetProperty" id="slcTeams" class="form-control" @(autofocus ? "autofocus=\"autofocus\"" : string.Empty)></select>
 
 <script>
   $(document).ready(function() {

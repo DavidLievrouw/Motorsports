@@ -7,6 +7,7 @@
   var allRainLevels = ((IEnumerable) ViewData["RainLevels"]).OfType<RainLevel>().ToList();
   var selectedRainLevel = (RainLevel?) ViewData["SelectedRainLevel"];
   var targetProperty = ViewData["TargetProperty"] ?? "RainLevel";
+  var autofocus = bool.Parse(ViewData["Autofocus"]?.ToString() ?? "false");
 
   var rainLevelsData = allRainLevels
     .Select(_ => new {
@@ -15,7 +16,7 @@
     }).ToArray();
 }
 
-<select name="@targetProperty" id="slcRainLevels" class="form-control"></select>
+<select name="@targetProperty" id="slcRainLevels" class="form-control" @(autofocus ? "autofocus=\"autofocus\"" : string.Empty)></select>
 
 <script>
   $(document).ready(function() {

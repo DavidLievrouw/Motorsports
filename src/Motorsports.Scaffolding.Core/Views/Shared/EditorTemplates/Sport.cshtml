@@ -10,6 +10,7 @@
   var allSports = ((IEnumerable) ViewData["Sports"]).OfType<Sport>().ToList();
   var selectedSport = (string) ViewData["SelectedSport"];
   var targetProperty = ViewData["TargetProperty"] ?? "Sport";
+  var autofocus = bool.Parse(ViewData["Autofocus"]?.ToString() ?? "false");
 
   var sportsData = allSports
     .Select(sport => new {
@@ -19,7 +20,7 @@
     }).ToArray();
 }
 
-<select name="@targetProperty" id="slcSports" class="form-control"></select>
+<select name="@targetProperty" id="slcSports" class="form-control" @(autofocus ? "autofocus=\"autofocus\"" : string.Empty)></select>
 
 <script>
   $(document).ready(function() {

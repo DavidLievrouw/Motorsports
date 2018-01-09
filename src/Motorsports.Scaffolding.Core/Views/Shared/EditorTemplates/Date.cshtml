@@ -3,13 +3,14 @@
 @{
   var selectedDate = (DateTime) ViewData["SelectedDate"];
   var targetProperty = ViewData["TargetProperty"] ?? "Date";
+  var autofocus = bool.Parse(ViewData["Autofocus"]?.ToString() ?? "false");
 }
 
 <div class="row">
   <input type="hidden" id="selectedDateValue" name="@targetProperty" value="@selectedDate.ToString("yyyy-MM-dd")" />
   <div class="col-md-8">
     <div class='input-group date' id="datePicker">
-      <input type='text' class="form-control" />
+      <input type='text' class="form-control" @(autofocus ? "autofocus=\"autofocus\"" : string.Empty)/>
       <span class="input-group-addon">
         <span class="glyphicon glyphicon-calendar"></span>
       </span>
