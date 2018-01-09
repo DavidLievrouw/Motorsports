@@ -14,9 +14,9 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
         .WithMessage("A date is required.");
 
       RuleFor(_ => _.Number)
-        .Must(number => number > 0 && number < 100)
+        .Must(number => number > -1 && number < 100)
         .WithMessage("A valid number is required.")
-        .Must(BeUnique)
+        .Must(BeUniqueOrRound0)
         .WithMessage("This round already exists.");
       
       RuleFor(_ => _.Venue)
@@ -50,8 +50,8 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
       return _context.Season.Any(_ => _.Id == season);
     }
 
-    bool BeUnique(Round round, short number) {
-      return !_context.Round.Any(_ => 
+    bool BeUniqueOrRound0(Round round, short number) {
+      return number == 0 || !_context.Round.Any(_ => 
         _.Season == round.Season && 
         _.Number == number);
     }

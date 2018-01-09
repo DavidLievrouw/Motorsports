@@ -14,11 +14,11 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
         .WithMessage("A date is required.");
 
       RuleFor(_ => _.Number)
-        .Must(number => number > 0 && number < 100)
+        .Must(number => number > -1 && number < 100)
         .WithMessage("A valid number is required.")
         .Must(MustExist)
         .WithMessage("The round to update does not exist.")
-        .Must(BeUnique)
+        .Must(BeUniqueOrRound0)
         .WithMessage("This round already exists.");
       
       RuleFor(_ => _.Venue)
@@ -56,10 +56,10 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
       return _context.Season.Any(_ => _.Id == season);
     }
 
-    bool BeUnique(Round round, short number) {
-      return !_context.Round.Any(_ => 
-        StringComparer.InvariantCultureIgnoreCase.Equals(_.Season, round.Season) && 
-        StringComparer.InvariantCultureIgnoreCase.Equals(_.Number, number) &&
+    bool BeUniqueOrRound0(Round round, short number) {
+      return number == 0 || !_context.Round.Any(_ => 
+        _.Season == round.Season && 
+        _.Number == number &&
         _.Id != round.Id);
     }
   }

@@ -104,7 +104,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Include(r => r.RelatedRoundWinners)
         .ThenInclude(rw => rw.RelatedParticipant)
         .Include(r => r.RelatedVenue)
-        .OrderBy(r => r.Number)
+        .OrderBy(r => r.Date)
         .Select(r => new RoundDisplayModel(r, null, null, null, null))
         .ToListAsync();
     }
@@ -117,7 +117,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .ThenInclude(rw => rw.RelatedParticipant)
         .Include(r => r.RelatedVenue)
         .Where(r => r.Season == seasonId)
-        .OrderBy(r => r.Number)
+        .OrderBy(r => r.Date)
         .Select(r => new RoundDisplayModel(r, null, null, null, null))
         .ToListAsync();
     }
