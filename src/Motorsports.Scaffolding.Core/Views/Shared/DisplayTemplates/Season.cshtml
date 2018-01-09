@@ -4,8 +4,8 @@
   <span>@Model.Label (@Model.Sport)</span>
 }
 else {
-  var firstRound = Model.RelatedRounds?.OrderBy(r => r.Number)?.FirstOrDefault()?.Date;
-  var lastRound = Model.RelatedRounds?.OrderByDescending(r => r.Number)?.FirstOrDefault()?.Date;
+  var firstRound = Model.RelatedRounds?.OrderBy(r => r.Date)?.FirstOrDefault()?.Date;
+  var lastRound = Model.RelatedRounds?.OrderByDescending(r => r.Date)?.FirstOrDefault()?.Date;
   var firstYear = firstRound?.Year;
   var lastYear = lastRound?.Year;
   if (firstYear.HasValue && lastYear.HasValue) {
