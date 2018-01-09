@@ -38,7 +38,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       get => DataModel.Date;
       set => DataModel.Date = value;
     }
-
+    
     public short Number {
       get => DataModel.Number;
       set => DataModel.Number = value;
@@ -97,5 +97,8 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
 
     [DisplayFormat(NullDisplayText = "?")]
     public IEnumerable<Participant> WinningParticipants => DataModel.RelatedRoundWinners?.Select(rw => rw.RelatedParticipant);
+    
+    [DisplayName("Number")]
+    public string NumberDescription => Number < 1 ? $"{Number} (non-championship)" : Number.ToString();
   }
 }

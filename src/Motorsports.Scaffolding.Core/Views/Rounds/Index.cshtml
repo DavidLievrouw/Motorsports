@@ -52,7 +52,7 @@
     @foreach (var round in Model.Rounds) {
       <tr class="@(round.Number < 1 ? "disabledRow" : string.Empty)">
         <td>
-          @Html.DisplayFor(modelItem => round.Number)
+          @Html.DisplayFor(modelItem => round.NumberDescription)
         </td>
         <td>
           @Html.DisplayFor(modelItem => round.Date)
