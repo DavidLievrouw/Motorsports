@@ -50,7 +50,7 @@ namespace Motorsports.Scaffolding.Core.Models.EditModels {
             : seasonStringStringValues.Select(int.Parse).First(),
           Name = nameStringStringValues == StringValues.Empty
             ? null
-            : string.IsNullOrEmpty(nameStringStringValues.First())
+            : string.IsNullOrWhiteSpace(nameStringStringValues.First())
               ? null
               : nameStringStringValues.First(),
           Date = dateStringStringValues == StringValues.Empty
@@ -64,7 +64,7 @@ namespace Motorsports.Scaffolding.Core.Models.EditModels {
             : venueStringStringValues.First(),
           Note = noteStringStringValues == StringValues.Empty
             ? null
-            : string.IsNullOrEmpty(noteStringStringValues.First())
+            : string.IsNullOrWhiteSpace(noteStringStringValues.First())
               ? null
               : noteStringStringValues.First(),
           WinningTeamId = winningTeamIdStringValues == StringValues.Empty

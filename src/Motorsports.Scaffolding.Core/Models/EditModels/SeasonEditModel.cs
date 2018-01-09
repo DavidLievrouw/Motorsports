@@ -29,7 +29,7 @@ namespace Motorsports.Scaffolding.Core.Models.EditModels {
             : idStringStringValues.Select(int.Parse).First(),
           Label = labelStringStringValues == StringValues.Empty
             ? null
-            :  string.IsNullOrEmpty(labelStringStringValues.First())
+            :  string.IsNullOrWhiteSpace(labelStringStringValues.First())
               ? null
               : labelStringStringValues.First(),
           WinningTeamId = winningTeamIdStringValues == StringValues.Empty

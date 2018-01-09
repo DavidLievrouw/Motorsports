@@ -63,7 +63,8 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       get => DataModel.RelatedVenue;
       set => DataModel.RelatedVenue = value;
     }
-    
+
+    [DisplayFormat(NullDisplayText = "/")]
     public string Note {
       get => DataModel.Note;
       set => DataModel.Note = value;

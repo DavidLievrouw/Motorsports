@@ -88,11 +88,24 @@
       @Html.DisplayNameFor(model => model.EventHistory)
     </dt>
     <dd>
-      @foreach (var eventHistoryItem in Model.EventHistory) {
-        <div>@Html.DisplayFor(model => eventHistoryItem.Date) - @Html.DisplayFor(model => eventHistoryItem.WinningParticipants) - @Html.DisplayFor(model => eventHistoryItem.WinningTeam) - @Html.DisplayFor(model => eventHistoryItem.Rain) - @Html.DisplayFor(model => eventHistoryItem.Rating)/10</div>
-      }
       @if (!Model.EventHistory.Any()) {
         <div class="disabledLink">No event history available</div>
+      }
+      else {
+        <table>
+          <tbody>
+          @foreach (var eventHistoryItem in Model.EventHistory) {
+            <tr>
+              <td>
+                @Html.DisplayFor(model => eventHistoryItem.Date) - @Html.DisplayFor(model => eventHistoryItem.WinningParticipants) - @Html.DisplayFor(model => eventHistoryItem.WinningTeam) - @Html.DisplayFor(model => eventHistoryItem.Rain) - @Html.DisplayFor(model => eventHistoryItem.Rating)/10
+              </td>
+              <td>
+                <a class="eventHistoryItemLink" asp-action="Details" asp-controller="Rounds" asp-route-id="@eventHistoryItem.Id">Details</a>
+              </td>
+            </tr>
+          }
+          </tbody>
+        </table>
       }
     </dd>
   </dl>
