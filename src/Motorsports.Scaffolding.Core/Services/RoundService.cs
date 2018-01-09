@@ -213,14 +213,15 @@ namespace Motorsports.Scaffolding.Core.Services {
         FROM
 	        [dbo].[Round] R
 	        INNER JOIN [dbo].[Season] S ON R.[Season] = S.[Id]
+          INNER JOIN [dbo].[Status] ST ON ST.[Name] = R.[Status]          
 	        LEFT JOIN [dbo].[Team] T ON R.[WinningTeam] = T.[Id]
 	        LEFT JOIN [dbo].[RoundWinner] RW ON R.[Id] = RW.[Round]
 	        LEFT JOIN [dbo].[Participant] P ON P.[Id] = RW.[Participant]
         WHERE
 	        R.[Venue] = @Venue
-	        AND R.[Status] <> 'Scheduled'
+	        AND ST.[Step} > 1
 	        AND S.[Sport] = @Sport
-          AND R.[Date] < @Date
+          AND R.[Date] <= @Date
         GROUP BY
 	        R.[Id],
 	        R.[Date],

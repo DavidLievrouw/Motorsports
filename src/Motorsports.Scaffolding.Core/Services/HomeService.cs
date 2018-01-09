@@ -43,8 +43,9 @@ namespace Motorsports.Scaffolding.Core.Services {
             FROM
 	            [dbo].[Round] R
 	            INNER JOIN [dbo].[Season] S ON S.[Id] = R.[Season]
+              INNER JOIN [dbo].[Status] ST ON ST.[Name] = R.[Status]
             WHERE
-	            R.[Status] = 'Scheduled'
+	            ST.[Step] < 2 -- Scheduled or ReadyToWatch
           )
           SELECT 
             P.[Sport],
