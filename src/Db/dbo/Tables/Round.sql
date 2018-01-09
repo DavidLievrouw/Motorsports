@@ -9,6 +9,7 @@
     [Rating]      DECIMAL (3, 1) NULL,
     [Rain]        DECIMAL (1)    NULL,
     [WinningTeam] INT            NULL,
+    [Note]        NVARCHAR(MAX)  NULL, 
     CONSTRAINT [PK_Round] PRIMARY KEY CLUSTERED ([Id] ASC),
     CONSTRAINT [FK_Season_Round] FOREIGN KEY ([Season]) REFERENCES [dbo].[Season] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_Status_Round] FOREIGN KEY ([Status]) REFERENCES [dbo].[Status] ([Name]) ON UPDATE CASCADE,
