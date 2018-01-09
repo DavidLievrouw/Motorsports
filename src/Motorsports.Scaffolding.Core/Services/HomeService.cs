@@ -71,7 +71,6 @@ namespace Motorsports.Scaffolding.Core.Services {
       var veryNextUp = roundsNextUpDisplayModels
         .FirstOrDefault(n => n.IsVeryNextUp);
       var allSeasons = await _context.Season
-        .Include(s => s.RelatedSport)
         .Include(s => s.RelatedRounds)
         .Select(s => new HomeDisplayModel.SeasonDisplayModelForHome(s))
         .ToListAsync();
@@ -81,7 +80,7 @@ namespace Motorsports.Scaffolding.Core.Services {
           .Where(n => veryNextUp == null || n != veryNextUp)
           .ToList(),
         LatestSeasons = allSeasons
-          .GroupBy(s => s.RelatedSport)
+          .GroupBy(s => s.Sport)
           .Select(
             group => new {
               Sport = group.Key,
