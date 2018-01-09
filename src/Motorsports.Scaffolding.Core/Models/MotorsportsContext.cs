@@ -68,6 +68,8 @@ namespace Motorsports.Scaffolding.Core.Models {
           entity.Property(e => e.Date).HasColumnType("date");
 
           entity.Property(e => e.Name).HasMaxLength(100);
+          
+          entity.Property(e => e.Note);
 
           entity.Property(e => e.Venue)
             .IsRequired()

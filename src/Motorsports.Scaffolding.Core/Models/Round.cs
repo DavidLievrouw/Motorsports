@@ -17,6 +17,7 @@ namespace Motorsports.Scaffolding.Core.Models {
     public decimal? Rating { get; set; }
     public decimal? Rain { get; set; }
     public int? WinningTeam { get; set; }
+    public string Note { get; set; }
 
     public Season RelatedSeason { get; set; }
     public Venue RelatedVenue { get; set; }
