@@ -1,8 +1,8 @@
 ﻿CREATE TABLE [dbo].[SeasonEntry] (
-  [SeasonId] INT NOT NULL, 
-  [TeamId] INT NOT NULL, 
+  [Season] INT NOT NULL, 
+  [Team] INT NOT NULL, 
   [Name] NVARCHAR(50) NOT NULL, 
-  PRIMARY KEY ([SeasonId], [TeamId]), 
-  CONSTRAINT [FK_Season_SeasonEntry] FOREIGN KEY ([SeasonId]) REFERENCES [dbo].[Season]([Id]) ON DELETE CASCADE,
-  CONSTRAINT [FK_Team_SeasonEntry] FOREIGN KEY ([TeamId]) REFERENCES [dbo].[Team]([Id])
+  PRIMARY KEY ([Season], [Team]), 
+  CONSTRAINT [FK_Season_SeasonEntry] FOREIGN KEY ([Season]) REFERENCES [dbo].[Season]([Id]) ON DELETE CASCADE,
+  CONSTRAINT [FK_Team_SeasonEntry] FOREIGN KEY ([Team]) REFERENCES [dbo].[Team]([Id])
 )
