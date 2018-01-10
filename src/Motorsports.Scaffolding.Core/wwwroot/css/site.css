@@ -178,3 +178,22 @@ div.roundsToAcquireName {
   display: inline-block;
   margin-left: 10px;
 }
+
+.table > tbody > tr.headerRow {
+  border-top: 0;
+  vertical-align: bottom;
+  border-bottom: 2px solid #ddd;
+  padding: 8px;
+  line-height: 1.42857143;
+  text-align: left;
+  font-weight: bold;
+}
+
+.table > tbody > tr.headerRow > td {
+  border-top: 0px;
+}
+
+.table > tbody > tr > td.sportTableCell {
+  border: 0px;
+  padding-top: 30px;
+}

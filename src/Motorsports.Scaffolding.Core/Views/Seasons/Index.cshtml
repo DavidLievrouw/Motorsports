@@ -13,37 +13,38 @@
 <p>
   <a asp-action="Create">Create New</a>
 </p>
-
-@foreach (var seasonsForSport in Model.SeasonsPerSport) {
-  <blockquote>
-    <div class="sportlogoContainer">
-      <img class="sportlogo" src="@_imageService.GetSportLogo(seasonsForSport.Key.Name)" alt="@seasonsForSport.Key.Name"/>
-    </div>
-    <h4 class="viewName">@seasonsForSport.Key.FullName</h4>
-  </blockquote>
-  <table class="table">
-    <thead>
+<table class="table">
+  <tbody>
+  @foreach (var seasonsForSport in Model.SeasonsPerSport) {
     <tr>
-      <th>
-        @Html.DisplayNameFor(model => seasonsForSport.Value.First().Label)
-      </th>
-      <th>
-        @Html.DisplayNameFor(model => seasonsForSport.Value.First().StartDate)
-      </th>
-      <th>
-        @Html.DisplayNameFor(model => seasonsForSport.Value.First().EndDate)
-      </th>
-      <th>
-        @Html.DisplayNameFor(model => seasonsForSport.Value.First().WinningParticipantIds)
-      </th>
-      <th>
-        @Html.DisplayNameFor(model => seasonsForSport.Value.First().WinningTeamId)
-      </th>
-      <th></th>
+      <td colspan="6" class="sportTableCell">
+        <blockquote>
+          <div class="sportlogoContainer">
+            <img class="sportlogo" src="@_imageService.GetSportLogo(seasonsForSport.Key.Name)" alt="@seasonsForSport.Key.Name"/>
+          </div>
+          <h4 class="viewName">@seasonsForSport.Key.FullName</h4>
+        </blockquote>
+      </td>
     </tr>
-    </thead>
-    <tbody>
-    @foreach (var item in seasonsForSport.Value) {
+    <tr class="headerRow">
+      <td>
+        @Html.DisplayNameFor(model => seasonsForSport.Value.First().Label)
+      </td>
+      <td>
+        @Html.DisplayNameFor(model => seasonsForSport.Value.First().StartDate)
+      </td>
+      <td>
+        @Html.DisplayNameFor(model => seasonsForSport.Value.First().EndDate)
+      </td>
+      <td>
+        @Html.DisplayNameFor(model => seasonsForSport.Value.First().WinningParticipantIds)
+      </td>
+      <td>
+        @Html.DisplayNameFor(model => seasonsForSport.Value.First().WinningTeamId)
+      </td>
+      <td></td>
+    </tr>
+    foreach (var item in seasonsForSport.Value) {
       <tr>
         <td>
           @Html.DisplayFor(modelItem => item.Label)
@@ -69,6 +70,6 @@
         </td>
       </tr>
     }
-    </tbody>
-  </table>
-}
+  }
+  </tbody>
+</table>
