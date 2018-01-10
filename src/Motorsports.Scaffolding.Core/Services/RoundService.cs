@@ -134,7 +134,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       if (round == null) throw new ArgumentNullException(nameof(round));
 
       // Update own props
-      var roundToUpdate = _context.Round.Single(s => s.Id == round.Id);
+      var roundToUpdate = await _context.Round.SingleAsync(s => s.Id == round.Id);
       roundToUpdate.Season = round.Season;
       roundToUpdate.Venue = round.Venue;
       roundToUpdate.Note = round.Note;
