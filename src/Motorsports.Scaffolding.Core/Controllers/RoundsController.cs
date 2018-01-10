@@ -26,7 +26,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       _roundModelStatePopulator = roundModelStatePopulator ?? throw new ArgumentNullException(nameof(roundModelStatePopulator));
     }
 
-    // GET: /Rounds/Season/5
+    // GET: /Rounds/Index/5
     public async Task<IActionResult> Index(int? id) {
       if (id == null) return NotFound();
 
@@ -64,7 +64,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     // POST: Rounds/Create/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(int? id,[Bind("Season,Date,Number,Name,Venue,Status")] Round round) {
+    public async Task<IActionResult> Create(int? id, [Bind("Season,Date,Number,Name,Venue,Status")] Round round) {
       if (id == null) return NotFound();
       
       await _roundModelStatePopulator.ValidateAndPopulateForCreate(ModelState, round);
