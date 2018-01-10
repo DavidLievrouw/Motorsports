@@ -1,4 +1,5 @@
 ﻿@using Motorsports.Scaffolding.Core.Services
+
 @model Motorsports.Scaffolding.Core.Models.DisplayModels.TeamsIndexDisplayModel
 
 @inject IImageService _imageService
@@ -12,27 +13,30 @@
 <p>
   <a asp-action="Create">Create New</a>
 </p>
-@foreach (var teamsForSport in Model.TeamsPerSport) {
-  <blockquote>
-    <div class="sportlogoContainer">
-      <img class="sportlogo" src="@_imageService.GetSportLogo(teamsForSport.Key.Name)" alt="@teamsForSport.Key.Name"/>
-    </div>
-    <h4 class="viewName">@teamsForSport.Key.FullName</h4>
-  </blockquote>
-  <table class="table">
-    <thead>
+
+<table class="table">
+  <tbody>
+  @foreach (var teamsForSport in Model.TeamsPerSport) {
     <tr>
-      <th>
-        @Html.DisplayNameFor(model => teamsForSport.Value.First().Name)
-      </th>
-      <th>
-        @Html.DisplayNameFor(model => teamsForSport.Value.First().Country)
-      </th>
-      <th></th>
+      <td colspan="6" class="sportTableCell">
+        <blockquote>
+          <div class="sportlogoContainer">
+            <img class="sportlogo" src="@_imageService.GetSportLogo(teamsForSport.Key.Name)" alt="@teamsForSport.Key.Name"/>
+          </div>
+          <h4 class="viewName">@teamsForSport.Key.FullName</h4>
+        </blockquote>
+      </td>
     </tr>
-    </thead>
-    <tbody>
-    @foreach (var team in teamsForSport.Value) {
+    <tr class="headerRow">
+      <td>
+        @Html.DisplayNameFor(model => teamsForSport.Value.First().Name)
+      </td>
+      <td>
+        @Html.DisplayNameFor(model => teamsForSport.Value.First().Country)
+      </td>
+      <td></td>
+    </tr>
+    foreach (var team in teamsForSport.Value) {
       <tr>
         <td>
           @Html.DisplayFor(modelItem => team.Name)
@@ -46,6 +50,6 @@
         </td>
       </tr>
     }
-    </tbody>
-  </table>
-}
+  }
+  </tbody>
+</table>
