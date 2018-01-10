@@ -30,7 +30,7 @@
   $(document).ready(function() {
     var teams = $("#slcTeams");
     teams.select2({
-      placeholder: "Select the winning team",
+      placeholder: "Select a team",
       allowClear: true,
       data: @Html.Raw(JsonConvert.SerializeObject(groupedTeams))
     });

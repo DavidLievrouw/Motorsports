@@ -26,7 +26,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       _seasonEntryService = seasonEntryService ?? throw new ArgumentNullException(nameof(seasonEntryService));
     }
 
-    // GET: /Season/SeasonEntries/5
+    // GET: SeasonEntries/5
     public async Task<IActionResult> Index(int? id) {
       if (id == null) return NotFound();
 
@@ -54,28 +54,26 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       return View(seasonEntry);
     }
 
-    // GET: SeasonEntries/Create
-    public IActionResult Create() {
-      ViewData["Season"] = new SelectList(_context.Season, "Id", "Sport");
-      ViewData["Team"] = new SelectList(_context.Team, "Id", "Country");
-      return View(new SeasonEntry());
+    // GET: SeasonEntries/Create/5
+    public async Task<IActionResult> Create(int? id) {
+      if (id == null) return NotFound();
+      return View(await _seasonEntryService.GetNew(id.Value));
     }
 
-    // POST: SeasonEntries/Create
-    // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-    // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
+    // POST: SeasonEntries/Create/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("Season,Team,Name")] SeasonEntry seasonEntry) {
+    public async Task<IActionResult> Create(int? id, [Bind("Season,Team,Name")] SeasonEntry seasonEntry) {
+      if (id == null) return NotFound();
+
       if (ModelState.IsValid) {
-        _context.Add(seasonEntry);
-        await _context.SaveChangesAsync();
-        return RedirectToAction(nameof(Index));
+        await _seasonEntryService.PersistSeasonEntry(seasonEntry);
+        return RedirectToAction(nameof(Index), new { id = id.Value});
       }
 
-      ViewData["Season"] = new SelectList(_context.Season, "Id", "Sport", seasonEntry.Season);
-      ViewData["Team"] = new SelectList(_context.Team, "Id", "Country", seasonEntry.Team);
-      return View(seasonEntry);
+      var seasonEntryDisplayModel = await _seasonEntryService.GetNew(id.Value);
+      if (seasonEntryDisplayModel == null) return NotFound();
+      return View(seasonEntryDisplayModel);
     }
 
     // GET: SeasonEntries/Edit/5
@@ -90,8 +88,6 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     }
 
     // POST: SeasonEntries/Edit/5
-    // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-    // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, [Bind("Season,Team,Name")] SeasonEntry seasonEntry) {
