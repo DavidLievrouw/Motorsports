@@ -10,6 +10,7 @@ namespace Motorsports.Scaffolding.Core.Models {
     public virtual DbSet<RoundWinner> RoundWinner { get; set; }
     public virtual DbSet<Season> Season { get; set; }
     public virtual DbSet<SeasonWinner> SeasonWinner { get; set; }
+    public virtual DbSet<SeasonEntry> SeasonEntry { get; set; }
     public virtual DbSet<Sport> Sport { get; set; }
     public virtual DbSet<Status> Status { get; set; }
     public virtual DbSet<Team> Team { get; set; }
@@ -151,6 +152,26 @@ namespace Motorsports.Scaffolding.Core.Models {
             .WithMany(p => p.RelatedSeasonWinners)
             .HasForeignKey(d => d.Season)
             .HasConstraintName("FK_Season_SeasonWinner");
+        });
+
+      modelBuilder.Entity<SeasonEntry>(
+        entity => {
+          entity.HasKey(e => e.Season);
+          entity.HasKey(e => e.Team);
+
+          entity.Property(e => e.Name)
+            .IsRequired()
+            .HasMaxLength(50);
+
+          entity.HasOne(d => d.RelatedTeam)
+            .WithMany(p => p.RelatedSeasonEntries)
+            .HasForeignKey(d => d.Team)
+            .HasConstraintName("FK_Team_SeasonEntry");
+
+          entity.HasOne(d => d.RelatedSeason)
+            .WithMany(p => p.RelatedSeasonEntries)
+            .HasForeignKey(d => d.Season)
+            .HasConstraintName("FK_Season_SeasonEntry");
         });
 
       modelBuilder.Entity<Sport>(
