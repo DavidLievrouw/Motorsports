@@ -90,6 +90,7 @@ namespace Motorsports.Scaffolding.Core.Services {
           var eventHistory = await _roundService.GetEventHistory(n.Id);
           return new NextUpDisplayModel(n, roundsNextUp, eventHistory);
         }))
+        .OrderByDescending(ehi => ehi.Date)
         .ToList();
       var veryNextUp = roundsNextUpDisplayModels
         .FirstOrDefault(n => n.IsVeryNextUp);

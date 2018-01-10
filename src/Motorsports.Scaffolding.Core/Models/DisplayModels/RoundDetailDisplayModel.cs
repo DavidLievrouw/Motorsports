@@ -8,6 +8,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       Round = round;
       EventHistory = eventHistory
         .Where(eh => eh.Id != round.Id)
+        .OrderByDescending(eh => eh.Date)
         .Select(eh => new EventHistoryItemDisplayModel(eh))
         .ToList();
     }
