@@ -14,3 +14,4 @@ Post-Deployment Script Template
 
 :r .\v2\001_Post_MoveSeasonResultDataToSeasonTable.sql
 :r .\v2\002_Post_MoveRoundResultDataToRoundTable.sql
+:r .\v2\003_Post_InitialLoadSeasonEntryTable.sql
