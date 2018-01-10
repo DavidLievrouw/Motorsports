@@ -1,36 +1,57 @@
-﻿@model SeasonEntry
+﻿@using Motorsports.Scaffolding.Core.Services
+
+@model Motorsports.Scaffolding.Core.Models.DisplayModels.SeasonEntryDisplayModel
+
+@inject IImageService _imageService
 
 @{
-  ViewData["Title"] = "Details";
+  ViewData["Title"] = "Details of a season entry";
 }
 
 <h2>Details</h2>
 
 <div>
-  <h4>SeasonEntry</h4>
-  <hr/>
+  <blockquote>
+    <div class="sportlogoContainer">
+      <img class="sportlogo" src="@_imageService.GetSportLogo(Model.RelatedSeason.Sport)" alt="@Model.RelatedSeason.Sport" />
+    </div>
+    <h4 class="viewName">Season entry</h4>
+  </blockquote>
+  <hr />
   <dl class="dl-horizontal">
+    <dt>
+      @Html.DisplayNameFor(model => model.RelatedSeason.Sport)
+    </dt>
+    <dd>
+      @Html.DisplayFor(model => model.RelatedSeason.RelatedSport.FullName)
+    </dd>
+    <dt>
+      @Html.DisplayNameFor(model => model.RelatedSeason)
+    </dt>
+    <dd>
+      @Html.DisplayFor(model => model.RelatedSeason)
+    </dd>
+    <dt>
+      @Html.DisplayNameFor(model => model.RelatedTeam)
+    </dt>
+    <dd>
+      @Html.DisplayFor(model => model.RelatedTeam)
+    </dd>
+    <dt>
+      @Html.DisplayNameFor(model => model.RelatedTeam.Country)
+    </dt>
+    <dd>
+      @Html.DisplayFor(model => model.RelatedTeam.RelatedCountry.NiceName)
+    </dd>
     <dt>
       @Html.DisplayNameFor(model => model.Name)
     </dt>
     <dd>
       @Html.DisplayFor(model => model.Name)
     </dd>
-    <dt>
-      @Html.DisplayNameFor(model => model.RelatedSeason)
-    </dt>
-    <dd>
-      @Html.DisplayFor(model => model.RelatedSeason.Sport)
-    </dd>
-    <dt>
-      @Html.DisplayNameFor(model => model.RelatedTeam)
-    </dt>
-    <dd>
-      @Html.DisplayFor(model => model.RelatedTeam.Country)
-    </dd>
   </dl>
 </div>
 <div>
   <a asp-action="Edit" asp-route-id="@Model.Team">Edit</a> |
-  <a asp-action="Index">Back to List</a>
+  <a asp-action="Index" asp-route-id="@Model.Season">Back to List</a>
 </div>

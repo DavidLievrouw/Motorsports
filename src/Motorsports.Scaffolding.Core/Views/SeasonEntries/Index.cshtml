@@ -50,9 +50,9 @@
           @Html.DisplayFor(modelItem => seasonEntry.RelatedTeam)
         </td>
         <td>
-          <a asp-action="Edit" asp-route-id="@seasonEntry.Team">Edit</a> |
-          <a asp-action="Details" asp-route-id="@seasonEntry.Team">Details</a> |
-          <a asp-action="Delete" asp-route-id="@seasonEntry.Team">Delete</a>
+          <a asp-action="Edit" asp-route-teamId="@seasonEntry.Team" asp-route-seasonId="@seasonEntry.Season">Edit</a> |
+          <a asp-action="Details" asp-route-teamId="@seasonEntry.Team" asp-route-seasonId="@seasonEntry.Season">Details</a> |
+          <a asp-action="Delete" asp-route-teamId="@seasonEntry.Team" asp-route-seasonId="@seasonEntry.Season">Delete</a>
         </td>
       </tr>
     }

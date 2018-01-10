@@ -11,6 +11,8 @@ namespace Motorsports.Scaffolding.Core.Services {
     Task<List<SeasonEntry>> LoadSeasonEntryList(int seasonId);
     Task<SeasonEntryDisplayModel> GetNew(int seasonId);
     Task PersistSeasonEntry(SeasonEntry seasonEntry);
+    Task<SeasonEntryDisplayModel> LoadDisplayModel(int seasonId, int teamId);
+    Task DeleteSeasonEntry(int seasonId, int teamId);
   }
 
   public class SeasonEntryService : ISeasonEntryService {
@@ -23,6 +25,7 @@ namespace Motorsports.Scaffolding.Core.Services {
     public Task<List<SeasonEntry>> LoadSeasonEntryList(int seasonId) {
       return _context.SeasonEntry
         .Include(se => se.RelatedTeam)
+        .ThenInclude(t => t.RelatedCountry)
         .Include(se => se.RelatedSeason)
         .ThenInclude(s => s.RelatedRounds)
         .Include(s => s.RelatedSeason)
@@ -30,6 +33,8 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Include(s => s.RelatedSeason)
         .ThenInclude(s => s.RelatedSeasonWinners)
         .ThenInclude(sw => sw.RelatedParticipant)
+        .Include(se => se.RelatedSeason)
+        .ThenInclude(s => s.RelatedSport)
         .Where(se => se.Season == seasonId)
         .OrderBy(se => se.RelatedTeam.Name)
         .ThenBy(se => se.Name)
@@ -55,6 +60,33 @@ namespace Motorsports.Scaffolding.Core.Services {
 
     public async Task PersistSeasonEntry(SeasonEntry seasonEntry) {
       _context.Add(seasonEntry);
+      await _context.SaveChangesAsync();
+    }
+
+    public async Task<SeasonEntryDisplayModel> LoadDisplayModel(int seasonId, int teamId) {
+      var seasonEntry = await _context.SeasonEntry
+        .Include(se => se.RelatedTeam)
+        .ThenInclude(t => t.RelatedCountry)
+        .Include(se => se.RelatedSeason)
+        .ThenInclude(s => s.RelatedRounds)
+        .Include(s => s.RelatedSeason)
+        .ThenInclude(s => s.RelatedWinningTeam)
+        .Include(s => s.RelatedSeason)
+        .ThenInclude(s => s.RelatedSeasonWinners)
+        .ThenInclude(sw => sw.RelatedParticipant)
+        .Include(se => se.RelatedSeason)
+        .ThenInclude(s => s.RelatedSport)
+        .Where(se => se.Season == seasonId && se.Team == teamId)
+        .SingleOrDefaultAsync();
+
+      return seasonEntry == null
+        ? null
+        : new SeasonEntryDisplayModel(seasonEntry);
+    }
+
+    public async Task DeleteSeasonEntry(int seasonId, int teamId) {
+      var seasonEntry = await _context.SeasonEntry.SingleOrDefaultAsync(m => m.Season == seasonId && m.Team == teamId);
+      _context.SeasonEntry.Remove(seasonEntry);
       await _context.SaveChangesAsync();
     }
   }

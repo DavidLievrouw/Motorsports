@@ -19,7 +19,10 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     [DisplayName("Name during season")]
     public string Name => DataModel.Name;
 
+    [DisplayName("Season")]
     public Season RelatedSeason => DataModel.RelatedSeason;
+
+    [DisplayName("Team")]
     public Team RelatedTeam => DataModel.RelatedTeam;
 
     public IEnumerable<Team> AvailableTeams { get; }
