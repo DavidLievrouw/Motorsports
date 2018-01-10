@@ -52,6 +52,7 @@ namespace Motorsports.Scaffolding.Core {
       services.TryAddScoped<IHomeService>(provider => new HomeService(provider.GetService<MotorsportsContext>(), provider.GetRequiredService<IQueryExecutor>(), provider.GetRequiredService<IRoundService>()));
       services.TryAddScoped<ISeasonService>(provider => new SeasonService(provider.GetService<MotorsportsContext>(), provider.GetRequiredService<IQueryExecutor>()));
       services.TryAddScoped<IRoundService>(provider => new RoundService(provider.GetService<MotorsportsContext>(), provider.GetRequiredService<IQueryExecutor>()));
+      services.TryAddScoped<ISeasonEntryService>(provider => new SeasonEntryService(provider.GetService<MotorsportsContext>()));
 
       // Helpers for requests
       services.TryAddSingleton<IActionContextAccessor>(provider => new ActionContextAccessor());
