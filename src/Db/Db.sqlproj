@@ -170,12 +170,17 @@
       <AnsiNulls>On</AnsiNulls>
       <QuotedIdentifier>On</QuotedIdentifier>
     </Build>
+    <Build Include="dbo\Tables\SeasonEntry.sql">
+      <AnsiNulls>On</AnsiNulls>
+      <QuotedIdentifier>On</QuotedIdentifier>
+    </Build>
     <Build Include="Security\MotorsportsApp.sql" />
     <Build Include="Security\RoleMemberships.sql" />
     <Build Include="Security\Permissions.sql" />
     <None Include="Scripts\v1\001_Post_InitialLoad.sql" />
     <None Include="Scripts\v2\001_Post_MoveSeasonResultDataToSeasonTable.sql" />
     <None Include="Scripts\v2\002_Post_MoveRoundResultDataToRoundTable.sql" />
+    <None Include="Scripts\v2\003_Post_InitialLoadSeasonEntryTable.sql" />
   </ItemGroup>
   <ItemGroup>
     <PostDeploy Include="Scripts\Script.PostDeployment.sql" />
