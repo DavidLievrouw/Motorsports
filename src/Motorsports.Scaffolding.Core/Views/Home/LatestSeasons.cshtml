@@ -48,6 +48,7 @@
           @Html.DisplayFor(modelItem => season.EndDate)
         </td>
         <td>
+          <a asp-action="Index" asp-controller="SeasonEntries" asp-route-id="@season.Id">Entries</a> |
           <a asp-action="Edit" asp-controller="Seasons" asp-route-id="@season.Id">Edit</a> |
           <a asp-action="Details" asp-controller="Seasons" asp-route-id="@season.Id">Details</a>
         </td>
