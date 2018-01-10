@@ -20,7 +20,7 @@
       [dbo].[Season] S
       INNER JOIN [dbo].[Team] T ON T.Sport = S.Sport AND S.[WinningTeam] = T.[Id]
     ) AS Source
-  ON Target.[SeasonId] = Source.[SeasonId] AND Target.[TeamId] = Source.[TeamId] 
+  ON Target.[Season] = Source.[Season] AND Target.[Team] = Source.[Team] 
   WHEN NOT MATCHED BY TARGET THEN
     INSERT (
       [Season],
