@@ -2,8 +2,8 @@
   MERGE [dbo].[SeasonEntry] AS Target 
   USING (
     SELECT DISTINCT
-      S.[Id] AS [SeasonId],
-      T.[Id] AS [TeamId],
+      S.[Id] AS [Season],
+      T.[Id] AS [Team],
       T.[Name] AS [Name]
     FROM
       [dbo].[Season] S
@@ -13,8 +13,8 @@
     UNION
 
     SELECT DISTINCT
-      S.[Id] AS [SeasonId],
-      S.[WinningTeam] AS [TeamId],
+      S.[Id] AS [Season],
+      S.[WinningTeam] AS [Team],
       T.[Name] AS [Name]
     FROM
       [dbo].[Season] S
@@ -23,12 +23,12 @@
   ON Target.[SeasonId] = Source.[SeasonId] AND Target.[TeamId] = Source.[TeamId] 
   WHEN NOT MATCHED BY TARGET THEN
     INSERT (
-      [SeasonId],
-      [TeamId],
+      [Season],
+      [Team],
       [Name]
     ) VALUES (
-      Source.[SeasonId],
-      Source.[TeamId],
+      Source.[Season],
+      Source.[Team],
       Source.[Name]
     );
 END
