@@ -89,26 +89,27 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     // POST: Rounds/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Date,Number,Venue,Rain,Rating,Status,WinningTeamId,WinningParticipantIds[]")] [ModelBinder(typeof(RoundEditModel.RoundEditModelBinder))] RoundEditModel round) {
+    public async Task<IActionResult> Edit(int? id, [Bind("Id,Name,Date,Number,Venue,Rain,Rating,Status,WinningTeamId,WinningParticipantIds[]")] [ModelBinder(typeof(RoundEditModel.RoundEditModelBinder))] RoundEditModel round) {
+      if (id == null) return NotFound();
       if (id != round.Id) return NotFound();
 
-      var roundForValidation = await _roundService.LoadDataRecord(id);
+      var roundForValidation = await _roundService.LoadDataRecord(id.Value);
       roundForValidation.Season = round.Season;
       roundForValidation.Name = round.Name;
       roundForValidation.Date = round.Date;
       roundForValidation.Number = round.Number;
       roundForValidation.Venue = round.Venue;
       roundForValidation.Note = round.Note;
-      await _roundModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, id, roundForValidation);
+      await _roundModelStatePopulator.ValidateAndPopulateForUpdate(ModelState, id.Value, roundForValidation);
       
       if (ModelState.IsValid) {
         await _roundService.UpdateRound(round);
-        var roundDisplayModel = await _roundService.LoadDisplayModel(id);
+        var roundDisplayModel = await _roundService.LoadDisplayModel(id.Value);
         if (roundDisplayModel == null) return NotFound();
         return RedirectToAction(nameof(Index), new { id = roundDisplayModel.Season });
       }
 
-      return View(await _roundService.LoadDisplayModel(id));
+      return View(await _roundService.LoadDisplayModel(id.Value));
     }
 
     // GET: Rounds/Delete/5

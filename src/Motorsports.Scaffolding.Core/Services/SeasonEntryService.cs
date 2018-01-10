@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
 using Motorsports.Scaffolding.Core.Models.DisplayModels;
+using Motorsports.Scaffolding.Core.Models.EditModels;
 
 namespace Motorsports.Scaffolding.Core.Services {
   public interface ISeasonEntryService {
@@ -13,6 +14,7 @@ namespace Motorsports.Scaffolding.Core.Services {
     Task PersistSeasonEntry(SeasonEntry seasonEntry);
     Task<SeasonEntryDisplayModel> LoadDisplayModel(int seasonId, int teamId);
     Task DeleteSeasonEntry(int seasonId, int teamId);
+    Task UpdateSeasonEntry(SeasonEntryEditModel seasonEntry);
   }
 
   public class SeasonEntryService : ISeasonEntryService {
@@ -87,6 +89,15 @@ namespace Motorsports.Scaffolding.Core.Services {
     public async Task DeleteSeasonEntry(int seasonId, int teamId) {
       var seasonEntry = await _context.SeasonEntry.SingleOrDefaultAsync(m => m.Season == seasonId && m.Team == teamId);
       _context.SeasonEntry.Remove(seasonEntry);
+      await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateSeasonEntry(SeasonEntryEditModel seasonEntry) {
+      if (seasonEntry == null) throw new ArgumentNullException(nameof(seasonEntry));
+
+      var seasonEntryToUpdate = await _context.SeasonEntry.SingleAsync(se => se.Season == seasonEntry.Season && se.Team == seasonEntry.Team);
+      seasonEntryToUpdate.Name = seasonEntry.Name;
+      _context.Update(seasonEntryToUpdate);
       await _context.SaveChangesAsync();
     }
   }

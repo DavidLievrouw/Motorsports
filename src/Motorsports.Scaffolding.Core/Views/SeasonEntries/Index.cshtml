@@ -18,7 +18,7 @@
   <div class="sportlogoContainer">
     <img class="sportlogo" src="@_imageService.GetSportLogo(Model.Season.Sport)" alt="@Model.Season.Sport"/>
   </div>
-  <h4 class="viewName">Entries for @Html.DisplayFor(model => model.Season)</h4>
+  <h4 class="viewName">Entries for season @Html.DisplayFor(model => model.Season)</h4>
 </blockquote>
 
 @if (Model.SeasonEntries.Any()) {

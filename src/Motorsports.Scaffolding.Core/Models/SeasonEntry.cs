@@ -16,6 +16,11 @@ namespace Motorsports.Scaffolding.Core.Models {
     public Team RelatedTeam { get; set; }
 
     public class SeasonEntryKey : IEquatable<SeasonEntryKey> {
+      public SeasonEntryKey(int season, int team) {
+        Season = season;
+        Team = team;
+      }
+
       public int Season { get; set; }
       public int Team { get; set; }
 

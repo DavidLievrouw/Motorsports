@@ -19,7 +19,13 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
 
       RuleFor(_ => _.Name)
         .NotEmpty()
-        .WithMessage("A name is required.");
+        .WithMessage("A name is required.")
+        .Must(MustExist)
+        .WithMessage("The season entry to update does not exist.");
+    }
+
+    bool MustExist(SeasonEntry seasonEntry, string name) {
+      return _context.SeasonEntry.Any(_ => _.Season == seasonEntry.Season && _.Team == seasonEntry.Team);
     }
 
     bool SeasonExists(SeasonEntry seasonEntry, int season) {

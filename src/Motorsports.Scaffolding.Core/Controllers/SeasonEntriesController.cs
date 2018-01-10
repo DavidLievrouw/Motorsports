@@ -1,30 +1,25 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
 using Motorsports.Scaffolding.Core.Models.DisplayModels;
+using Motorsports.Scaffolding.Core.Models.EditModels;
 using Motorsports.Scaffolding.Core.Models.Validators;
 using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
   [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
   public class SeasonEntriesController : Controller {
-    readonly MotorsportsContext _context;
     readonly ISeasonService _seasonService;
     readonly ISeasonEntryService _seasonEntryService;
     readonly IModelStatePopulator<SeasonEntry, SeasonEntry.SeasonEntryKey> _seasonEntryModelStatePopulator;
 
     public SeasonEntriesController(
-      MotorsportsContext context,
       ISeasonService seasonService,
       ISeasonEntryService seasonEntryService,
       IModelStatePopulator<SeasonEntry, SeasonEntry.SeasonEntryKey> seasonEntryModelStatePopulator) {
-      _context = context ?? throw new ArgumentNullException(nameof(context));
       _seasonService = seasonService ?? throw new ArgumentNullException(nameof(seasonService));
       _seasonEntryService = seasonEntryService ?? throw new ArgumentNullException(nameof(seasonEntryService));
       _seasonEntryModelStatePopulator = seasonEntryModelStatePopulator ?? throw new ArgumentNullException(nameof(seasonEntryModelStatePopulator));
@@ -76,37 +71,35 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     }
 
     // GET: SeasonEntries/Edit/5
-    public async Task<IActionResult> Edit(int? id) {
-      if (id == null) return NotFound();
-
-      var seasonEntry = await _context.SeasonEntry.SingleOrDefaultAsync(m => m.Team == id);
-      if (seasonEntry == null) return NotFound();
-      ViewData["Season"] = new SelectList(_context.Season, "Id", "Sport", seasonEntry.Season);
-      ViewData["Team"] = new SelectList(_context.Team, "Id", "Country", seasonEntry.Team);
-      return View(seasonEntry);
+    public async Task<IActionResult> Edit(int seasonId, int teamId) {
+      var displayModel = await _seasonEntryService.LoadDisplayModel(seasonId, teamId);
+      if (displayModel == null) return NotFound();
+      return View(displayModel);
     }
 
     // POST: SeasonEntries/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Season,Team,Name")] SeasonEntry seasonEntry) {
-      if (id != seasonEntry.Team) return NotFound();
+    public async Task<IActionResult> Edit(int? id, [Bind("Season,Team,Name")] [ModelBinder(typeof(SeasonEntryEditModel.SeasonEntryEditModelBinder))] SeasonEntryEditModel seasonEntry) {
+      if (id == null) return NotFound();
+      if (id != seasonEntry.Season) return NotFound();
 
+      var seasonEntryForValidation = new SeasonEntry {
+        Season = seasonEntry.Season,
+        Team = seasonEntry.Team,
+        Name = seasonEntry.Name
+      };
+      await _seasonEntryModelStatePopulator.ValidateAndPopulateForUpdate(
+        ModelState, 
+        new SeasonEntry.SeasonEntryKey(seasonEntry.Season, seasonEntry.Team), 
+        seasonEntryForValidation);
+      
       if (ModelState.IsValid) {
-        try {
-          _context.Update(seasonEntry);
-          await _context.SaveChangesAsync();
-        } catch (DbUpdateConcurrencyException) {
-          if (!SeasonEntryExists(seasonEntry.Team)) return NotFound();
-          else throw;
-        }
-
-        return RedirectToAction(nameof(Index));
+        await _seasonEntryService.UpdateSeasonEntry(seasonEntry);
+        return RedirectToAction(nameof(Index), new { id = seasonEntry.Season });
       }
-
-      ViewData["Season"] = new SelectList(_context.Season, "Id", "Sport", seasonEntry.Season);
-      ViewData["Team"] = new SelectList(_context.Team, "Id", "Country", seasonEntry.Team);
-      return View(seasonEntry);
+      
+      return View(await _seasonEntryService.LoadDisplayModel(seasonEntry.Season, seasonEntry.Team));
     }
 
     // GET: SeasonEntries/Delete/5
@@ -125,10 +118,6 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       if (seasonEntry == null) return NotFound();
       await _seasonEntryService.DeleteSeasonEntry(seasonId, teamId);
       return RedirectToAction(nameof(Index), new { id = seasonEntry.Season });
-    }
-
-    bool SeasonEntryExists(int id) {
-      return _context.SeasonEntry.Any(e => e.Team == id);
     }
   }
 }
