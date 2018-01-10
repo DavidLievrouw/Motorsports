@@ -38,6 +38,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       return _context.Round
         .Include(r => r.RelatedStatus)
         .Include(r => r.RelatedSeason)
+        .ThenInclude(s => s.RelatedSport)
         .Include(r => r.RelatedWinningTeam)
         .Include(r => r.RelatedRoundWinners)
         .ThenInclude(rw => rw.RelatedParticipant)
@@ -102,6 +103,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       return _context.Round
         .Include(r => r.RelatedStatus)
         .Include(r => r.RelatedSeason)
+        .ThenInclude(s => s.RelatedSport)
         .Include(r => r.RelatedWinningTeam)
         .Include(r => r.RelatedRoundWinners)
         .ThenInclude(rw => rw.RelatedParticipant)
@@ -116,6 +118,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       var roundDataModel = await _context.Round
         .Include(r => r.RelatedStatus)
         .Include(r => r.RelatedSeason)
+        .ThenInclude(s => s.RelatedSport)
         .Include(r => r.RelatedWinningTeam)
         .Include(r => r.RelatedRoundWinners)
         .ThenInclude(rw => rw.RelatedParticipant)
