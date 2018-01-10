@@ -46,16 +46,10 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     }
 
     // GET: SeasonEntries/Details/5
-    public async Task<IActionResult> Details(int? id) {
-      if (id == null) return NotFound();
-
-      var seasonEntry = await _context.SeasonEntry
-        .Include(s => s.RelatedSeason)
-        .Include(s => s.RelatedTeam)
-        .SingleOrDefaultAsync(m => m.Team == id);
-      if (seasonEntry == null) return NotFound();
-
-      return View(seasonEntry);
+    public async Task<IActionResult> Details(int seasonId, int teamId) {
+      var displayModel = await _seasonEntryService.LoadDisplayModel(seasonId, teamId);
+      if (displayModel == null) return NotFound();
+      return View(displayModel);
     }
 
     // GET: SeasonEntries/Create/5
@@ -116,27 +110,21 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     }
 
     // GET: SeasonEntries/Delete/5
-    public async Task<IActionResult> Delete(int? id) {
-      if (id == null) return NotFound();
-
-      var seasonEntry = await _context.SeasonEntry
-        .Include(s => s.RelatedSeason)
-        .Include(s => s.RelatedTeam)
-        .SingleOrDefaultAsync(m => m.Team == id);
-      if (seasonEntry == null) return NotFound();
-
-      return View(seasonEntry);
+    public async Task<IActionResult> Delete(int seasonId, int teamId) {
+      var displayModel = await _seasonEntryService.LoadDisplayModel(seasonId, teamId);
+      if (displayModel == null) return NotFound();
+      return View(displayModel);
     }
 
     // POST: SeasonEntries/Delete/5
     [HttpPost]
     [ActionName("Delete")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id) {
-      var seasonEntry = await _context.SeasonEntry.SingleOrDefaultAsync(m => m.Team == id);
-      _context.SeasonEntry.Remove(seasonEntry);
-      await _context.SaveChangesAsync();
-      return RedirectToAction(nameof(Index));
+    public async Task<IActionResult> DeleteConfirmed(int seasonId, int teamId) {
+      var seasonEntry = await _seasonEntryService.LoadDisplayModel(seasonId, teamId);
+      if (seasonEntry == null) return NotFound();
+      await _seasonEntryService.DeleteSeasonEntry(seasonId, teamId);
+      return RedirectToAction(nameof(Index), new { id = seasonEntry.Season });
     }
 
     bool SeasonEntryExists(int id) {

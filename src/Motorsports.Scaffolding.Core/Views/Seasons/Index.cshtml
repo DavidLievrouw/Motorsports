@@ -59,7 +59,7 @@
           @Html.DisplayFor(modelItem => item.WinningParticipants, nameof(item.WinningParticipants))
         </td>
         <td>
-          @Html.DisplayFor(modelItem => item.WinningTeam, nameof(item.WinningTeam))
+          @Html.DisplayFor(modelItem => item.WinningTeam)
         </td>
         <td>
           <a asp-action="Index" asp-controller="SeasonEntries" asp-route-id="@item.Id">Entries</a> |
