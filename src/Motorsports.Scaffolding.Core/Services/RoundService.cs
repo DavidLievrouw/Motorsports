@@ -206,32 +206,30 @@ namespace Motorsports.Scaffolding.Core.Services {
 
       return await _queryExecutor.NewQuery(@"
         SELECT TOP 5
-	        R.[Id],
-	        R.[Date],
-	        R.[Rating],
-	        R.[Rain],
-	        T.[Name] AS WinningTeam,
-	        STRING_AGG(P.[FirstName] + ' ' + P.[LastName], ', ') WITHIN GROUP (ORDER BY P.[LastName] ASC, P.[FirstName] ASC) AS WinningParticipants
+          R.[Id],
+          R.[Date],
+          R.[Rating],
+          R.[Rain],
+          SE.[Name] AS WinningTeam,
+          STRING_AGG(P.[FirstName] + ' ' + P.[LastName], ', ') WITHIN GROUP (ORDER BY P.[LastName] ASC, P.[FirstName] ASC) AS WinningParticipants
         FROM
-	        [dbo].[Round] R
-	        INNER JOIN [dbo].[Season] S ON R.[Season] = S.[Id]
-          INNER JOIN [dbo].[Status] ST ON ST.[Name] = R.[Status]          
-	        LEFT JOIN [dbo].[Team] T ON R.[WinningTeam] = T.[Id]
-	        LEFT JOIN [dbo].[RoundWinner] RW ON R.[Id] = RW.[Round]
-	        LEFT JOIN [dbo].[Participant] P ON P.[Id] = RW.[Participant]
+          [dbo].[Round] R
+          INNER JOIN [dbo].[Season] S ON R.[Season] = S.[Id]
+          INNER JOIN [dbo].[Status] ST ON ST.[Name] = R.[Status]
+		  LEFT JOIN [dbo].[SeasonEntry] SE ON SE.[Season] = S.[Id] AND SE.[Team] = R.[WinningTeam]
+          LEFT JOIN [dbo].[RoundWinner] RW ON R.[Id] = RW.[Round]
+          LEFT JOIN [dbo].[Participant] P ON P.[Id] = RW.[Participant]
         WHERE
-	        R.[Venue] = @Venue
-	        AND ST.[Step] > 1
-	        AND S.[Sport] = @Sport
+          R.[Venue] = @Venue
+          AND ST.[Step] > 1
+          AND S.[Sport] = @Sport
           AND R.[Date] <= @Date
         GROUP BY
-	        R.[Id],
-	        R.[Date],
-	        R.[Rating],
-	        R.[Rain],
-	        T.[Name]
-        ORDER BY
-        	R.[Date] DESC")
+          R.[Id],
+          R.[Date],
+          R.[Rating],
+          R.[Rain],
+          SE.[Name]")
         .WithCommandType(CommandType.Text)
         .WithParameters(new {
           Venue = round.Venue,
