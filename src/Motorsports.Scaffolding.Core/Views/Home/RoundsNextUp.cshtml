@@ -1,0 +1,31 @@
+﻿@model Motorsports.Scaffolding.Core.Models.DisplayModels.HomeDisplayModel
+
+<blockquote class="homeHeader">
+  <h4>Next up</h4>
+</blockquote>
+@if (Model.HasVeryNextUp) {
+  @Html.Partial("NextUp", Model.VeryNextUp)
+}
+@if (Model.HasNextUpPerSport) {
+  foreach (var nextUp in Model.NextUpPerSport) {
+    @Html.Partial("NextUp", nextUp)
+  }
+}
+else {
+  if (!Model.HasVeryNextUp) {
+    <div class="disabledLink">[No rounds next up]</div>
+  }
+}
+<script>
+  $(document).ready(function() {
+    var maxHeight = 0;
+
+    $("div.nextUp").each(function() {
+      if ($(this).height() > maxHeight) {
+        maxHeight = $(this).height();
+      }
+    });
+
+    $("div.nextUp").height(maxHeight);
+  });
+</script>
