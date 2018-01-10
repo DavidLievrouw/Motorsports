@@ -79,6 +79,9 @@ namespace Motorsports.Scaffolding.Core {
       services.TryAddScoped<IModelStatePopulator<Round, int>>(provider => new ModelStatePopulator<Round, int>(
         new CreateRoundValidator(provider.GetService<MotorsportsContext>()),
         new UpdateRoundValidator(provider.GetService<MotorsportsContext>())));
+      services.TryAddScoped<IModelStatePopulator<SeasonEntry, SeasonEntry.SeasonEntryKey>>(provider => new ModelStatePopulator<SeasonEntry, SeasonEntry.SeasonEntryKey>(
+        new CreateSeasonEntryValidator(provider.GetService<MotorsportsContext>()),
+        new UpdateSeasonEntryValidator(provider.GetService<MotorsportsContext>())));
 
       // Security
       services.TryAddSingleton(provider => new PasswordHashingConfig());

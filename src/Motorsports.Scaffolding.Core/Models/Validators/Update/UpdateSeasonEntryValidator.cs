@@ -1,0 +1,33 @@
+﻿using System;
+using System.Linq;
+using FluentValidation;
+
+namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
+  public class UpdateSeasonEntryValidator : MotorsportsValidator<SeasonEntry, SeasonEntry.SeasonEntryKey>, IUpdateValidator<SeasonEntry, SeasonEntry.SeasonEntryKey> {
+    readonly MotorsportsContext _context;
+
+    public UpdateSeasonEntryValidator(MotorsportsContext context) {
+      _context = context ?? throw new ArgumentNullException(nameof(context));
+
+      RuleFor(_ => _.Season)
+        .Must(SeasonExists)
+        .WithMessage("The specified season does not exist.");
+
+      RuleFor(_ => _.Team)
+        .Must(TeamExists)
+        .WithMessage("The specified team does not exist.");
+
+      RuleFor(_ => _.Name)
+        .NotEmpty()
+        .WithMessage("A name is required.");
+    }
+
+    bool SeasonExists(SeasonEntry seasonEntry, int season) {
+      return _context.Season.Any(_ => _.Id == season);
+    }
+    
+    bool TeamExists(SeasonEntry seasonEntry, int team) {
+      return _context.Team.Any(_ => _.Id == team);
+    }
+  }
+}

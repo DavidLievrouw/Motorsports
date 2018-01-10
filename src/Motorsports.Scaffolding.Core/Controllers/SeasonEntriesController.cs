@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
 using Motorsports.Scaffolding.Core.Models.DisplayModels;
+using Motorsports.Scaffolding.Core.Models.Validators;
 using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
@@ -16,14 +17,17 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     readonly MotorsportsContext _context;
     readonly ISeasonService _seasonService;
     readonly ISeasonEntryService _seasonEntryService;
+    readonly IModelStatePopulator<SeasonEntry, SeasonEntry.SeasonEntryKey> _seasonEntryModelStatePopulator;
 
     public SeasonEntriesController(
       MotorsportsContext context,
       ISeasonService seasonService,
-      ISeasonEntryService seasonEntryService) {
+      ISeasonEntryService seasonEntryService,
+      IModelStatePopulator<SeasonEntry, SeasonEntry.SeasonEntryKey> seasonEntryModelStatePopulator) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
       _seasonService = seasonService ?? throw new ArgumentNullException(nameof(seasonService));
       _seasonEntryService = seasonEntryService ?? throw new ArgumentNullException(nameof(seasonEntryService));
+      _seasonEntryModelStatePopulator = seasonEntryModelStatePopulator ?? throw new ArgumentNullException(nameof(seasonEntryModelStatePopulator));
     }
 
     // GET: SeasonEntries/5
@@ -66,6 +70,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     public async Task<IActionResult> Create(int? id, [Bind("Season,Team,Name")] SeasonEntry seasonEntry) {
       if (id == null) return NotFound();
 
+      await _seasonEntryModelStatePopulator.ValidateAndPopulateForCreate(ModelState, seasonEntry);
       if (ModelState.IsValid) {
         await _seasonEntryService.PersistSeasonEntry(seasonEntry);
         return RedirectToAction(nameof(Index), new { id = id.Value});
