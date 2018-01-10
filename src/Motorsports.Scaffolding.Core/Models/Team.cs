@@ -5,6 +5,7 @@ namespace Motorsports.Scaffolding.Core.Models {
     public Team() {
       RelatedRounds = new HashSet<Round>();
       RelatedSeasons = new HashSet<Season>();
+      RelatedSeasonEntries = new HashSet<SeasonEntry>();
     }
 
     public int Id { get; set; }
@@ -16,5 +17,6 @@ namespace Motorsports.Scaffolding.Core.Models {
     public Sport RelatedSport { get; set; }
     public ICollection<Round> RelatedRounds { get; set; }
     public ICollection<Season> RelatedSeasons { get; set; }
+    public ICollection<SeasonEntry> RelatedSeasonEntries { get; set; }
   }
 }
