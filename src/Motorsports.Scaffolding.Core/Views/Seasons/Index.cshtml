@@ -19,7 +19,7 @@
     <div class="sportlogoContainer">
       <img class="sportlogo" src="@_imageService.GetSportLogo(seasonsForSport.Key.Name)" alt="@seasonsForSport.Key.Name"/>
     </div>
-    <h4 class="sportlogoName">@seasonsForSport.Key.FullName</h4>
+    <h4 class="viewName">@seasonsForSport.Key.FullName</h4>
   </blockquote>
   <table class="table">
     <thead>
@@ -61,6 +61,7 @@
           @Html.DisplayFor(modelItem => item.WinningTeam, nameof(item.WinningTeam))
         </td>
         <td>
+          <a asp-action="Index" asp-controller="SeasonEntries" asp-route-id="@item.Id">Entries</a> |
           <a asp-action="Index" asp-controller="Rounds" asp-route-id="@item.Id">Rounds</a> |
           <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
           <a asp-action="Details" asp-route-id="@item.Id">Details</a> |

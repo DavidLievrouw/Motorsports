@@ -14,7 +14,6 @@ namespace Motorsports.Scaffolding.Core.Services {
     Task<Round> LoadDataRecord(int roundId);
     Task<RoundDisplayModel> CreateForRound(Round round);
     Task<RoundDisplayModel> GetNew(int seasonId);
-    Task<List<RoundDisplayModel>> LoadRoundList();
     Task<List<RoundDisplayModel>> LoadRoundList(int seasonId);
     Task<RoundDisplayModel> LoadDisplayModel(int roundId);
     Task UpdateRound(RoundEditModel round);
@@ -97,19 +96,6 @@ namespace Motorsports.Scaffolding.Core.Services {
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
         _context.Status.OrderBy(s => s.Step).ThenBy(s => s.Name),
         _context.Venue.OrderBy(v => v.Name));
-    }
-
-    public Task<List<RoundDisplayModel>> LoadRoundList() {
-      return _context.Round
-        .Include(r => r.RelatedStatus)
-        .Include(r => r.RelatedSeason)
-        .Include(r => r.RelatedWinningTeam)
-        .Include(r => r.RelatedRoundWinners)
-        .ThenInclude(rw => rw.RelatedParticipant)
-        .Include(r => r.RelatedVenue)
-        .OrderBy(r => r.Date)
-        .Select(r => new RoundDisplayModel(r, null, null, null, null))
-        .ToListAsync();
     }
 
     public Task<List<RoundDisplayModel>> LoadRoundList(int seasonId) {

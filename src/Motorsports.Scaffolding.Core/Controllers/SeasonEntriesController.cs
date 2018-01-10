@@ -1,22 +1,44 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Scaffolding.Core.Models;
+using Motorsports.Scaffolding.Core.Models.DisplayModels;
+using Motorsports.Scaffolding.Core.Services;
 
 namespace Motorsports.Scaffolding.Core.Controllers {
+  [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
   public class SeasonEntriesController : Controller {
     readonly MotorsportsContext _context;
+    readonly ISeasonService _seasonService;
+    readonly ISeasonEntryService _seasonEntryService;
 
-    public SeasonEntriesController(MotorsportsContext context) {
-      _context = context;
+    public SeasonEntriesController(
+      MotorsportsContext context,
+      ISeasonService seasonService,
+      ISeasonEntryService seasonEntryService) {
+      _context = context ?? throw new ArgumentNullException(nameof(context));
+      _seasonService = seasonService ?? throw new ArgumentNullException(nameof(seasonService));
+      _seasonEntryService = seasonEntryService ?? throw new ArgumentNullException(nameof(seasonEntryService));
     }
 
-    // GET: SeasonEntries
-    public async Task<IActionResult> Index() {
-      var seasonEntries = _context.SeasonEntry.Include(s => s.RelatedSeason).Include(s => s.RelatedTeam);
-      return View(await seasonEntries.ToListAsync());
+    // GET: /Season/SeasonEntries/5
+    public async Task<IActionResult> Index(int? id) {
+      if (id == null) return NotFound();
+
+      var season = await _seasonService.LoadDataRecord(id.Value);
+      var entriesForSeason = await _seasonEntryService.LoadSeasonEntryList(id.Value);
+      if (entriesForSeason == null) return NotFound();
+
+      var displayModel = new SeasonEntryIndexDisplayModel {
+        Season = season,
+        SeasonEntries = entriesForSeason
+      };
+      return View(displayModel);
     }
 
     // GET: SeasonEntries/Details/5

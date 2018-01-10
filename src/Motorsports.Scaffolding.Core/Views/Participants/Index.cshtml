@@ -1,4 +1,8 @@
-﻿@model IEnumerable<Participant>
+﻿@using Motorsports.Scaffolding.Core.Services
+
+@model IEnumerable<Participant>
+
+@inject IImageService _imageService
 
 @{
   ViewData["Title"] = "Participants";
@@ -9,6 +13,11 @@
 <p>
   <a asp-action="Create">Create New</a>
 </p>
+
+<blockquote>
+  <h4 class="viewName">Participants</h4>
+</blockquote>
+
 <table class="table">
   <thead>
   <tr>
