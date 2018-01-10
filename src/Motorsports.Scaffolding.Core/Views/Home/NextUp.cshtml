@@ -48,11 +48,16 @@
     <div class="nextUpDetailItem">@Model.Date.ToString("ddd d MMM yyyy")</div>
     <div class="nextUpDetailItem">@Model.Venue</div>
     <div class="nextUpDetailItem">&nbsp;</div>
-    @if (Model.EventHistory.Any()) {
-      <div class="nextUpDetailItem">Event history</div>
-      <table class="nextUpDetailItem">
-        <tbody>
-        @foreach (var eventHistoryItem in Model.EventHistory) {
+    <div class="nextUpDetailItem">Event history</div>
+    <table class="nextUpDetailItem">
+      <tbody>
+      @if (!Model.EventHistory.Any()) {
+        <tr class="nextUpEventHistoryItem">
+          <td colspan="2">-</td>
+        </tr>
+      }
+      else {
+        foreach (var eventHistoryItem in Model.EventHistory) {
           <tr class="nextUpEventHistoryItem">
             <td>
               @Html.DisplayFor(model => eventHistoryItem.Date) - @Html.DisplayFor(model => eventHistoryItem.WinningParticipants) - @Html.DisplayFor(model => eventHistoryItem.WinningTeam) - @Html.DisplayFor(model => eventHistoryItem.Rain) - @Html.DisplayFor(model => eventHistoryItem.Rating)/10
@@ -62,8 +67,8 @@
             </td>
           </tr>
         }
-        </tbody>
+      }
+      </tbody>
       </table>
-    }
   </div>
 </div>
