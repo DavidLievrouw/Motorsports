@@ -84,6 +84,11 @@ namespace Motorsports.Scaffolding.Core.Models.EditModels {
             : statusStringValues.Select(s => Enum.Parse<RoundStatus>(s, true)).First()
         };
 
+        // Clear rating if 0/10 and status is ready to watch or earlier
+        if ((!model.Status.HasValue || model.Status <= RoundStatus.ReadyToWatch) && (model.Rating.HasValue && model.Rating <= 0)) {
+          model.Rating = new short?();
+        }
+
         bindingContext.Result = ModelBindingResult.Success(model);
         return Task.CompletedTask;
       }
