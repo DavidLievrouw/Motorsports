@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -35,6 +34,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       return _context.Season
         .Include(s => s.RelatedSport)
         .Include(s => s.RelatedWinningTeam)
+        .ThenInclude(t => t.RelatedSeasonEntries)
         .Include(s => s.RelatedSeasonWinners)
         .ThenInclude(sw => sw.RelatedParticipant)
         .Include(s => s.RelatedRounds)
@@ -46,7 +46,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         new SeasonDisplayModel(
           new Season(),
           _context.Sport.OrderBy(sport => sport.Name),
-          _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
+          _context.SeasonEntry.Include(se => se.RelatedTeam).OrderBy(se => se.RelatedTeam.Sport).ThenBy(team => team.Name),
           _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
 
@@ -54,6 +54,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       var allSeasons = await _context.Season
         .Include(s => s.RelatedSport)
         .Include(s => s.RelatedWinningTeam)
+        .ThenInclude(t => t.RelatedSeasonEntries)
         .Include(s => s.RelatedSeasonWinners)
         .ThenInclude(sw => sw.RelatedParticipant)
         .Include(s => s.RelatedRounds)
@@ -76,6 +77,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       var seasonDataModel = await _context.Season
         .Include(s => s.RelatedSport)
         .Include(s => s.RelatedWinningTeam)
+        .ThenInclude(t => t.RelatedSeasonEntries)
         .Include(s => s.RelatedSeasonWinners)
         .ThenInclude(sw => sw.RelatedParticipant)
         .Include(s => s.RelatedRounds)
@@ -84,7 +86,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       return new SeasonDisplayModel(
         seasonDataModel,
         _context.Sport.OrderBy(sport => sport.Name),
-        _context.Team.Where(team => team.Sport == seasonDataModel.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
+        _context.SeasonEntry.Include(se => se.RelatedTeam).Where(se => se.Season == seasonId).OrderBy(se => se.RelatedTeam.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName));
     }
 
