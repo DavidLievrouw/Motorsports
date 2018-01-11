@@ -40,6 +40,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Include(r => r.RelatedSeason)
         .ThenInclude(s => s.RelatedSport)
         .Include(r => r.RelatedWinningTeam)
+        .ThenInclude(t => t.RelatedSeasonEntries)
         .Include(r => r.RelatedRoundWinners)
         .ThenInclude(rw => rw.RelatedParticipant)
         .Include(r => r.RelatedVenue)
@@ -71,10 +72,10 @@ namespace Motorsports.Scaffolding.Core.Services {
               ? _context.Venue.SingleOrDefault(v => StringComparer.InvariantCultureIgnoreCase.Equals(v.Name, round.Venue))
               : null,
             RelatedWinningTeam = round.WinningTeam.HasValue
-              ? _context.Team.Single(t => t.Id == round.WinningTeam.Value)
+              ? _context.Team.Include(t => t.RelatedSeasonEntries).Single(t => t.Id == round.WinningTeam.Value)
               : null
           },
-          _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
+          _context.SeasonEntry.Include(se => se.RelatedTeam).Where(se => se.Season == round.Season).OrderBy(se => se.RelatedTeam.Sport).ThenBy(team => team.Name),
           _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
           _context.Status.OrderBy(s => s.Step).ThenBy(s => s.Name),
           _context.Venue.OrderBy(v => v.Name)));
@@ -93,7 +94,7 @@ namespace Motorsports.Scaffolding.Core.Services {
           Status = RoundStatus.Scheduled.ToString(),
           Number = (short)((lastRoundInSeason?.Number ?? 0) + 1),
         },
-        _context.Team.OrderBy(team => team.Sport).ThenBy(team => team.Name),
+        _context.SeasonEntry.Include(se => se.RelatedTeam).Where(se => se.Season == seasonId).OrderBy(se => se.RelatedTeam.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
         _context.Status.OrderBy(s => s.Step).ThenBy(s => s.Name),
         _context.Venue.OrderBy(v => v.Name));
@@ -105,6 +106,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Include(r => r.RelatedSeason)
         .ThenInclude(s => s.RelatedSport)
         .Include(r => r.RelatedWinningTeam)
+        .ThenInclude(t => t.RelatedSeasonEntries)
         .Include(r => r.RelatedRoundWinners)
         .ThenInclude(rw => rw.RelatedParticipant)
         .Include(r => r.RelatedVenue)
@@ -120,6 +122,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Include(r => r.RelatedSeason)
         .ThenInclude(s => s.RelatedSport)
         .Include(r => r.RelatedWinningTeam)
+        .ThenInclude(t => t.RelatedSeasonEntries)
         .Include(r => r.RelatedRoundWinners)
         .ThenInclude(rw => rw.RelatedParticipant)
         .Include(r => r.RelatedVenue)
@@ -127,7 +130,7 @@ namespace Motorsports.Scaffolding.Core.Services {
 
       return new RoundDisplayModel(
         roundDataModel,
-        _context.Team.Where(team => team.Sport == roundDataModel.RelatedSeason.Sport).OrderBy(team => team.Sport).ThenBy(team => team.Name),
+        _context.SeasonEntry.Include(se => se.RelatedTeam).Where(se => se.Season == roundDataModel.Season).OrderBy(se => se.RelatedTeam.Sport).ThenBy(team => team.Name),
         _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
         _context.Status.OrderBy(s => s.Step).ThenBy(s => s.Name),
         _context.Venue.OrderBy(v => v.Name));

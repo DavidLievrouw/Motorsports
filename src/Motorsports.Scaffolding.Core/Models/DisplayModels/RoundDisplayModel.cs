@@ -8,12 +8,12 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
   public class RoundDisplayModel {
     public RoundDisplayModel(
       Round round,
-      IEnumerable<Team> teams = null,
+      IEnumerable<SeasonEntry> seasonEntries = null,
       IEnumerable<Participant> participants = null,
       IEnumerable<Status> statuses = null,
       IEnumerable<Venue> venues = null) {
       DataModel = round ?? throw new ArgumentNullException(nameof(round));
-      AvailableTeams = teams;
+      AvailableSeasonEntries = seasonEntries;
       AvailableParticipants = participants;
       AvailableStatuses = statuses;
       AvailableVenues = venues;
@@ -80,7 +80,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
       ? Enum.Parse<RainLevel>(Enum.GetName(typeof(RainLevel), (int)DataModel.Rain))
       : new RainLevel?();
 
-    public IEnumerable<Team> AvailableTeams { get; }
+    public IEnumerable<SeasonEntry> AvailableSeasonEntries { get; }
     public IEnumerable<Participant> AvailableParticipants { get; }
     public IEnumerable<Status> AvailableStatuses { get; }
     public IEnumerable<Venue> AvailableVenues { get; }
@@ -93,7 +93,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public int[] WinningParticipantIds { get; }
     
     [DisplayFormat(NullDisplayText = "?")]
-    public Team WinningTeam => DataModel.RelatedWinningTeam;
+    public string WinningTeamName => DataModel.RelatedWinningTeam?.RelatedSeasonEntries?.SingleOrDefault(se => se.Season == Season)?.Name ?? DataModel.RelatedWinningTeam?.Name;
 
     [DisplayFormat(NullDisplayText = "?")]
     public IEnumerable<Participant> WinningParticipants => DataModel.RelatedRoundWinners?.Select(rw => rw.RelatedParticipant);
