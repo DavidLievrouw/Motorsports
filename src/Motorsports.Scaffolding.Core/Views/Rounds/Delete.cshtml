@@ -97,5 +97,8 @@
     <input type="hidden" asp-for="Id" />
     <input type="submit" value="Delete" class="btn btn-default" /> |
     <a asp-action="Index" asp-route-id="@Model.Season">Back to List</a>
+    <div>
+      <span asp-validation-for="Id" class="text-danger"></span>
+    </div>
   </form>
 </div>
