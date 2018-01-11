@@ -29,9 +29,6 @@
         @Html.DisplayNameFor(model => model.SeasonEntries.First().Name)
       </th>
       <th>
-        @Html.DisplayNameFor(model => model.SeasonEntries.First().RelatedSeason)
-      </th>
-      <th>
         @Html.DisplayNameFor(model => model.SeasonEntries.First().RelatedTeam)
       </th>
       <th></th>
@@ -42,9 +39,6 @@
       <tr>
         <td>
           @Html.DisplayFor(modelItem => seasonEntry.Name)
-        </td>
-        <td>
-          @Html.DisplayFor(modelItem => seasonEntry.RelatedSeason)
         </td>
         <td>
           @Html.DisplayFor(modelItem => seasonEntry.RelatedTeam)
