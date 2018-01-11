@@ -116,10 +116,10 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     public async Task<IActionResult> Delete(int? id) {
       if (id == null) return NotFound();
 
-      var round = await _roundService.LoadDisplayModel(id.Value);
-      if (round == null) return NotFound();
+      var roundDisplayModel = await _roundService.LoadDisplayModel(id.Value);
+      if (roundDisplayModel == null) return NotFound();
 
-      return View(round);
+      return View(roundDisplayModel);
     }
 
     // POST: Rounds/Delete/5
@@ -127,10 +127,16 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     [ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id) {
-      var round = await _roundService.LoadDisplayModel(id);
-      if (round == null) return NotFound();
-      await _roundService.DeleteRound(id);
-      return RedirectToAction(nameof(Index), new { id = round.Season });
+      var roundDisplayModel = await _roundService.LoadDisplayModel(id);
+      if (roundDisplayModel == null) return NotFound();
+
+      await _roundModelStatePopulator.ValidateAndPopulateForDelete(ModelState, roundDisplayModel.DataModel);
+      if (ModelState.IsValid) {
+        await _roundService.DeleteRound(id);
+        return RedirectToAction(nameof(Index), new {id = roundDisplayModel.Season});
+      }
+
+      return View(roundDisplayModel);
     }
 
     // GET: Rounds/MarkReadyToWatch/5

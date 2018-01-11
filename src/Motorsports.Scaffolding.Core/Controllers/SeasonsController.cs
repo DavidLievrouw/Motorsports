@@ -83,10 +83,10 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     public async Task<IActionResult> Delete(int? id) {
       if (id == null) return NotFound();
 
-      var season = await _seasonService.LoadDisplayModel(id.Value);
-      if (season == null) return NotFound();
+      var seasonDisplayModel = await _seasonService.LoadDisplayModel(id.Value);
+      if (seasonDisplayModel == null) return NotFound();
 
-      return View(season);
+      return View(seasonDisplayModel);
     }
 
     // POST: Seasons/Delete/5
@@ -94,8 +94,16 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     [ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id) {
-      await _seasonService.DeleteSeason(id);
-      return RedirectToAction(nameof(Index));
+      var seasonDisplayModel = await _seasonService.LoadDisplayModel(id);
+      if (seasonDisplayModel == null) return NotFound();
+
+      await _seasonModelStatePopulator.ValidateAndPopulateForDelete(ModelState, seasonDisplayModel.DataModel);
+      if (ModelState.IsValid) {
+        await _seasonService.DeleteSeason(id);
+        return RedirectToAction(nameof(Index));
+      }
+
+      return View(seasonDisplayModel);
     }
   }
 }
