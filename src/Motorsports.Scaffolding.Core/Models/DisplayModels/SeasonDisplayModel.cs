@@ -45,7 +45,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public IEnumerable<Participant> WinningParticipants => DataModel.RelatedSeasonWinners?.Select(sw => sw.RelatedParticipant);
     
     [DisplayFormat(NullDisplayText = "?")]
-    public string WinningTeamName => DataModel.RelatedWinningTeam?.RelatedSeasonEntries?.Single(se => se.Season == Id)?.Name;
+    public string WinningTeamName => DataModel.RelatedWinningTeam?.RelatedSeasonEntries?.Single(se => se.Season == Id)?.Name ?? DataModel.RelatedWinningTeam?.Name;
 
     [DisplayName("Start date")]
     [DisplayFormat(DataFormatString = "{0:d MMM yyyy}", NullDisplayText = "/")]
