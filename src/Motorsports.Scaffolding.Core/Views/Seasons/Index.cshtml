@@ -62,11 +62,15 @@
           @Html.DisplayFor(modelItem => item.WinningTeamName)
         </td>
         <td>
-          <a asp-action="Index" asp-controller="SeasonEntries" asp-route-id="@item.Id">Entries</a> |
-          <a asp-action="Index" asp-controller="Rounds" asp-route-id="@item.Id">Rounds</a> |
-          <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-          <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-          <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+          <div>
+            <a asp-action="Index" asp-controller="SeasonEntries" asp-route-id="@item.Id">Entries</a> |
+            <a asp-action="Index" asp-controller="Rounds" asp-route-id="@item.Id">Rounds</a> |
+          </div>
+          <div>
+            <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+            <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+            <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+          </div>
         </td>
       </tr>
     }
