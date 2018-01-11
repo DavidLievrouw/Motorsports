@@ -13,7 +13,7 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Delete {
       return Task.FromResult(
         new ValidationResult(
           new ValidationFailure(
-            nameof(instance.Title),
+            nameof(instance.Id),
             $"Deleting this {nameof(Participant)} is not allowed.")));
     }
 
@@ -21,7 +21,7 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Delete {
       return Task.FromResult(
         new ValidationResult(
           new ValidationFailure(
-            nameof(instance.Sport),
+            nameof(instance.Id),
             $"Deleting this {nameof(Season)} is not allowed.")));
     }
 
@@ -37,7 +37,7 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Delete {
       return Task.FromResult(
         new ValidationResult(
           new ValidationFailure(
-            nameof(instance.Name),
+            nameof(instance.Id),
             $"Deleting this {nameof(Team)} is not allowed.")));
     }
 
@@ -53,7 +53,7 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Delete {
       return Task.FromResult(
         new ValidationResult(
           new ValidationFailure(
-            nameof(instance.Number),
+            nameof(instance.Id),
             $"Deleting this {nameof(Round)} is not allowed.")));
     }
   }

@@ -10,6 +10,8 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Delete {
       _context = context ?? throw new ArgumentNullException(nameof(context));
 
       RuleFor(_ => _.Team)
+        .NotEmpty()
+        .WithMessage("A team is required.")
         .Must(NotHaveWonAnyRounds)
         .WithMessage("This entry cannot be deleted, because the team has won rounds.")
         .Must(NotHaveWonSeason)

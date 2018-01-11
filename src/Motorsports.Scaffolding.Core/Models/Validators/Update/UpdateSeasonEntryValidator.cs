@@ -10,10 +10,14 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
       _context = context ?? throw new ArgumentNullException(nameof(context));
 
       RuleFor(_ => _.Season)
+        .NotEmpty()
+        .WithMessage("A season is required.")
         .Must(SeasonExists)
         .WithMessage("The specified season does not exist.");
 
       RuleFor(_ => _.Team)
+        .NotEmpty()
+        .WithMessage("A team is required.")
         .Must(TeamExists)
         .WithMessage("The specified team does not exist.");
 
