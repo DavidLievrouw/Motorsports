@@ -1,0 +1,38 @@
+﻿@using System.Collections
+@using Newtonsoft.Json
+
+@model int?
+
+@{
+  var allSeasonEntries = ((IEnumerable) ViewData["SeasonEntries"]).OfType<SeasonEntry>().ToList();
+  var selectedTeam = (int?) ViewData["SelectedTeam"];
+  var targetProperty = ViewData["TargetProperty"] ?? "SeasonEntry";
+  var autofocus = bool.Parse(ViewData["Autofocus"]?.ToString() ?? "false");
+
+  var seasonEntriesData = allSeasonEntries
+    .OrderBy(se => se.Name)
+    .Select(_ => new {
+      id = _.Team,
+      text = _.Name
+    }).ToArray();
+}
+
+<select name="@targetProperty" id="slcSeasonEntries" class="form-control" @(autofocus
+                                                                              ? "autofocus=\"autofocus\""
+                                                                              : string.Empty)>
+</select>
+
+<script>
+  $(document).ready(function() {
+    var seasonEntries = $("#slcSeasonEntries");
+    seasonEntries.select2({
+      placeholder: "Select a season entry",
+      allowClear: true,
+      data: @Html.Raw(JsonConvert.SerializeObject(seasonEntriesData))
+    });
+    seasonEntries.val(@Html.Raw(selectedTeam.HasValue
+                        ? "\"" + selectedTeam.Value + "\""
+                        : "null"));
+    seasonEntries.trigger("change"); // Notify any JS components that the value changed
+  });
+</script>

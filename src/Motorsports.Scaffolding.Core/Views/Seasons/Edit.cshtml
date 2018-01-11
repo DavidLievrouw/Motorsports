@@ -38,8 +38,8 @@
           <a asp-action="Index" asp-controller="Teams" target="_blank">Edit teams</a>
         </div>
         <div>
-          @Html.EditorFor(_ => _.WinningTeamId, nameof(Team), new {
-            Teams = Model.AvailableTeams,
+          @Html.EditorFor(_ => _.WinningTeamId, nameof(SeasonEntry), new {
+            SeasonEntries = Model.AvailableSeasonEntries,
             SelectedTeam = Model.WinningTeamId,
             TargetProperty = nameof(Model.WinningTeamId)
           })
