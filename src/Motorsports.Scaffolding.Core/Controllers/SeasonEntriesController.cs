@@ -104,9 +104,9 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
     // GET: SeasonEntries/Delete/5
     public async Task<IActionResult> Delete(int seasonId, int teamId) {
-      var displayModel = await _seasonEntryService.LoadDisplayModel(seasonId, teamId);
-      if (displayModel == null) return NotFound();
-      return View(displayModel);
+      var seasonEntryDisplayModel = await _seasonEntryService.LoadDisplayModel(seasonId, teamId);
+      if (seasonEntryDisplayModel == null) return NotFound();
+      return View(seasonEntryDisplayModel);
     }
 
     // POST: SeasonEntries/Delete/5
@@ -114,10 +114,16 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     [ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int seasonId, int teamId) {
-      var seasonEntry = await _seasonEntryService.LoadDisplayModel(seasonId, teamId);
-      if (seasonEntry == null) return NotFound();
-      await _seasonEntryService.DeleteSeasonEntry(seasonId, teamId);
-      return RedirectToAction(nameof(Index), new { id = seasonEntry.Season });
+      var seasonEntryDisplayModel = await _seasonEntryService.LoadDisplayModel(seasonId, teamId);
+      if (seasonEntryDisplayModel == null) return NotFound();
+
+      await _seasonEntryModelStatePopulator.ValidateAndPopulateForDelete(ModelState, seasonEntryDisplayModel.DataModel);
+      if (ModelState.IsValid) {
+        await _seasonEntryService.DeleteSeasonEntry(seasonId, teamId);
+        return RedirectToAction(nameof(Index), new { id = seasonEntryDisplayModel.Season });
+      }
+
+      return View(seasonEntryDisplayModel);
     }
   }
 }

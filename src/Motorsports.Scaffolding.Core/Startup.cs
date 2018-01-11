@@ -16,6 +16,7 @@ using Motorsports.Scaffolding.Core.Dapper;
 using Motorsports.Scaffolding.Core.Models;
 using Motorsports.Scaffolding.Core.Models.Validators;
 using Motorsports.Scaffolding.Core.Models.Validators.Create;
+using Motorsports.Scaffolding.Core.Models.Validators.Delete;
 using Motorsports.Scaffolding.Core.Models.Validators.Update;
 using Motorsports.Scaffolding.Core.Security;
 using Motorsports.Scaffolding.Core.Services;
@@ -63,25 +64,32 @@ namespace Motorsports.Scaffolding.Core {
       // Validators
       services.TryAddScoped<IModelStatePopulator<Sport, string>>(provider => new ModelStatePopulator<Sport, string>(
         new CreateSportValidator(provider.GetService<MotorsportsContext>()),
-        new UpdateSportValidator(provider.GetService<MotorsportsContext>())));
+        new UpdateSportValidator(provider.GetService<MotorsportsContext>()),
+        new DisallowDeleteValidator()));
       services.TryAddScoped<IModelStatePopulator<Venue, string>>(provider => new ModelStatePopulator<Venue, string>(
         new CreateVenueValidator(provider.GetService<MotorsportsContext>()),
-        new UpdateVenueValidator(provider.GetService<MotorsportsContext>())));
+        new UpdateVenueValidator(provider.GetService<MotorsportsContext>()),
+        new DisallowDeleteValidator()));
       services.TryAddScoped<IModelStatePopulator<Team, int>>(provider => new ModelStatePopulator<Team, int>(
         new CreateTeamValidator(provider.GetService<MotorsportsContext>()),
-        new UpdateTeamValidator(provider.GetService<MotorsportsContext>())));
+        new UpdateTeamValidator(provider.GetService<MotorsportsContext>()),
+        new DisallowDeleteValidator()));
       services.TryAddScoped<IModelStatePopulator<Participant, int>>(provider => new ModelStatePopulator<Participant, int>(
         new CreateParticipantValidator(provider.GetService<MotorsportsContext>()),
-        new UpdateParticipantValidator(provider.GetService<MotorsportsContext>())));
+        new UpdateParticipantValidator(provider.GetService<MotorsportsContext>()),
+        new DisallowDeleteValidator()));
       services.TryAddScoped<IModelStatePopulator<Season, int>>(provider => new ModelStatePopulator<Season, int>(
         new CreateSeasonValidator(provider.GetService<MotorsportsContext>()),
-        new UpdateSeasonValidator(provider.GetService<MotorsportsContext>())));
+        new UpdateSeasonValidator(provider.GetService<MotorsportsContext>()),
+        new DisallowDeleteValidator()));
       services.TryAddScoped<IModelStatePopulator<Round, int>>(provider => new ModelStatePopulator<Round, int>(
         new CreateRoundValidator(provider.GetService<MotorsportsContext>()),
-        new UpdateRoundValidator(provider.GetService<MotorsportsContext>())));
+        new UpdateRoundValidator(provider.GetService<MotorsportsContext>()),
+        new DisallowDeleteValidator()));
       services.TryAddScoped<IModelStatePopulator<SeasonEntry, SeasonEntry.SeasonEntryKey>>(provider => new ModelStatePopulator<SeasonEntry, SeasonEntry.SeasonEntryKey>(
         new CreateSeasonEntryValidator(provider.GetService<MotorsportsContext>()),
-        new UpdateSeasonEntryValidator(provider.GetService<MotorsportsContext>())));
+        new UpdateSeasonEntryValidator(provider.GetService<MotorsportsContext>()),
+        new DeleteSeasonEntryValidator(provider.GetService<MotorsportsContext>())));
 
       // Security
       services.TryAddSingleton(provider => new PasswordHashingConfig());

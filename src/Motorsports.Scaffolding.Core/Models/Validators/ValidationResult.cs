@@ -10,6 +10,10 @@ namespace Motorsports.Scaffolding.Core.Models.Validators {
     public ValidationResult(IEnumerable<ValidationFailure> failures) {
       Errors = failures.Where(failure => failure != null).ToList();
     }
+    
+    public ValidationResult(params ValidationFailure[] failures) {
+      Errors = failures.Where(failure => failure != null).ToList();
+    }
 
     public ValidationResult(FluentValidation.Results.ValidationResult result) {
       Errors = result.Errors.Select(e => new ValidationFailure(e.PropertyName, e.ErrorMessage)).ToList();
