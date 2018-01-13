@@ -7,7 +7,7 @@
   @Html.Partial("NextUp", Model.VeryNextUp)
 }
 @if (Model.HasNextUpPerSport) {
-  foreach (var nextUp in Model.NextUpPerSport) {
+  foreach (var nextUp in Model.NextUp) {
     @Html.Partial("NextUp", nextUp)
   }
 }

@@ -9,8 +9,8 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
     public NextUpDisplayModel VeryNextUp { get; set; }
     public bool HasVeryNextUp => VeryNextUp != null;
 
-    public IEnumerable<NextUpDisplayModel> NextUpPerSport { get; set; }
-    public bool HasNextUpPerSport => NextUpPerSport.Any();
+    public IEnumerable<NextUpDisplayModel> NextUp { get; set; }
+    public bool HasNextUpPerSport => NextUp.Any();
     
     [DisplayName("Round")]
     public IEnumerable<RoundToAcquireDisplayModel> RoundsToAcquire { get; set; }
