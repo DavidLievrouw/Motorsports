@@ -17,7 +17,7 @@
         <a asp-controller="Rounds" asp-action="Edit" asp-route-id="@Model.Id">Round @(Model.Number)</a>
       }
       else {
-        <div class="disabledLink">Round @(Model.Number)</div>
+        <div class="disabled">Round @(Model.Number)</div>
       }
     </div>
   </div>
@@ -34,7 +34,7 @@
         </a>
       }
       else {
-        <div class="disabledLink">
+        <div class="disabled">
           @if (!string.IsNullOrEmpty(Model.Name)) {
             <span>@Model.Name</span>
           }
@@ -47,8 +47,7 @@
     </div>
     <div class="nextUpDetailItem">@Model.Date.ToString("ddd d MMM yyyy")</div>
     <div class="nextUpDetailItem">@Model.Venue</div>
-    <div class="nextUpDetailItem">&nbsp;</div>
-    <div class="nextUpDetailItem">Event history</div>
+    <div class="nextUpDetailItem subTitle">Event history</div>
     <table class="nextUpDetailItem">
       <tbody>
       @if (!Model.EventHistory.Any()) {
@@ -58,9 +57,9 @@
       }
       else {
         foreach (var eventHistoryItem in Model.EventHistory) {
-          <tr class="nextUpEventHistoryItem">
+          <tr class="eventHistoryItemContainer">
             <td>
-              @Html.DisplayFor(model => eventHistoryItem.Date) - @Html.DisplayFor(model => eventHistoryItem.WinningParticipants) - @Html.DisplayFor(model => eventHistoryItem.WinningTeam) - @Html.DisplayFor(model => eventHistoryItem.Rain) - @Html.DisplayFor(model => eventHistoryItem.Rating)/10
+              @Html.DisplayFor(model => eventHistoryItem, nameof(eventHistoryItem))
             </td>
             <td>
               <a class="nextUpEventHistoryItemLink" asp-action="Details" asp-controller="Rounds" asp-route-id="@eventHistoryItem.Id">Details</a>

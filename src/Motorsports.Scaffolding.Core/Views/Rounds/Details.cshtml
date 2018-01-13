@@ -96,15 +96,15 @@
     </dt>
     <dd>
       @if (!Model.EventHistory.Any()) {
-        <div class="disabledLink">No event history available</div>
+        <div class="disabled">No event history available</div>
       }
       else {
         <table>
           <tbody>
           @foreach (var eventHistoryItem in Model.EventHistory) {
-            <tr>
+            <tr class="eventHistoryItemContainer">
               <td>
-                @Html.DisplayFor(model => eventHistoryItem.Date) - @Html.DisplayFor(model => eventHistoryItem.WinningParticipants) - @Html.DisplayFor(model => eventHistoryItem.WinningTeam) - @Html.DisplayFor(model => eventHistoryItem.Rain) - @Html.DisplayFor(model => eventHistoryItem.Rating)/10
+                @Html.DisplayFor(model => eventHistoryItem, nameof(eventHistoryItem))
               </td>
               <td>
                 <a class="eventHistoryItemLink" asp-action="Details" asp-controller="Rounds" asp-route-id="@eventHistoryItem.Id">Details</a>

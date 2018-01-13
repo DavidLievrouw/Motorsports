@@ -1,0 +1,9 @@
+﻿@model Motorsports.Scaffolding.Core.Models.DisplayModels.EventHistoryItemDisplayModel
+
+<div class="eventHistoryItem">
+  <div class="eventHistoryItemCol">@Html.DisplayFor(model => Model.Date)</div>
+  <div class="eventHistoryItemCol">@Html.DisplayFor(model => Model.WinningParticipants)</div>
+  <div class="eventHistoryItemCol">@Html.DisplayFor(model => Model.WinningTeam)</div>
+  <div class="eventHistoryItemCol">@Html.DisplayFor(model => Model.Rain)</div>
+  <div class="eventHistoryItemCol">@Html.DisplayFor(model => Model.Rating)/10</div>
+</div>

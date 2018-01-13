@@ -15,27 +15,25 @@
   color: darkgray;
   font-size: smaller;
   border-top: 1px solid lightgray;
-} 
+}
 
 .body-content {
   padding-left: 15px;
   padding-right: 15px;
 }
 
- /* Custom CSS */
-div.rating {
-  display: flex;
-}
-div.slider {
-  flex-grow: 1;
-}
+/* Custom CSS */
+
+div.rating { display: flex; }
+
+div.slider { flex-grow: 1; }
+
 div#rangeValue {
   width: 30px;
   text-align: right;
 }
-div#rngRating .slider-selection {
-  background: #BABABA;
-}
+
+div#rngRating .slider-selection { background: #BABABA; }
 
 div.formLabelWithLink {
   display: flex;
@@ -47,9 +45,7 @@ div.nextUp {
   padding: 10px;
 }
 
-div.veryNextUp {
-  background: #eee;
-}
+div.veryNextUp { background: #eee; }
 
 div.nextUp .nextUpTitle {
   font-weight: bold;
@@ -64,46 +60,64 @@ div.nextUpSport {
   font-weight: bolder;
 }
 
-div.nextUpEventHistoryItem {
-  border-top: 1px solid #ddd;
-}
-
 div.nextUpTagLine {
   font-size: 18px;
   font-weight: 500;
   text-align: center;
 }
 
-div.nextUpDetail {
-  display: inline-table;
+div.nextUpDetail { display: inline-table; }
+
+.nextUpDetailItem { margin-left: 30px; }
+
+.subTitle {
+  margin-top: 1em;
+  color: darkgray;
 }
 
-.nextUpDetailItem {
-  margin-left: 30px;
+
+.eventHistoryItemContainer:first-child {
+  border-top: 0;
 }
 
-a.nextUpEventHistoryItemLink, 
+.eventHistoryItemContainer {
+  border-top: 1px solid #ddd;
+}
+
+.eventHistoryItem:after { clear: both; }
+
+.eventHistoryItem:before, .eventHistoryItem:after {
+  display: table;
+}
+
+@media (min-width: 768px) {
+  .eventHistoryItemCol {
+    float: left;
+  }
+  .eventHistoryItemCol:after {
+    content: " -";
+    margin-right: 5px;
+  }  
+  .eventHistoryItemCol:last-child:after {
+    content: "";
+    margin-right: 0px;
+  }
+}
+
+a.nextUpEventHistoryItemLink,
 a.eventHistoryItemLink {
   border-left: 1px solid #ddd;
   margin: 0px 10px 0px 10px;
   padding: 0px 10px 0px 10px;
 }
 
-tr.disabledRow {
-  color: silver;
-}
+tr.disabledRow { color: silver; }
 
-div.disabledLink {
-  color: silver;
-}
+.disabled { color: silver; }
 
-div.padded {
-  padding: 10px;
-}
+div.padded { padding: 10px; }
 
-blockquote.homeHeader {
-  margin-top: 30px;
-}
+blockquote.homeHeader { margin-top: 30px; }
 
 div.sportlogoContainer {
   width: 125px;
@@ -111,9 +125,7 @@ div.sportlogoContainer {
   text-align: center;
 }
 
-h4.viewName {
-  display: inline-block;
-}
+h4.viewName { display: inline-block; }
 
 img.sportlogo {
   max-width: 100px;
@@ -126,9 +138,7 @@ div.sportoptionlogo {
   display: inline-block;
 }
 
-div.sportoptiontext {
-  display: inline-block;
-}
+div.sportoptiontext { display: inline-block; }
 
 div.sportoptionlogo img {
   max-width: 50px;
@@ -177,9 +187,7 @@ div.roundsToAcquireName {
   font-weight: bold;
 }
 
-.table > tbody > tr.headerRow > td {
-  border-top: 0px;
-}
+.table > tbody > tr.headerRow > td { border-top: 0px; }
 
 .table > tbody > tr > td.sportTableCell {
   border: 0px;
