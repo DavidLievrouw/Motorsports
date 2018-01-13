@@ -1,9 +1,30 @@
-﻿body {
+﻿/* Page structure */
+html, body {
+  height: 100%;
+}
+
+body {
   padding-top: 50px;
   padding-bottom: 20px;
 }
 
-/* Wrapping element */
+.page {
+  min-height: 100vh;
+  margin-bottom: -25px;
+  padding-bottom: 25px;
+}
+
+.footer {
+  height: 25px;
+  width: 100%;
+  margin-top: -30px;
+  position: relative;
+  background-color: #f5f5f5;
+  padding: 5px;
+  color: darkgray;
+  font-size: smaller;
+  border-top: 1px solid lightgray;
+} 
 
 /* Set some basic padding to keep content from hitting the edges */
 
