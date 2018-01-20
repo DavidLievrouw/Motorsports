@@ -41,11 +41,15 @@
           else {
             <span>Edit details of this round</span>
           }
-          <span>(@Model.DaysInFuture day(s) to go)</span>
         </div>
       }
     </div>
-    <div class="nextUpDetailItem">@Model.Date.ToString("ddd d MMM yyyy")</div>
+    <div class="nextUpDetailItem">
+      @Model.Date.ToString("ddd d MMM yyyy")
+      @if (!Model.IsInPast) {
+        <span class="disabled">(@Model.DaysInFuture day(s) to go)</span>
+      }
+    </div>
     <div class="nextUpDetailItem">@Model.Venue</div>
     <div class="nextUpDetailItem subTitle">Event history</div>
     <table class="nextUpDetailItem">
