@@ -21,14 +21,14 @@ https://github.com/cake-build/frosting
 
 [CmdletBinding()]
 Param(
-    [string]$Target = "Default",
-    [ValidateSet("Release", "Debug")]
-    [string]$Configuration = "Release",
-    [ValidateSet("Quiet", "Minimal", "Normal", "Verbose", "Diagnostic")]
-    [string]$Verbosity = "Verbose",
-    [switch]$WhatIf,
-    [Parameter(Position=0,Mandatory=$false,ValueFromRemainingArguments=$true)]
-    [string[]]$ScriptArgs
+  [string]$Target = "Default",
+  [ValidateSet("Release", "Debug")]
+  [string]$Configuration = "Release",
+  [ValidateSet("Quiet", "Minimal", "Normal", "Verbose", "Diagnostic")]
+  [string]$Verbosity = "Verbose",
+  [switch]$WhatIf,
+  [Parameter(Position=0,Mandatory=$false,ValueFromRemainingArguments=$true)]
+  [string[]]$ScriptArgs
 )
 
 $DotNetVersion = "2.1.3";
@@ -47,8 +47,7 @@ if (!(Test-Path $ToolPath)) {
 # INSTALL .NET CORE CLI
 ###########################################################################
 
-Function Remove-PathVariable([string]$VariableToRemove)
-{
+Function Remove-PathVariable([string]$VariableToRemove) {
   $path = [Environment]::GetEnvironmentVariable("PATH", "User")
   $newItems = $path.Split(';') | Where-Object { $_.ToString() -inotlike $VariableToRemove }
   [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "User")
@@ -60,21 +59,21 @@ Function Remove-PathVariable([string]$VariableToRemove)
 # Get .NET Core CLI path if installed.
 $FoundDotNetCliVersion = $null;
 if (Get-Command dotnet -ErrorAction SilentlyContinue) {
-    $FoundDotNetCliVersion = dotnet --version;
+  $FoundDotNetCliVersion = dotnet --version;
 }
 
 if($FoundDotNetCliVersion -ne $DotNetVersion) {
-    $InstallPath = Join-Path $PSScriptRoot ".dotnet"
-    if (!(Test-Path $InstallPath)) {
-        mkdir -Force $InstallPath | Out-Null;
-    }
-    (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "$InstallPath\dotnet-install.ps1");
-    & $InstallPath\dotnet-install.ps1 -Version $DotNetVersion -InstallDir $InstallPath;
+  $InstallPath = Join-Path $PSScriptRoot ".dotnet"
+  if (!(Test-Path $InstallPath)) {
+    mkdir -Force $InstallPath | Out-Null;
+  }
+  (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "$InstallPath\dotnet-install.ps1");
+  & $InstallPath\dotnet-install.ps1 -Version $DotNetVersion -InstallDir $InstallPath;
 
-    Remove-PathVariable "$InstallPath"
-    $env:PATH = "$InstallPath;$env:PATH"
-    $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
-    $env:DOTNET_CLI_TELEMETRY_OPTOUT=1
+  Remove-PathVariable "$InstallPath"
+  $env:PATH = "$InstallPath;$env:PATH"
+  $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+  $env:DOTNET_CLI_TELEMETRY_OPTOUT=1
 }
 
 ###########################################################################
@@ -84,8 +83,8 @@ if($FoundDotNetCliVersion -ne $DotNetVersion) {
 # Make sure nuget.exe exists.
 $NugetPath = Join-Path $ToolPath "nuget.exe" 
 if (!(Test-Path $NugetPath)) {
-    Write-Host "Downloading NuGet.exe..."
-    (New-Object System.Net.WebClient).DownloadFile($NugetUrl, $NugetPath);
+  Write-Host "Downloading NuGet.exe..."
+  (New-Object System.Net.WebClient).DownloadFile($NugetUrl, $NugetPath);
 }
 
 ###########################################################################
@@ -94,24 +93,24 @@ if (!(Test-Path $NugetPath)) {
 
 # Build the argument list.
 $Arguments = @{
-    target=$Target;
-    configuration=$Configuration;
-    verbosity=$Verbosity;
-    dryrun=$WhatIf;
+  target=$Target;
+  configuration=$Configuration;
+  verbosity=$Verbosity;
+  dryrun=$WhatIf;
 }.GetEnumerator() | ForEach-Object { "--{0}=`"{1}`"" -f $_.key, $_.value };
 
 try {
-    Push-Location
-    Set-Location .
-    Write-Host "Restoring packages..."
-    if($LASTEXITCODE -eq 0) {
-        Write-Output "Compiling build..."
-        Invoke-Expression "dotnet publish -c $Configuration /v:q /nologo"
-        if($LASTEXITCODE -eq 0) {
-            Write-Output "Running build..."
-            Invoke-Expression "bin/$Configuration/net461/publish/Build.exe $Arguments"
-        }
-    }
+  Push-Location
+  Set-Location .
+  Write-Host "Restoring packages..."
+  if($LASTEXITCODE -eq 0) {
+      Write-Output "Compiling build..."
+      Invoke-Expression "dotnet publish -c $Configuration /v:q /nologo"
+      if($LASTEXITCODE -eq 0) {
+          Write-Output "Running build..."
+          Invoke-Expression "bin/$Configuration/net461/publish/Build.exe $Arguments"
+      }
+  }
 }
 finally {
     Pop-Location
