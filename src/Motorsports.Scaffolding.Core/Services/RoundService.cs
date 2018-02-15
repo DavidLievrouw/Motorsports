@@ -224,6 +224,7 @@ namespace Motorsports.Scaffolding.Core.Services {
           LEFT JOIN [dbo].[Participant] P ON P.[Id] = RW.[Participant]
         WHERE
           R.[Venue] = @Venue
+          AND R.[Number] > 0
           AND ST.[Step] > 1
           AND S.[Sport] = @Sport
           AND R.[Date] <= @Date
