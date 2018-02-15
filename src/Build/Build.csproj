@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net471</TargetFramework>
+    <RootNamespace>Motorsports.Build</RootNamespace>
+    <AssemblyName>Motorsports.Build</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="tools\**" />
+    <EmbeddedResource Remove="tools\**" />
+    <None Remove="tools\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Cake.FileHelpers" Version="2.0.0" />
+    <PackageReference Include="Cake.Frosting" Version="0.1.0-alpha0077" />
+    <PackageReference Include="Cake.IIS" Version="0.3.4" />
+    <PackageReference Include="Cake.NuGet" Version="0.25.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="4.4.1" />
+  </ItemGroup>
+</Project>

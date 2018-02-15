@@ -28,7 +28,7 @@ setlocal & pushd .
 set "DIR=%~dp0"
 cd %~dp0
 TITLE Motorsports -- Create IIS application
-cd ./build
-Powershell.exe -File build.ps1 -Target CreateIISApplication -Verbosity Normal
+cd ./src/Build
+Powershell.exe -File build.ps1 -Target CreateIISApplication -Verbosity Normal -SkipInstallDotNetCoreCli True
 CHOICE /T 60 /C yYnN /CS /D y  /M "Should this window close? [Default y, you have 60 seconds]:"
 if errorlevel 2 pause

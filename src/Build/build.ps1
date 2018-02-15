@@ -8,10 +8,14 @@ and execute your Cake build script with the parameters you provide.
 The build script target to run.
 .PARAMETER Configuration
 The build configuration to use.
+.PARAMETER PublishDirectory
+The directory to publish to.
 .PARAMETER Verbosity
 Specifies the amount of information to be displayed.
 .PARAMETER WhatIf
 Performs a dry run of the build script.
+.PARAMETER SkipInstallDotNetCoreCli
+Set to True to skip installing the DotNetCore CLI, when it is missing.
 No tasks will be executed.
 .PARAMETER ScriptArgs
 Remaining arguments are added here.
@@ -26,7 +30,11 @@ Param(
   [string]$Configuration = "Release",
   [ValidateSet("Quiet", "Minimal", "Normal", "Verbose", "Diagnostic")]
   [string]$Verbosity = "Verbose",
+  [string]$PublishDirectory = "",
   [switch]$WhatIf,
+  [switch]$SkipInstallDotNetCoreCli = $false,
+  [ValidateSet("Development", "Production")]
+  [string]$PublishEnvironment = "Production",
   [Parameter(Position=0,Mandatory=$false,ValueFromRemainingArguments=$true)]
   [string[]]$ScriptArgs
 )
@@ -39,8 +47,8 @@ $NugetUrl = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
 $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
 $ToolPath = Join-Path $PSScriptRoot "tools"
 if (!(Test-Path $ToolPath)) {
-    Write-Verbose "Creating tools directory..."
-    New-Item -Path $ToolPath -Type directory | out-null
+  Write-Verbose "Creating tools directory..."
+  New-Item -Path $ToolPath -Type directory | out-null
 }
 
 ###########################################################################
@@ -56,13 +64,12 @@ Function Remove-PathVariable([string]$VariableToRemove) {
   [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "Process")
 }
 
-# Get .NET Core CLI path if installed.
 $FoundDotNetCliVersion = $null;
 if (Get-Command dotnet -ErrorAction SilentlyContinue) {
   $FoundDotNetCliVersion = dotnet --version;
 }
-
-if($FoundDotNetCliVersion -ne $DotNetVersion) {
+  
+if($FoundDotNetCliVersion -ne $DotNetVersion -And $SkipInstallDotNetCoreCli -eq $false) {
   $InstallPath = Join-Path $PSScriptRoot ".dotnet"
   if (!(Test-Path $InstallPath)) {
     mkdir -Force $InstallPath | Out-Null;
@@ -75,7 +82,7 @@ if($FoundDotNetCliVersion -ne $DotNetVersion) {
   $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
   $env:DOTNET_CLI_TELEMETRY_OPTOUT=1
 }
-
+    
 ###########################################################################
 # INSTALL NUGET
 ###########################################################################
@@ -83,7 +90,7 @@ if($FoundDotNetCliVersion -ne $DotNetVersion) {
 # Make sure nuget.exe exists.
 $NugetPath = Join-Path $ToolPath "nuget.exe" 
 if (!(Test-Path $NugetPath)) {
-  Write-Host "Downloading NuGet.exe..."
+  Write-Output "Downloading NuGet.exe..."
   (New-Object System.Net.WebClient).DownloadFile($NugetUrl, $NugetPath);
 }
 
@@ -95,24 +102,26 @@ if (!(Test-Path $NugetPath)) {
 $Arguments = @{
   target=$Target;
   configuration=$Configuration;
+  publishDirectory=$PublishDirectory;
   verbosity=$Verbosity;
   dryrun=$WhatIf;
+  publishEnvironment=$PublishEnvironment;
 }.GetEnumerator() | ForEach-Object { "--{0}=`"{1}`"" -f $_.key, $_.value };
 
 try {
   Push-Location
-  Set-Location .
-  Write-Host "Restoring packages..."
+  $BuildProjectPath = [System.IO.Path]::GetFullPath($PSScriptRoot)
+  Set-Location $BuildProjectPath
   if($LASTEXITCODE -eq 0) {
-      Write-Output "Compiling build..."
-      Invoke-Expression "dotnet publish -c $Configuration /v:q /nologo"
-      if($LASTEXITCODE -eq 0) {
-          Write-Output "Running build..."
-          Invoke-Expression "bin/$Configuration/net461/publish/Build.exe $Arguments"
-      }
+    Write-Output "Compiling build..."
+    Invoke-Expression "dotnet publish -c Debug /v:q /nologo"
+    if($LASTEXITCODE -eq 0) {
+      Write-Output "Running build..."
+      Invoke-Expression "bin/Debug/net471/publish/Motorsports.Build.exe $Arguments"
+    }
   }
 }
 finally {
-    Pop-Location
-    exit $LASTEXITCODE;
+  Pop-Location
+  exit $LASTEXITCODE;
 }
