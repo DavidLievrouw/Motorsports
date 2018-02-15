@@ -7,7 +7,7 @@ namespace Motorsports.Build.Tasks {
   public sealed class RestorePackages : FrostingTask<Context> {
     public override void Run(Context context) {
       context.DotNetCoreRestore(
-        context.Motorsports.FileSystem.ProjectsAndSolutions.ScaffoldingSolution.FullPath,
+        context.Motorsports.FileSystem.ProjectsAndSolutions.ScaffoldingProjectFile.FullPath,
         new DotNetCoreRestoreSettings {
           IgnoreFailedSources = true
         });
