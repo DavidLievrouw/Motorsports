@@ -224,7 +224,9 @@ namespace Motorsports.Scaffolding.Core.Services {
           LEFT JOIN [dbo].[Participant] P ON P.[Id] = RW.[Participant]
         WHERE
           R.[Venue] = @Venue
-          AND R.[Number] > 0
+          -- If the requested round is non-championship, only get history of non-championship events
+          -- If the requested round is part of the championship, exclude non-championship events
+          AND ((@IsNonChampionship = 1 AND R.[Number] = 0) OR (@IsNonChampionship = 0 AND R.[Number] > 0))
           AND ST.[Step] > 1
           AND S.[Sport] = @Sport
           AND R.[Date] <= @Date
@@ -238,7 +240,8 @@ namespace Motorsports.Scaffolding.Core.Services {
         .WithParameters(new {
           Venue = round.Venue,
           Sport = round.RelatedSeason.Sport,
-          Date = round.Date.Date
+          Date = round.Date.Date,
+          IsNonChampionship = round.Number < 1
         })
         .ExecuteAsync<EventHistoryItem>();
     }
