@@ -156,8 +156,7 @@ namespace Motorsports.Scaffolding.Core.Models {
 
       modelBuilder.Entity<SeasonEntry>(
         entity => {
-          entity.HasKey(e => e.Season);
-          entity.HasKey(e => e.Team);
+          entity.HasKey(e => new {e.Season, e.Team});
 
           entity.Property(e => e.Name)
             .IsRequired()
