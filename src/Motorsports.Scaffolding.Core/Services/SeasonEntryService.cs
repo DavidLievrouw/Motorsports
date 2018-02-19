@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Motorsports.Scaffolding.Core.Dapper;
 using Motorsports.Scaffolding.Core.Models;
 using Motorsports.Scaffolding.Core.Models.DisplayModels;
 using Motorsports.Scaffolding.Core.Models.EditModels;
@@ -19,9 +21,13 @@ namespace Motorsports.Scaffolding.Core.Services {
 
   public class SeasonEntryService : ISeasonEntryService {
     readonly MotorsportsContext _context;
+    readonly IQueryExecutor _queryExecutor;
 
-    public SeasonEntryService(MotorsportsContext context) {
+    public SeasonEntryService(
+      MotorsportsContext context,
+      IQueryExecutor queryExecutor) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
+      _queryExecutor = queryExecutor ?? throw new ArgumentNullException(nameof(queryExecutor));
     }
 
     public Task<List<SeasonEntry>> LoadSeasonEntryList(int seasonId) {
@@ -95,10 +101,15 @@ namespace Motorsports.Scaffolding.Core.Services {
     public async Task UpdateSeasonEntry(SeasonEntryEditModel seasonEntry) {
       if (seasonEntry == null) throw new ArgumentNullException(nameof(seasonEntry));
 
-      var seasonEntryToUpdate = await _context.SeasonEntry.SingleAsync(se => se.Season == seasonEntry.Season && se.Team == seasonEntry.Team);
-      seasonEntryToUpdate.Name = seasonEntry.Name;
-      _context.Update(seasonEntryToUpdate);
-      await _context.SaveChangesAsync();
+      await _queryExecutor
+        .NewQuery("UPDATE [dbo].[SeasonEntry] SET Name=@Name WHERE [Season]=@Season AND [Team]=@Team")
+        .WithCommandType(CommandType.Text)
+        .WithParameters(new {
+          Season = seasonEntry.Season,
+          Team = seasonEntry.Team,
+          Name = seasonEntry.Name
+        })
+        .ExecuteAsync();
     }
   }
 }
