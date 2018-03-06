@@ -13,6 +13,7 @@ namespace Motorsports.Scaffolding.Core.Services {
     Task<Season> LoadDataRecord(int seasonId);
     Task<SeasonDisplayModel> GetNew();
     Task<SeasonsIndexDisplayModel> LoadSeasonList();
+    Task<SeasonsIndexDisplayModel> LoadSeasonList(string sport);
     Task<SeasonDisplayModel> LoadDisplayModel(int seasonId);
     Task UpdateSeason(SeasonEditModel season);
     Task PersistSeason(Season season);
@@ -50,8 +51,13 @@ namespace Motorsports.Scaffolding.Core.Services {
           _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
     }
 
-    public async Task<SeasonsIndexDisplayModel> LoadSeasonList() {
+    public Task<SeasonsIndexDisplayModel> LoadSeasonList() {
+      return LoadSeasonList(null);
+    }
+
+    public async Task<SeasonsIndexDisplayModel> LoadSeasonList(string sport) {
       var allSeasons = await _context.Season
+        .Where(s => sport == null || StringComparer.InvariantCultureIgnoreCase.Equals(s.Sport, sport))
         .Include(s => s.RelatedSport)
         .Include(s => s.RelatedWinningTeam)
         .ThenInclude(t => t.RelatedSeasonEntries)
@@ -129,6 +135,7 @@ namespace Motorsports.Scaffolding.Core.Services {
               .WithParameters(new {Season = winner.Season, Participant = winner.Participant})
               .ExecuteAsync();
           }
+
           transactionalQueryExecutor.Commit();
         } catch {
           transactionalQueryExecutor.Rollback();

@@ -23,6 +23,11 @@ namespace Motorsports.Scaffolding.Core.Controllers {
     public async Task<IActionResult> Index() {
       return View(await _seasonService.LoadSeasonList());
     }
+    
+    // GET: Seasons/F1
+    public async Task<IActionResult> IndexOfSport(string id) {
+      return View("Index", await _seasonService.LoadSeasonList(id));
+    }
 
     // GET: Seasons/Details/5
     public async Task<IActionResult> Details(int? id) {
