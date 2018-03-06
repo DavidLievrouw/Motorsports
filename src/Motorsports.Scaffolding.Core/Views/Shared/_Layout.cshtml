@@ -10,19 +10,24 @@
   <link rel="stylesheet" href="~/lib/select2/dist/select2.css" asp-append-version="true" />
   <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
   <script src="~/lib/jquery/dist/jquery.js" asp-append-version="true"></script>
+  <script src="~/lib/bootstrap/dist/js/bootstrap.js" asp-append-version="true"></script>
 </head>
 <body>
 <div class="page">
   @if (User.Identity.IsAuthenticated) {
-  <div>
     <nav class="navbar navbar-inverse navbar-fixed-top">
       <div class="container-fluid">
-        <div class="navbar-header">
-          <a asp-controller="Home" asp-action="Index" class="navbar-brand">Motorsports</a>
-        </div>
         <ul class="nav navbar-nav">
-          <li><a asp-controller="Sports" asp-action="Index">Sports</a></li>
-          <li><a asp-controller="Seasons" asp-action="Index">Seasons</a></li>
+          <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">Motorsports<span class="caret"></span></a>
+            <ul class="dropdown-menu">
+              <li><a asp-controller="Home" asp-action="Index">Home</a></li>
+              <li><a asp-controller="Sports" asp-action="Index">Sports</a></li>
+              <li><a asp-controller="Seasons" asp-action="Index">Seasons</a></li>
+              <li><hr /></li>
+              <li><a asp-controller="Login" asp-action="Logout">Log out</a></li>
+            </ul>
+          </li>
         </ul>
         <div class="navbar-collapse collapse">
           <ul class="nav navbar-nav navbar-right">
@@ -31,7 +36,6 @@
         </div>
       </div>
     </nav>
-  </div>
   }
   <div class="container body-content">
     @RenderBody()
@@ -41,9 +45,7 @@
   Technology playground by David Lievrouw (v@(typeof(Startup).Assembly.GetName().Version.ToString(3))).
 </div>
 
-<script src="~/lib/bootstrap/dist/js/bootstrap.js" asp-append-version="true"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
-<script src="~/lib/bootstrap/dist/js/bootstrap.js" asp-append-version="true"></script>
 <script src="~/lib/bootstrap-slider/dist/bootstrap-slider.js" asp-append-version="true"></script>
 <script src="~/lib/momentjs/dist/js/moment-with-locales.js" asp-append-version="true"></script>
 <script src="~/lib/bootstrap-datetimepicker/dist/js/bootstrap-datetimepicker.min.js" asp-append-version="true"></script>
