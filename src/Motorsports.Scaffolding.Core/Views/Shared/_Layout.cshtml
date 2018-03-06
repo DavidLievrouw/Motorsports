@@ -15,11 +15,15 @@
 <div class="page">
   @if (User.Identity.IsAuthenticated) {
     <nav class="navbar navbar-inverse navbar-fixed-top">
-      <div class="container">
+      <div class="container-fluid">
         <div class="navbar-header">
           <a asp-controller="Home" asp-action="Index" class="navbar-brand">Motorsports</a>
         </div>
-        <div class="navbar-collapse collapse">
+        <ul class="nav navbar-nav">
+          <li><a asp-controller="Sports" asp-action="Index">Sports</a></li>
+          <li><a asp-controller="Seasons" asp-action="Index">Seasons</a></li>
+        </ul>
+        <div class="navbar-collapse">
           <ul class="nav navbar-nav navbar-right">
             <li><a asp-controller="Login" asp-action="Logout" class="navbar-brand">Log out</a></li>
           </ul>
