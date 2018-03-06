@@ -18,7 +18,7 @@
   <div class="sportlogoContainer">
     <img class="sportlogo" src="@_imageService.GetSportLogo(Model.Season.Sport)" alt="@Model.Season.Sport"/>
   </div>
-  <h4 class="viewName">Rounds for @Html.DisplayFor(model => model.Season)</h4>
+  <h4 class="viewName">Rounds for <a asp-action="Edit" asp-controller="Seasons" asp-route-id="@(Model.Season.Id)">@Html.DisplayFor(model => model.Season)</a></h4>
 </blockquote>
 
 @if (Model.Rounds.Any()) {
@@ -82,6 +82,9 @@
     }
     </tbody>
   </table>
+  <div>
+    <a asp-controller="Seasons" asp-action="Index">Back to List</a>
+  </div>
 
   <script>
     $(document).ready(function() {
