@@ -14,6 +14,7 @@
 <body>
 <div class="page">
   @if (User.Identity.IsAuthenticated) {
+  <div>
     <nav class="navbar navbar-inverse navbar-fixed-top">
       <div class="container-fluid">
         <div class="navbar-header">
@@ -23,13 +24,14 @@
           <li><a asp-controller="Sports" asp-action="Index">Sports</a></li>
           <li><a asp-controller="Seasons" asp-action="Index">Seasons</a></li>
         </ul>
-        <div class="navbar-collapse">
+        <div class="navbar-collapse collapse">
           <ul class="nav navbar-nav navbar-right">
             <li><a asp-controller="Login" asp-action="Logout" class="navbar-brand">Log out</a></li>
           </ul>
         </div>
       </div>
     </nav>
+  </div>
   }
   <div class="container body-content">
     @RenderBody()
