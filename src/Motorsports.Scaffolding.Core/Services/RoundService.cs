@@ -219,7 +219,7 @@ namespace Motorsports.Scaffolding.Core.Services {
           [dbo].[Round] R
           INNER JOIN [dbo].[Season] S ON R.[Season] = S.[Id]
           INNER JOIN [dbo].[Status] ST ON ST.[Name] = R.[Status]
-		  LEFT JOIN [dbo].[SeasonEntry] SE ON SE.[Season] = S.[Id] AND SE.[Team] = R.[WinningTeam]
+          LEFT JOIN [dbo].[SeasonEntry] SE ON SE.[Season] = S.[Id] AND SE.[Team] = R.[WinningTeam]
           LEFT JOIN [dbo].[RoundWinner] RW ON R.[Id] = RW.[Round]
           LEFT JOIN [dbo].[Participant] P ON P.[Id] = RW.[Participant]
         WHERE
@@ -235,7 +235,9 @@ namespace Motorsports.Scaffolding.Core.Services {
           R.[Date],
           R.[Rating],
           R.[Rain],
-          SE.[Name]")
+          SE.[Name]
+        ORDER BY
+          R.[Date] DESC")
         .WithCommandType(CommandType.Text)
         .WithParameters(new {
           Venue = round.Venue,

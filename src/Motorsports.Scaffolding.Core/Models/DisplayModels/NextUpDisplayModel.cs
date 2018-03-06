@@ -21,6 +21,7 @@ namespace Motorsports.Scaffolding.Core.Models.DisplayModels {
                        .FirstOrDefault() == nextUp;
       EventHistory = eventHistory
         .Where(eh => eh.Id != nextUp.Id)
+        .OrderByDescending(eh => eh.Date)
         .Select(eh => new EventHistoryItemDisplayModel(eh))
         .ToList();
     }
