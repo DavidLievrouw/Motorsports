@@ -14,7 +14,7 @@
     <PackageReference Include="Cake.FileHelpers" Version="3.0.0" />
     <PackageReference Include="Cake.Frosting" Version="0.1.0-alpha0077" />
     <PackageReference Include="Cake.IIS" Version="0.4.0" />
-    <PackageReference Include="Cake.NuGet" Version="0.29.0" />
+    <PackageReference Include="Cake.NuGet" Version="0.27.2" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="4.5.0" />
   </ItemGroup>

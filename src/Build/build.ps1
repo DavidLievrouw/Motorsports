@@ -114,10 +114,10 @@ try {
   Set-Location $BuildProjectPath
   if($LASTEXITCODE -eq 0) {
     Write-Output "Compiling build..."
-    Invoke-Expression "dotnet publish -c Debug /v:q /nologo"
+    Invoke-Expression "dotnet publish -c $Configuration /v:q /nologo"
     if($LASTEXITCODE -eq 0) {
       Write-Output "Running build..."
-      Invoke-Expression "bin/Debug/net471/publish/Motorsports.Build.exe $Arguments"
+      Invoke-Expression "bin/$Configuration/net471/publish/Motorsports.Build.exe $Arguments"
     }
   }
 }

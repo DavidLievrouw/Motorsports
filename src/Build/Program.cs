@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Cake.Core.Configuration;
 using Cake.Frosting;
@@ -18,11 +19,15 @@ namespace Motorsports.Build {
     }
 
     public static int Main(string[] args) {
-      return new CakeHostBuilder()
+      var exitCode = new CakeHostBuilder()
         .WithArguments(args)
         .UseStartup<Program>()
         .Build()
         .Run();
+#if DEBUG
+      Console.ReadKey();
+#endif
+      return exitCode;
     }
   }
 }
