@@ -9,19 +9,21 @@
   var targetProperty = ViewData["TargetProperty"] ?? "Season";
   var autofocus = bool.Parse(ViewData["Autofocus"]?.ToString() ?? "false");
 
-  var groupedSeasons = allSeasons
+  var groupedSeasonsTasks = allSeasons
     .GroupBy(season => season.Sport)
     .OrderBy(_ => _.Key)
-    .Select(_ => new {
+    .SelectAsync(async _ => new {
       id = 0,
       text = _.Key,
-      children = _
+      children = await _
         .OrderBy(season => season.RelatedRounds.FirstOrDefault()?.Date ?? DateTime.MinValue)
-        .Select(season => new {
+        .SelectAsync(async season => new {
           id = season.Id,
-          text = Html.Partial("DisplayTemplates/" + nameof(Season), season).ToHtmlString()
+          text = (await Html.PartialAsync("DisplayTemplates/" + nameof(Season), season)).ToHtmlString()
         })
-    }).ToArray();
+    });
+
+    var groupedSeasons = (await groupedSeasonsTasks).ToArray();
 }
 
 <select name="@targetProperty" id="slcSeasons" class="form-control" @(autofocus ? "autofocus=\"autofocus\"" : string.Empty)></select>

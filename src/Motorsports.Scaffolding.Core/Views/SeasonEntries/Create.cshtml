@@ -31,7 +31,7 @@
       <div class="form-group">
         <div class="formLabelWithLink">
           <label asp-for="Team" class="control-label"></label>
-          <a asp-action="Index" asp-controller="Teams" target="_blank">Edit teams</a>
+          <a href="@Url.Action("Index", "Teams")" target="_blank">Edit teams</a>
         </div>
         <div>
           @Html.EditorFor(_ => _.Team, nameof(Team), new {

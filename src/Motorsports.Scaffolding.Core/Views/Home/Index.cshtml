@@ -5,8 +5,8 @@
 }
 
 <div id="menu">
-  @Html.Partial("RoundsNextUp", Model)
-  @Html.Partial("RoundsToAcquire", Model)
-  @Html.Partial("LatestSeasons", Model)
-  @Html.Partial("MasterData", Model)
+  @await Html.PartialAsync("RoundsNextUp", Model)
+  @await Html.PartialAsync("RoundsToAcquire", Model)
+  @await Html.PartialAsync("LatestSeasons", Model)
+  @await Html.PartialAsync("MasterData", Model)
 </div>

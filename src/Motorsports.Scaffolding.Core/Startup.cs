@@ -119,7 +119,6 @@ namespace Motorsports.Scaffolding.Core {
       
       if (env.IsDevelopment()) {
         app.UseDeveloperExceptionPage();
-        app.UseBrowserLink();
       }
       else app.UseExceptionHandler("/error");
 

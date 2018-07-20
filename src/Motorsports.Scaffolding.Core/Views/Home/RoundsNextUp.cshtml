@@ -4,11 +4,11 @@
   <h4>Next up</h4>
 </blockquote>
 @if (Model.HasVeryNextUp) {
-  @Html.Partial("NextUp", Model.VeryNextUp)
+  @await Html.PartialAsync("NextUp", Model.VeryNextUp)
 }
 @if (Model.HasNextUpPerSport) {
   foreach (var nextUp in Model.NextUp) {
-    @Html.Partial("NextUp", nextUp)
+    @await Html.PartialAsync("NextUp", nextUp)
   }
 }
 else {
