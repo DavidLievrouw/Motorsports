@@ -15,7 +15,5 @@
     <PackageReference Include="Cake.Frosting" Version="0.31.0" />
     <PackageReference Include="Cake.IIS" Version="0.4.1" />
     <PackageReference Include="CommandLineParser" Version="2.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.1" />
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="4.5.0" />
   </ItemGroup>
 </Project>
