@@ -45,13 +45,15 @@ namespace Motorsports.Build {
                 Console.WriteLine();
                 return Startup(options);
             }
-            
+
+#if DEBUG
             // Otherwise, wait for key press if debugger is attached
             if (System.Diagnostics.Debugger.IsAttached) {
                 Console.WriteLine();
                 Console.WriteLine("Press any key to quit...");
                 Console.ReadKey();
             }
+#endif
 
             return returnCode;
         }
