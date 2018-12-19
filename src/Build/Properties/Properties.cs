@@ -29,12 +29,14 @@ namespace Motorsports.Build.Properties {
       var childPropertiesList = new List<IProperties>();
       foreach (var prop in PublicProperties) {
         var propValue = prop.GetValue(this);
-        if (propValue is IProperties)
-          childPropertiesList.Add(propValue as IProperties);
-        else if (!(propValue is ICakeContext))
-          stringBuilder.AppendLine($" - {prop.Name}: {propValue ?? "[NULL]"}");
+        if (propValue is IProperties) childPropertiesList.Add(propValue as IProperties);
+        else if (!(propValue is ICakeContext)) stringBuilder.AppendLine($" - {prop.Name}: {propValue ?? "[NULL]"}");
       }
-      foreach (var childProperties in childPropertiesList) stringBuilder.AppendLine(childProperties.ToString());
+
+      foreach (var childProperties in childPropertiesList) {
+        stringBuilder.AppendLine(childProperties.ToString());
+      }
+
       return Environment.NewLine + stringBuilder.ToString().Trim();
     }
   }

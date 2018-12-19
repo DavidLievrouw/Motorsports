@@ -5,7 +5,7 @@ using Cake.IIS;
 
 namespace Motorsports.Build.Properties {
   public class IISApplicationProperties : Properties<IISApplicationProperties> {
-    private readonly MotorsportsProperties _container;
+    readonly MotorsportsProperties _container;
 
     public IISApplicationProperties(ICakeContext context, MotorsportsProperties container) : base(context) {
       _container = container ?? throw new ArgumentNullException(nameof(container));

@@ -15,6 +15,11 @@ namespace Motorsports.Build.Tasks {
     public override void Run(Context context) {
       var msBuildSettings = new DotNetCoreMSBuildSettings();
       msBuildSettings.Properties.Add("PublishEnvironment", new[] {context.Motorsports.Arguments.PublishEnvironment});
+      msBuildSettings.Properties.Add("PublishProfile", new[] {"Properties\\PublishProfiles\\IIS.pubxml"});
+
+      // Suppress warning for conflicting dependency versions. 
+      // This warning is not applicable for NETSTANDARD projects, apparently.
+      msBuildSettings.WarningCodesAsMessage.Add("MSB3277");
 
       context.CleanDirectory(context.Motorsports.FileSystem.PublishTargetDirectory);
       context.DotNetCoreClean(

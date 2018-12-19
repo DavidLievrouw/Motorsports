@@ -4,16 +4,27 @@ using Cake.Core;
 
 namespace Motorsports.Build.Properties {
   public class ArgumentsProperties : Properties<ArgumentsProperties> {
-    private readonly MotorsportsProperties _container;
+    readonly MotorsportsProperties _container;
 
     public ArgumentsProperties(ICakeContext context, MotorsportsProperties container) : base(context) {
       _container = container ?? throw new ArgumentNullException(nameof(container));
     }
 
-    public string Target => Context.Arguments.HasArgument("target") ? Context.Arguments.GetArgument("target") : "Default";
-    public string Configuration => Context.Arguments.HasArgument("configuration") ? Context.Arguments.GetArgument("configuration") : "ReleaseWithJs";
-    public string PublishEnvironment => Context.Arguments.HasArgument("PublishEnvironment") ? Context.Arguments.GetArgument("PublishEnvironment") : "Production";
-    public string PublishDirectory => Context.Arguments.HasArgument("PublishDirectory") ? Context.Arguments.GetArgument("PublishDirectory") : null;
+    public string Target => Context.Arguments.HasArgument("target")
+      ? Context.Arguments.GetArgument("target")
+      : "Default";
+
+    public string Configuration => Context.Arguments.HasArgument("configuration")
+      ? Context.Arguments.GetArgument("configuration")
+      : "ReleaseWithJs";
+
+    public string PublishEnvironment => Context.Arguments.HasArgument("PublishEnvironment")
+      ? Context.Arguments.GetArgument("PublishEnvironment")
+      : "Production";
+
+    public string PublishDirectory => Context.Arguments.HasArgument("PublishDirectory")
+      ? Context.Arguments.GetArgument("PublishDirectory")
+      : null;
 
     public DotNetCoreVerbosity DotNetCoreVerbosity {
       get {

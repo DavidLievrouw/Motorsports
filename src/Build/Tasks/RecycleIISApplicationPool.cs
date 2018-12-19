@@ -15,9 +15,7 @@ namespace Motorsports.Build.Tasks {
 
       context.StopPool(applicationPoolName);
       System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(4)).Wait(); // Make sure it is gracefully stopped
-      if (!context.StartPool(applicationPoolName)) {
-        context.Error($"Could not start application pool '{applicationPoolName}'.");
-      }
+      if (!context.StartPool(applicationPoolName)) context.Error($"Could not start application pool '{applicationPoolName}'.");
     }
   }
 }
