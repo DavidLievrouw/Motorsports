@@ -35,5 +35,4 @@ set "DIR=%~dp0"
 cd %~dp0
 TITLE Motorsports -- Build
 dotnet run --project "./src/Build/Build.csproj" --interactive --configuration Debug --no-launch-profile
-CHOICE /T 10 /C yYnN /CS /D y  /M "Should this window close? [Default y, you have 10 seconds]:"
 if errorlevel 2 pause
