@@ -1,33 +1,69 @@
 using System;
 using System.Collections.Generic;
-using Cake.Core.Configuration;
 using Cake.Frosting;
-using Cake.NuGet;
+using CommandLine;
+using Motorsports.Build.Startup;
 
 namespace Motorsports.Build {
-  public class Program : IFrostingStartup {
-    public void Configure(ICakeServices services) {
-      services.UseContext<Context>();
-      services.UseLifetime<Lifetime>();
-      services.UseTaskLifetime<TaskLifetime>();
-      services.UseWorkingDirectory(".");
-      services.UsePackageInstaller<NuGetPackageInstaller>();
+    public class Program {
+        public static int Main(string[] args) {
+            using (new TemporaryConsoleColor(ConsoleColor.Green)) {
+                Console.WriteLine("***************************");
+                Console.WriteLine("        MOTORSPORTS        ");
+                Console.WriteLine("***************************");
+            }
 
-      // Workaround, cannot use services.UseModule<NuGetModule>(), because there is no default constructor
-      var nuGetModule = new NuGetModule(new CakeConfiguration(new Dictionary<string, string>()));
-      nuGetModule.Register(services);
-    }
+            return Parser.Default.ParseArguments<Options>(args)
+                .MapResult(Startup, Shutdown);
+        }
 
-    public static int Main(string[] args) {
-      var exitCode = new CakeHostBuilder()
-        .WithArguments(args)
-        .UseStartup<Program>()
-        .Build()
-        .Run();
+      static int Startup(Options options) {
+            var localOptions = options.Interactive
+                ? InteractiveOptions.Prompt(options)
+                : options;
+
+            if (localOptions == null) {
+                return 0;
+            }
+
+            string[] arguments = {
+                $"-target={localOptions.Target}",
+                $"-configuration={localOptions.Configuration}",
+                $"-environment={localOptions.Environment}",
+                $"-verbosity={localOptions.Verbosity}",
+                $"-publishDirectory={localOptions.PublishDirectory}"
+            };
+
+            var returnCode = new CakeHostBuilder()
+                .WithArguments(arguments)
+                .UseStartup<FrostingStartup>()
+                .Build()
+                .Run();
+
+            // If interactive, keep asking 
+            if (options.Interactive) {
+                Console.WriteLine();
+                return Startup(options);
+            }
+
 #if DEBUG
-      Console.ReadKey();
+            // Otherwise, wait for key press if debugger is attached
+            if (System.Diagnostics.Debugger.IsAttached) {
+                Console.WriteLine();
+                Console.WriteLine("Press any key to quit...");
+                Console.ReadKey();
+            }
 #endif
-      return exitCode;
+
+            return returnCode;
+        }
+
+      static int Shutdown(IEnumerable<Error> errors) {
+            Console.WriteLine("Shutting down program");
+            foreach (var error in errors) {
+                Console.WriteLine(error.Tag);
+            }
+            return 1;
+        }
     }
-  }
 }

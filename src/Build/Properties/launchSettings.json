@@ -2,7 +2,8 @@
   "profiles": {
     "Build": {
       "commandName": "Project",
-      "commandLineArgs": "-target=Default"
+      "commandLineArgs": "--interactive",
+      "workingDirectory": "C:\\Workspace\\Motorsports"
     }
   }
 }

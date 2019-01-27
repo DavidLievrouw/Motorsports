@@ -1,5 +1,6 @@
 using Cake.Common.Tools.DotNetCore;
 using Cake.Common.Tools.DotNetCore.Restore;
+using Cake.Core;
 using Cake.Frosting;
 
 namespace Motorsports.Build.Tasks {
@@ -9,7 +10,9 @@ namespace Motorsports.Build.Tasks {
       context.DotNetCoreRestore(
         context.Motorsports.FileSystem.ProjectsAndSolutions.ScaffoldingProjectFile.FullPath,
         new DotNetCoreRestoreSettings {
-          IgnoreFailedSources = true
+          IgnoreFailedSources = true,
+          Verbosity = context.Motorsports.Arguments.DotNetCoreVerbosity,
+          ArgumentCustomization = args => args.Append("--force")
         });
     }
   }
