@@ -1,5 +1,5 @@
 # Copy source
-FROM microsoft/aspnetcore-build:2.0.4-2.1.3 AS build-env
+FROM mcr.microsoft.com/dotnet/core/sdk:2.2 AS build-env
 WORKDIR /app
 COPY *.csproj .
 
@@ -9,7 +9,7 @@ COPY . .
 RUN dotnet publish -c Release -o out
 
 # Run
-FROM microsoft/aspnetcore:2.0.4
+FROM mcr.microsoft.com/dotnet/core/aspnet:2.2
 WORKDIR /app
 COPY --from=build-env /app/out .
 ENTRYPOINT ["dotnet", "Motorsports.Scaffolding.Core.dll"]
