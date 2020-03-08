@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.FileProviders;
 using Motorsports.Scaffolding.Core.Dapper;
 using Motorsports.Scaffolding.Core.Models;
 using Motorsports.Scaffolding.Core.Models.Validators;
@@ -58,8 +59,8 @@ namespace Motorsports.Scaffolding.Core {
       // Helpers for requests
       services.TryAddSingleton<IActionContextAccessor>(provider => new ActionContextAccessor());
       services.TryAddScoped<IUrlHelper>(provider => new UrlHelper(provider.GetService<IActionContextAccessor>().ActionContext));
-      services.TryAddScoped<IPhysicalPathResolver>(provider => new PhysicalPathResolver(provider.GetRequiredService<IUrlHelper>(), CurrentEnvironment));
-      services.TryAddScoped<IImageService>(provider => new ImageService(provider.GetRequiredService<IPhysicalPathResolver>(), provider.GetRequiredService<IUrlHelper>()));
+      services.TryAddSingleton(serviceProvider => serviceProvider.GetRequiredService<IHostingEnvironment>().WebRootFileProvider);
+      services.TryAddScoped<IImageService, ImageService>();
 
       // Validators
       services.TryAddScoped<IModelStatePopulator<Sport, string>>(provider => new ModelStatePopulator<Sport, string>(

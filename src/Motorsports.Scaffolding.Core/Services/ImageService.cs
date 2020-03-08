@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.FileProviders;
 
 namespace Motorsports.Scaffolding.Core.Services {
   public interface IImageService {
@@ -9,11 +10,11 @@ namespace Motorsports.Scaffolding.Core.Services {
   }
 
   public class ImageService : IImageService {
-    readonly IPhysicalPathResolver _physicalPathResolver;
+    readonly IFileProvider _fileProvider;
     readonly IUrlHelper _urlHelper;
 
-    public ImageService(IPhysicalPathResolver physicalPathResolver, IUrlHelper urlHelper) {
-      _physicalPathResolver = physicalPathResolver ?? throw new ArgumentNullException(nameof(physicalPathResolver));
+    public ImageService(IFileProvider fileProvider, IUrlHelper urlHelper) {
+      _fileProvider = fileProvider ?? throw new ArgumentNullException(nameof(fileProvider));
       _urlHelper = urlHelper ?? throw new ArgumentNullException(nameof(urlHelper));
     }
 
@@ -22,9 +23,9 @@ namespace Motorsports.Scaffolding.Core.Services {
     }
 
     public string GetSportLogo(string sport, out bool isFound) {
-      var relativePath = "~/img/" + sport + ".png";
-      var physicalPath = _physicalPathResolver.Resolve(relativePath);
-      isFound = File.Exists(physicalPath);
+      var relativePath = _urlHelper.Content("~/img/" + sport + ".png");
+      var info = _fileProvider.GetFileInfo(relativePath);
+      isFound = info.Exists;
       return isFound
         ? _urlHelper.Content(relativePath)
         : _urlHelper.Content("~/img/notfound.png");
