@@ -1,0 +1,29 @@
+version: '3.2'
+      
+services:
+  portainer:
+    image: portainer/portainer-ce:2.15.1-alpine
+    container_name: portainer
+    entrypoint: >
+      sh -c "apk add --update apache2-utils
+      && pass_hash=$$(htpasswd -nbB admin 'S3cr37' | cut -d ':' -f 2)
+      && /portainer -H unix:///var/run/docker.sock --admin-password $$pass_hash --sslcert /etc/certs/public/easyform.dev-crt.pem --sslkey /etc/certs/public/easyform.dev-key.pem"
+    restart: always
+    volumes:
+      - /etc/dalion/motorsports/portainer/:/data/
+      - /var/dalion/motorsports/certs/:/etc/certs/public/:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "9000:9443"
+      - "8000:8000" 
+    networks:
+      - motorsports_network
+    logging:
+      options:
+        max-size: "25m"
+        max-file: "3"  
+
+networks:
+  motorsports_network:
+    external:
+      name: motorsports_net

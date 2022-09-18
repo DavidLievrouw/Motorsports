@@ -1,0 +1,32 @@
+version: '3.2'
+
+services:
+  sql_server:
+    image: mcr.microsoft.com/mssql/server:2019-CU16-ubuntu-20.04
+    container_name: sql_server
+    restart: always
+    user: root
+    volumes:
+      - /var/dalion/motorsports/sql/backup/:/backup/
+      - /var/dalion/motorsports/sql/:/var/opt/mssql/
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=S3cr37
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    networks:
+      - motorsports_network
+    logging:
+      options:
+        max-size: "25m"
+        max-file: "3"  
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
+
+networks:
+  motorsports_network:
+    external:
+      name: motorsports_net

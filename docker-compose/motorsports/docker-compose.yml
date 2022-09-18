@@ -1,0 +1,22 @@
+version: '3.2'
+      
+services:
+  nginx:
+    image: motorsports:latest
+    container_name: motorsports
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - ConnectionStrings__Motorsports=Server=sql_server,1433;Initial Catalog=Motorsports;User ID=MotorsportsApp;Password=S3cr37;
+    networks:
+      - motorsports_network
+    logging:
+      options:
+        max-size: "25m"
+        max-file: "3"  
+
+networks:
+  motorsports_network:
+    external:
+      name: motorsports_net
