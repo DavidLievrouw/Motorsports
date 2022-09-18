@@ -23,7 +23,7 @@ namespace Motorsports.Scaffolding.Core.Services {
     }
 
     public string GetSportLogo(string sport, out bool isFound) {
-      var relativePath = _urlHelper.Content("~/img/" + sport + ".png");
+      var relativePath = _urlHelper.Content("~/img/" + sport.ToLowerInvariant() + ".png");
       var info = _fileProvider.GetFileInfo(relativePath);
       isFound = info.Exists;
       return isFound
