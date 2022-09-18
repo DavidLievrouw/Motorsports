@@ -30,3 +30,4 @@ Import Schema Logs/
 *.dbmdl
 *.jfm
 **/appsettings-connectionstrings.json
+.idea
