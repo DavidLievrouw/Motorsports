@@ -28,7 +28,7 @@ namespace Motorsports.Scaffolding.Core {
       var builder = new ConfigurationBuilder()
         .SetBasePath(env.ContentRootPath)
         .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-        .AddJsonFile("appsettings-connectionstrings.json", optional: false, reloadOnChange: true)
+        .AddJsonFile("appsettings-connectionstrings.json", optional: true, reloadOnChange: true)
         .AddEnvironmentVariables();
       Configuration = builder.Build();
     }
