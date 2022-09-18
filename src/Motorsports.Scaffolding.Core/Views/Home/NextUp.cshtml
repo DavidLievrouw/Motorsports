@@ -9,10 +9,7 @@
                 : string.Empty) nextUp">
   <div class="nextUpTitle">
     <div class="nextUpSport">
-      <img class="sportlogo" src="@_imageService.GetSportLogo(Model.Sport, out var isSportLogoFound)" alt="@Model.Sport"/>
-      @if (!isSportLogoFound) {
-        <div>@Model.Sport</div>
-      }
+      <img class="sportlogo" src="@_imageService.GetSportLogo(Model.Sport)" alt="@Model.Sport"/>
     </div>
     <div class="nextUpTagLine">
       @if (Model.IsInPast) {
