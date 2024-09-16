@@ -1,5 +1,3 @@
-version: '3.2'
-      
 services:
   nginx:
     image: motorsports:latest
@@ -18,5 +16,5 @@ services:
 
 networks:
   motorsports_network:
-    external:
-      name: motorsports_net
+    name: motorsports_net
+    external: true

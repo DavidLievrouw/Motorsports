@@ -1,8 +1,6 @@
-version: '3.2'
-
 services:
   sql_server:
-    image: mcr.microsoft.com/mssql/server:2019-CU16-ubuntu-20.04
+    image: mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04
     container_name: sql_server
     restart: always
     user: root
@@ -28,5 +26,5 @@ services:
 
 networks:
   motorsports_network:
-    external:
-      name: motorsports_net
+    name: motorsports_net
+    external: true

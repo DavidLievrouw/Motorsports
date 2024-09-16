@@ -1,8 +1,6 @@
-version: '3.2'
-      
 services:
   portainer:
-    image: portainer/portainer-ce:2.15.1-alpine
+    image: portainer/portainer-ce:2.20.1-alpine
     container_name: portainer
     entrypoint: >
       sh -c "apk add --update apache2-utils
@@ -25,5 +23,5 @@ services:
 
 networks:
   motorsports_network:
-    external:
-      name: motorsports_net
+    name: motorsports_net
+    external: true
