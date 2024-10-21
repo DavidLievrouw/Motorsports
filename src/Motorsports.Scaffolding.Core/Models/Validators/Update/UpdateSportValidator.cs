@@ -20,8 +20,8 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
         .When(_ => !string.IsNullOrEmpty(_.Name));
     }
 
-    bool MustExist(Sport sport, string name, PropertyValidatorContext context) {
-      var existingKey = GetKey(context.ParentContext);
+    bool MustExist(Sport sport, string name, ValidationContext<Sport> context) {
+      var existingKey = GetKey(context);
       return _context.Sport.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, existingKey));
     }
   }

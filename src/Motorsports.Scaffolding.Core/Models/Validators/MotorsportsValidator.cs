@@ -23,7 +23,7 @@ namespace Motorsports.Scaffolding.Core.Models.Validators {
       return new ValidationResult(thirdPartyValidationResult);
     }
 
-    protected TKey GetKey(ValidationContext validationContext) {
+    protected TKey GetKey(IValidationContext validationContext) {
       return (TKey) validationContext.RootContextData[Key];
     }
   }

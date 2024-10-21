@@ -34,11 +34,9 @@ namespace Motorsports.Build {
                 $"-publishDirectory={localOptions.PublishDirectory}"
             };
 
-            var returnCode = new CakeHostBuilder()
-                .WithArguments(arguments)
+            var returnCode = new CakeHost()
                 .UseStartup<FrostingStartup>()
-                .Build()
-                .Run();
+                .Run(arguments);
 
             // If interactive, keep asking 
             if (options.Interactive) {
