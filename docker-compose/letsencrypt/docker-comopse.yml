@@ -1,0 +1,22 @@
+services:
+  letsencrypt-bot:
+    image: recomaticsworkflow.azurecr.io/workflow10/workflow-letsencrypt-webroot:1.1.0
+    container_name: letsencrypt-bot
+    restart: unless-stopped
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/dalion/motorsports/letsencrypt/:/etc/letsencrypt/
+      - /var/dalion/motorsports/letsencrypt/acme/:/tmp/letsencrypt/
+      - /var/dalion/motorsports/certs/:/etc/certs/public/
+    environment:
+      - DOMAINS=ms.dalion.eu # Domains for your certificate. Example: example.com www.example.com
+      - EMAIL=your-e-mail@gmail.com # Email for urgent notices and lost key recovery.
+      - EXP_LIMIT=30 # The number of days before expiration of the certificate before request another one. Defaults to 30.
+      - CHECK_FREQ=10 # The number of days how often to perform checks. Defaults to 10.
+      - STAGING=0 # Set this to 1 to use the staging environment of letsencrypt to prevent rate limiting while working on your setup. Defaults to 0.
+      - OUT_DIR=/etc/certs/public # The directory in which the output cert files will be copied.
+      - CERT_NAME=motorsports # The prefix of the output cert files
+    logging:
+      options:
+        max-size: "25m"
+        max-file: "3"
