@@ -39,7 +39,6 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Include(s => s.RelatedSeasonWinners)
         .ThenInclude(sw => sw.RelatedParticipant)
         .Include(s => s.RelatedRounds)
-        .AsNoTracking()
         .SingleOrDefaultAsync(m => m.Id == seasonId);
     }
 
