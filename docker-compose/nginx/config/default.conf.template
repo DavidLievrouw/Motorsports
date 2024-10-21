@@ -15,7 +15,7 @@ server {
   }
 
   location / {
-    return 301 https://$host:443/;
+    return 301 https://$host:443$request_uri;
   }
 }
 
