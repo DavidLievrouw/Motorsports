@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
   public class CreateSportValidator : MotorsportsValidator<Sport, string>, ICreateValidator<Sport> {
@@ -20,7 +21,7 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
     }
 
     bool BeUnique(Sport sport, string name) {
-      return !_context.Sport.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, name));
+      return !_context.Sport.Any(s => EF.Functions.Like(s.Name, name));
     }
   }
 }

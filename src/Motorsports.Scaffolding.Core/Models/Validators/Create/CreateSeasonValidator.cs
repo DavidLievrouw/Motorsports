@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
   public class CreateSeasonValidator : MotorsportsValidator<Season, int>, ICreateValidator<Season> {
@@ -17,7 +18,7 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
     }
 
     bool SportExists(Season season, string sport) {
-      return _context.Sport.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, sport));
+      return _context.Sport.Any(_ => EF.Functions.Like(_.Name, sport));
     }
   }
 }

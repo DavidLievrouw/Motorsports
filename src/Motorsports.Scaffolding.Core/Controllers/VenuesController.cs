@@ -28,7 +28,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
     // GET: Venues
     public async Task<IActionResult> Index() {
-      var motorsportsContext = _context.Venue.Include(v => v.RelatedCountry);
+      var motorsportsContext = _context.Venue.Include(v => v.RelatedCountry).AsNoTracking();
       return View(await motorsportsContext.ToListAsync());
     }
 
@@ -38,6 +38,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
       var venue = await _context.Venue
         .Include(v => v.RelatedCountry)
+        .AsNoTracking()
         .SingleOrDefaultAsync(m => m.Name == id);
       if (venue == null) return NotFound();
 

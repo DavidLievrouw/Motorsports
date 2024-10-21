@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
   public class CreateVenueValidator : MotorsportsValidator<Venue, string>, ICreateValidator<Venue> {
@@ -26,11 +27,11 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
     }
 
     bool BeUnique(Venue venue, string name) {
-      return !_context.Venue.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, name));
+      return !_context.Venue.Any(_ => EF.Functions.Like(_.Name, name));
     }    
 
     bool CountryExists(Venue venue, string country) {
-      return _context.Country.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Iso, country));
+      return _context.Country.Any(_ => EF.Functions.Like(_.Iso, country));
     }
   }
 }

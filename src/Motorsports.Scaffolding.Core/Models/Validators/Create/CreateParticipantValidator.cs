@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
   public class CreateParticipantValidator : MotorsportsValidator<Participant, int>, ICreateValidator<Participant> {
@@ -20,7 +21,7 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
       RuleFor(_ => _.LastName)
         .NotEmpty()
         .WithMessage("A last name is required.");
-      
+
       RuleFor(_ => _.Country)
         .NotEmpty()
         .WithMessage("A country is required.")
@@ -34,14 +35,15 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
     }
 
     bool CountryExists(Participant participant, string country) {
-      return _context.Country.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Iso, country));
+      return _context.Country.Any(_ => EF.Functions.Like(_.Iso, country));
     }
 
     bool BeUnique(Participant participant, string title) {
-      return !_context.Participant.Any(_ => 
-        StringComparer.InvariantCultureIgnoreCase.Equals(_.Title, participant.Title) && 
-        StringComparer.InvariantCultureIgnoreCase.Equals(_.FirstName, participant.FirstName) && 
-        StringComparer.InvariantCultureIgnoreCase.Equals(_.LastName, participant.LastName));
+      return !_context.Participant.Any(
+        _ =>
+          EF.Functions.Like(_.Title, participant.Title) &&
+          EF.Functions.Like(_.FirstName, participant.FirstName) &&
+          EF.Functions.Like(_.LastName, participant.LastName));
     }
   }
 }

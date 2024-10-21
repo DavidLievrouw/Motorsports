@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
   public class UpdateParticipantValidator : MotorsportsValidator<Participant, int>, IUpdateValidator<Participant, int> {
@@ -40,7 +41,7 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
     }
 
     bool CountryExists(Participant participant, string country) {
-      return _context.Country.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Iso, country));
+      return _context.Country.Any(_ => EF.Functions.Like(_.Iso, country));
     }
 
     bool MustExist(Participant participant, string title) {
@@ -49,9 +50,9 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
 
     bool BeUnique(Participant participant, string title) {
       return !_context.Participant.Any(_ => 
-        StringComparer.InvariantCultureIgnoreCase.Equals(_.Title, participant.Title) && 
-        StringComparer.InvariantCultureIgnoreCase.Equals(_.FirstName, participant.FirstName) && 
-        StringComparer.InvariantCultureIgnoreCase.Equals(_.LastName, participant.LastName) &&
+        EF.Functions.Like(_.Title, participant.Title) && 
+        EF.Functions.Like(_.FirstName, participant.FirstName) && 
+        EF.Functions.Like(_.LastName, participant.LastName) &&
         _.Id != participant.Id);
     }
   }

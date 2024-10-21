@@ -2,6 +2,7 @@
 using System.Linq;
 using FluentValidation;
 using FluentValidation.Validators;
+using Microsoft.EntityFrameworkCore;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
   public class UpdateVenueValidator : MotorsportsValidator<Venue, string>, IUpdateValidator<Venue, string> {
@@ -28,11 +29,11 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
 
     bool MustExist(Venue venue, string name, ValidationContext<Venue> context) {
       var existingKey = GetKey(context);
-      return _context.Venue.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, existingKey));
+      return _context.Venue.Any(_ => EF.Functions.Like(_.Name, existingKey));
     }
 
     bool CountryExists(Venue venue, string country) {
-      return _context.Country.Any(c => StringComparer.InvariantCultureIgnoreCase.Equals(c.Iso, country));
+      return _context.Country.Any(c => EF.Functions.Like(c.Iso, country));
     }
   }
 }

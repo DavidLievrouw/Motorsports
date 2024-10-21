@@ -27,6 +27,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
         .OrderBy(p => p.LastName)
         .ThenBy(p => p.FirstName)
         .ThenBy(p => p.Country)
+        .AsNoTracking()
         .ToListAsync();
       return View(participants);
     }
@@ -37,6 +38,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
       var participant = await _context.Participant
         .Include(p => p.RelatedCountry)
+        .AsNoTracking()
         .SingleOrDefaultAsync(m => m.Id == id);
       if (participant == null) return NotFound();
 

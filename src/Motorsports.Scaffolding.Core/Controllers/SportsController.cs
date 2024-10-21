@@ -27,7 +27,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
     // GET: Sports
     public async Task<IActionResult> Index() {
-      return View(model: await _context.Sport.ToListAsync());
+      return View(model: await _context.Sport.AsNoTracking().ToListAsync());
     }
 
     // GET: Sports/Details/5
@@ -35,6 +35,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       if (id == null) return NotFound();
       
       var sport = await _context.Sport
+        .AsNoTracking()
         .SingleOrDefaultAsync(m => m.Name == id);
       if (sport == null) return NotFound();
 

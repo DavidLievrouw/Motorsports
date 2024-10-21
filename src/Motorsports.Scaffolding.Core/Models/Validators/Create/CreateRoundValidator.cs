@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
   public class CreateRoundValidator : MotorsportsValidator<Round, int>, ICreateValidator<Round> {
@@ -39,11 +40,11 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
     }
 
     bool VenueExists(Round round, string venue) {
-      return _context.Venue.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, venue));
+      return _context.Venue.Any(_ => EF.Functions.Like(_.Name, venue));
     }
     
     bool StatusExists(Round round, string status) {
-      return _context.Status.Any(_ => StringComparer.InvariantCultureIgnoreCase.Equals(_.Name, status));
+      return _context.Status.Any(_ => EF.Functions.Like(_.Name, status));
     }
 
     bool SeasonExists(Round round, int season) {

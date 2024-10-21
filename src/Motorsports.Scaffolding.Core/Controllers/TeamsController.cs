@@ -23,7 +23,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
 
     // GET: Teams
     public async Task<IActionResult> Index() {
-      var allTeams = await _context.Team.Include(t => t.RelatedCountry).Include(t => t.RelatedSport).ToListAsync();
+      var allTeams = await _context.Team.Include(t => t.RelatedCountry).Include(t => t.RelatedSport).AsNoTracking().ToListAsync();
       return View(new TeamsIndexDisplayModel {
         TeamsPerSport = allTeams
           .GroupBy(s => s.RelatedSport)
@@ -43,6 +43,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       var team = await _context.Team
         .Include(t => t.RelatedCountry)
         .Include(t => t.RelatedSport)
+        .AsNoTracking()
         .SingleOrDefaultAsync(m => m.Id == id);
       if (team == null) return NotFound();
 

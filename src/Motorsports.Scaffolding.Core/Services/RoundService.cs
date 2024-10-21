@@ -44,6 +44,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Include(r => r.RelatedRoundWinners)
         .ThenInclude(rw => rw.RelatedParticipant)
         .Include(r => r.RelatedVenue)
+        .AsNoTracking()
         .SingleOrDefaultAsync(m => m.Id == roundId);
     }
 
@@ -54,7 +55,7 @@ namespace Motorsports.Scaffolding.Core.Services {
             Id = round.Id,
             Date = round.Date,
             Season = round.Season,
-            RelatedSeason = _context.Season.Include(s => s.RelatedRounds).SingleOrDefault(s => s.Id == round.Season),
+            RelatedSeason = _context.Season.Include(s => s.RelatedRounds).AsNoTracking().SingleOrDefault(s => s.Id == round.Season),
             Name = round.Name,
             Number = round.Number,
             Venue = round.Venue,
@@ -63,28 +64,29 @@ namespace Motorsports.Scaffolding.Core.Services {
             Status = round.Status,
             WinningTeam = round.WinningTeam,
             RelatedRoundWinners = round.Id != default(int)
-              ? _context.RoundWinner.Where(w => w.Round == round.Id).ToList()
+              ? _context.RoundWinner.Where(w => w.Round == round.Id).AsNoTracking().ToList()
               : null,
             RelatedStatus = !string.IsNullOrEmpty(round.Status)
-              ? _context.Status.SingleOrDefault(s => s.Name == round.Status)
+              ? _context.Status.AsNoTracking().SingleOrDefault(s => s.Name == round.Status)
               : null,
             RelatedVenue = !string.IsNullOrEmpty(round.Venue)
-              ? _context.Venue.SingleOrDefault(v => StringComparer.InvariantCultureIgnoreCase.Equals(v.Name, round.Venue))
+              ? _context.Venue.AsNoTracking().SingleOrDefault(v => EF.Functions.Like(v.Name, round.Venue))
               : null,
             RelatedWinningTeam = round.WinningTeam.HasValue
-              ? _context.Team.Include(t => t.RelatedSeasonEntries).Single(t => t.Id == round.WinningTeam.Value)
+              ? _context.Team.Include(t => t.RelatedSeasonEntries).AsNoTracking().Single(t => t.Id == round.WinningTeam.Value)
               : null
           },
-          _context.SeasonEntry.Include(se => se.RelatedTeam).Where(se => se.Season == round.Season).OrderBy(se => se.RelatedTeam.Sport).ThenBy(team => team.Name),
-          _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
-          _context.Status.OrderBy(s => s.Step).ThenBy(s => s.Name),
-          _context.Venue.OrderBy(v => v.Name)));
+          _context.SeasonEntry.Include(se => se.RelatedTeam).Where(se => se.Season == round.Season).OrderBy(se => se.RelatedTeam.Sport).ThenBy(team => team.Name).AsNoTracking(),
+          _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName).AsNoTracking(),
+          _context.Status.OrderBy(s => s.Step).ThenBy(s => s.Name).AsNoTracking(),
+          _context.Venue.OrderBy(v => v.Name).AsNoTracking()));
     }
 
     public async Task<RoundDisplayModel> GetNew(int seasonId) {
       var lastRoundInSeason = await _context.Round
         .Where(r => r.Season == seasonId)
         .OrderByDescending(r => r.Date)
+        .AsNoTracking()
         .FirstOrDefaultAsync();
       return new RoundDisplayModel(
         new Round {
@@ -94,10 +96,10 @@ namespace Motorsports.Scaffolding.Core.Services {
           Status = RoundStatus.Scheduled.ToString(),
           Number = (short)((lastRoundInSeason?.Number ?? 0) + 1),
         },
-        _context.SeasonEntry.Include(se => se.RelatedTeam).Where(se => se.Season == seasonId).OrderBy(se => se.RelatedTeam.Sport).ThenBy(team => team.Name),
-        _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
-        _context.Status.OrderBy(s => s.Step).ThenBy(s => s.Name),
-        _context.Venue.OrderBy(v => v.Name));
+        _context.SeasonEntry.Include(se => se.RelatedTeam).Where(se => se.Season == seasonId).OrderBy(se => se.RelatedTeam.Sport).ThenBy(team => team.Name).AsNoTracking(),
+        _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName).AsNoTracking(),
+        _context.Status.OrderBy(s => s.Step).ThenBy(s => s.Name).AsNoTracking(),
+        _context.Venue.OrderBy(v => v.Name).AsNoTracking());
     }
 
     public Task<List<RoundDisplayModel>> LoadRoundList(int seasonId) {
@@ -113,6 +115,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Where(r => r.Season == seasonId)
         .OrderBy(r => r.Date)
         .Select(r => new RoundDisplayModel(r, null, null, null, null))
+        .AsNoTracking()
         .ToListAsync();
     }
 
@@ -126,14 +129,15 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Include(r => r.RelatedRoundWinners)
         .ThenInclude(rw => rw.RelatedParticipant)
         .Include(r => r.RelatedVenue)
+        .AsNoTracking()
         .SingleOrDefaultAsync(m => m.Id == roundId);
 
       return new RoundDisplayModel(
         roundDataModel,
-        _context.SeasonEntry.Include(se => se.RelatedTeam).Where(se => se.Season == roundDataModel.Season).OrderBy(se => se.RelatedTeam.Sport).ThenBy(team => team.Name),
-        _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName),
-        _context.Status.OrderBy(s => s.Step).ThenBy(s => s.Name),
-        _context.Venue.OrderBy(v => v.Name));
+        _context.SeasonEntry.Include(se => se.RelatedTeam).Where(se => se.Season == roundDataModel.Season).OrderBy(se => se.RelatedTeam.Sport).ThenBy(team => team.Name).AsNoTracking(),
+        _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName).AsNoTracking(),
+        _context.Status.OrderBy(s => s.Step).ThenBy(s => s.Name).AsNoTracking(),
+        _context.Venue.OrderBy(v => v.Name).AsNoTracking());
     }
 
     public async Task UpdateRound(RoundEditModel round) {
@@ -148,21 +152,21 @@ namespace Motorsports.Scaffolding.Core.Services {
       roundToUpdate.Number = round.Number;
       roundToUpdate.Name = round.Name;
       roundToUpdate.Rain = round.Rain.HasValue
-        ? (int) round.Rain.Value
+        ? (int)round.Rain.Value
         : new int?();
       roundToUpdate.Status = round.Status.ToString();
       roundToUpdate.Rating = round.Rating;
       roundToUpdate.WinningTeam = round.WinningTeamId;
       _context.Update(roundToUpdate);
       await _context.SaveChangesAsync();
-      
+
       // Update winners
       using (var transactionalQueryExecutor = _queryExecutor.BeginTransaction()) {
         try {
           await transactionalQueryExecutor
             .NewQuery("DELETE FROM [dbo].[RoundWinner] WHERE [Round]=@Round")
             .WithCommandType(CommandType.Text)
-            .WithParameters(new {Round = round.Id})
+            .WithParameters(new { Round = round.Id })
             .ExecuteAsync();
           var winnersToAdd = round.WinningParticipantIds.Select(
             wp => new RoundWinner {
@@ -179,9 +183,10 @@ namespace Motorsports.Scaffolding.Core.Services {
                          (@Round
                          ,@Participant)")
               .WithCommandType(CommandType.Text)
-              .WithParameters(new {Round = winner.Round, Participant = winner.Participant})
+              .WithParameters(new { Round = winner.Round, Participant = winner.Participant })
               .ExecuteAsync();
           }
+
           transactionalQueryExecutor.Commit();
         } catch {
           transactionalQueryExecutor.Rollback();
@@ -207,7 +212,8 @@ namespace Motorsports.Scaffolding.Core.Services {
         .FirstOrDefaultAsync();
       if (round == null) throw new ArgumentException("The specified round was not found.", nameof(roundId));
 
-      return await _queryExecutor.NewQuery(@"
+      return await _queryExecutor.NewQuery(
+          @"
         SELECT TOP 5
           R.[Id],
           R.[Date],
@@ -239,12 +245,13 @@ namespace Motorsports.Scaffolding.Core.Services {
         ORDER BY
           R.[Date] DESC")
         .WithCommandType(CommandType.Text)
-        .WithParameters(new {
-          Venue = round.Venue,
-          Sport = round.RelatedSeason.Sport,
-          Date = round.Date.Date,
-          IsNonChampionship = round.Number < 1
-        })
+        .WithParameters(
+          new {
+            Venue = round.Venue,
+            Sport = round.RelatedSeason.Sport,
+            Date = round.Date.Date,
+            IsNonChampionship = round.Number < 1
+          })
         .ExecuteAsync<EventHistoryItem>();
     }
 

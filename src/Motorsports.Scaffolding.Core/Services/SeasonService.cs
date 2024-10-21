@@ -39,6 +39,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Include(s => s.RelatedSeasonWinners)
         .ThenInclude(sw => sw.RelatedParticipant)
         .Include(s => s.RelatedRounds)
+        .AsNoTracking()
         .SingleOrDefaultAsync(m => m.Id == seasonId);
     }
 
@@ -46,9 +47,9 @@ namespace Motorsports.Scaffolding.Core.Services {
       return Task.FromResult(
         new SeasonDisplayModel(
           new Season(),
-          _context.Sport.OrderBy(sport => sport.Name),
-          _context.SeasonEntry.Include(se => se.RelatedTeam).OrderBy(se => se.RelatedTeam.Sport).ThenBy(team => team.Name),
-          _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName)));
+          _context.Sport.OrderBy(sport => sport.Name).AsNoTracking(),
+          _context.SeasonEntry.Include(se => se.RelatedTeam).OrderBy(se => se.RelatedTeam.Sport).ThenBy(team => team.Name).AsNoTracking(),
+          _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName).AsNoTracking()));
     }
 
     public Task<SeasonsIndexDisplayModel> LoadSeasonList() {
@@ -57,7 +58,7 @@ namespace Motorsports.Scaffolding.Core.Services {
 
     public async Task<SeasonsIndexDisplayModel> LoadSeasonList(string sport) {
       var allSeasons = await _context.Season
-        .Where(s => sport == null || StringComparer.InvariantCultureIgnoreCase.Equals(s.Sport, sport))
+        .Where(s => sport == null || EF.Functions.Like(s.Sport, sport))
         .Include(s => s.RelatedSport)
         .Include(s => s.RelatedWinningTeam)
         .ThenInclude(t => t.RelatedSeasonEntries)
@@ -65,6 +66,7 @@ namespace Motorsports.Scaffolding.Core.Services {
         .ThenInclude(sw => sw.RelatedParticipant)
         .Include(s => s.RelatedRounds)
         .Select(s => new SeasonDisplayModel(s, null, null, null))
+        .AsNoTracking()
         .ToListAsync();
 
       return new SeasonsIndexDisplayModel {
@@ -87,13 +89,14 @@ namespace Motorsports.Scaffolding.Core.Services {
         .Include(s => s.RelatedSeasonWinners)
         .ThenInclude(sw => sw.RelatedParticipant)
         .Include(s => s.RelatedRounds)
+        .AsNoTracking()
         .SingleOrDefaultAsync(m => m.Id == seasonId);
 
       return new SeasonDisplayModel(
         seasonDataModel,
-        _context.Sport.OrderBy(sport => sport.Name),
-        _context.SeasonEntry.Include(se => se.RelatedTeam).Where(se => se.Season == seasonId).OrderBy(se => se.RelatedTeam.Sport).ThenBy(team => team.Name),
-        _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName));
+        _context.Sport.OrderBy(sport => sport.Name).AsNoTracking(),
+        _context.SeasonEntry.Include(se => se.RelatedTeam).Where(se => se.Season == seasonId).OrderBy(se => se.RelatedTeam.Sport).ThenBy(team => team.Name).AsNoTracking(),
+        _context.Participant.OrderBy(participant => participant.LastName).ThenBy(participant => participant.FirstName).AsNoTracking());
     }
 
     public async Task UpdateSeason(SeasonEditModel season) {
