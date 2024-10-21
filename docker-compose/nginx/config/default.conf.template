@@ -13,6 +13,10 @@ server {
     default_type "text/plain";
     return 200 "Hello ACME.\nUri: $request_uri\n";
   }
+
+  location / {
+    return 301 https://$host:443/;
+  }
 }
 
 server {
