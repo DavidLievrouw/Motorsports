@@ -30,7 +30,8 @@ namespace Motorsports.Scaffolding.Core.Services {
     }
 
     public Task<IEnumerable<RoundToAcquire>> GetRoundsToAcquire() {
-      return _queryExecutor.NewQuery(@"
+      return _queryExecutor.NewQuery(
+          @"
         SELECT
           S.[Sport],
           R.[Id],
@@ -84,17 +85,18 @@ namespace Motorsports.Scaffolding.Core.Services {
 
     public async Task<HomeDisplayModel> GetHomeDisplayModel() {
       var roundsNextUp = (await GetRoundsNextUp()).ToList();
-      var roundsNextUpDisplayModels = (await roundsNextUp
-        .OrderBy(n => n.Date)
-        .SelectAsync(async n => {
-          var eventHistory = await _roundService.GetEventHistory(n.Id);
-          return new NextUpDisplayModel(n, roundsNextUp, eventHistory);
-        }))
-        .ToList();
+      var roundsNextUpDisplayModels = new List<NextUpDisplayModel>();
+      foreach (var nextUp in roundsNextUp) {
+        var eventHistory = await _roundService.GetEventHistory(nextUp.Id);
+        roundsNextUpDisplayModels.Add(new NextUpDisplayModel(nextUp, roundsNextUp, eventHistory));
+      }
+
       var veryNextUp = roundsNextUpDisplayModels
         .FirstOrDefault(n => n.IsVeryNextUp);
       var allSeasons = await _context.Season
+        .AsNoTracking()
         .Include(s => s.RelatedRounds)
+        .AsNoTracking()
         .Select(s => new HomeDisplayModel.SeasonDisplayModelForHome(s))
         .ToListAsync();
       var roundsToAcquire = (await GetRoundsToAcquire()).ToList();
