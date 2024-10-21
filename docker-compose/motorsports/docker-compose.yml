@@ -6,7 +6,8 @@ services:
     ports:
       - "8080:80"
     environment:
-      - ConnectionStrings__Motorsports=Server=sql_server,1433;Initial Catalog=Motorsports;User ID=MotorsportsApp;Password=S3cr37;
+      - ConnectionStrings__Motorsports=Server=sql_server,1433;Initial Catalog=Motorsports;User ID=MotorsportsApp;Password=S3cr37;TrustServerCertificate=Yes;
+      - Kestrel:Endpoints:Http:Url=http://0.0.0.0:80
     networks:
       - motorsports_network
     logging:
