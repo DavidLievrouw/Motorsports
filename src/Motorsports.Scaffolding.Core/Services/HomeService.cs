@@ -90,7 +90,6 @@ namespace Motorsports.Scaffolding.Core.Services {
         var eventHistory = await _roundService.GetEventHistory(nextUp.Id);
         roundsNextUpDisplayModels.Add(new NextUpDisplayModel(nextUp, roundsNextUp, eventHistory));
       }
-
       var veryNextUp = roundsNextUpDisplayModels
         .FirstOrDefault(n => n.IsVeryNextUp);
       var allSeasons = await _context.Season
@@ -104,6 +103,8 @@ namespace Motorsports.Scaffolding.Core.Services {
         VeryNextUp = veryNextUp,
         NextUp = roundsNextUpDisplayModels
           .Where(n => veryNextUp == null || n != veryNextUp)
+          .OrderBy(n => n.Date)
+          .ThenBy(r => r.Sport)
           .ToList(),
         RoundsToAcquire = roundsToAcquire
           .Select(r => new RoundToAcquireDisplayModel(r))
