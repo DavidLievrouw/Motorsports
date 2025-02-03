@@ -70,10 +70,10 @@ namespace Motorsports.Scaffolding.Core.Services {
 
       return new SeasonsIndexDisplayModel {
         SeasonsPerSport = allSeasons
-          .GroupBy(s => s.RelatedSport)
+          .GroupBy(s => s.RelatedSport.FullName)
           .Select(
             group => new {
-              Sport = group.Key,
+              Sport = group.First().RelatedSport,
               Seasons = group.OrderByDescending(s => s.StartDate ?? DateTime.MaxValue).AsEnumerable()
             })
           .ToDictionary(_ => _.Sport, _ => _.Seasons)
