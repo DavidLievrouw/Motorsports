@@ -114,7 +114,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       using (var transactionalQueryExecutor = _queryExecutor.BeginTransaction()) {
         try {
           await transactionalQueryExecutor
-            .NewQuery("DELETE FROM [dbo].[SeasonWinner] WHERE [Season]=@Season")
+            .NewQuery("DELETE FROM SeasonWinner WHERE Season=@Season")
             .WithCommandType(CommandType.Text)
             .WithParameters(new {Season = season.Id})
             .ExecuteAsync();
@@ -127,9 +127,9 @@ namespace Motorsports.Scaffolding.Core.Services {
             await transactionalQueryExecutor
               .NewQuery(
                 @"
-              INSERT INTO [dbo].[SeasonWinner]
-                         ([Season]
-                         ,[Participant])
+              INSERT INTO SeasonWinner
+                         (Season
+                         ,Participant)
                    VALUES
                          (@Season
                          ,@Participant)")

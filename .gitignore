@@ -31,3 +31,4 @@ Import Schema Logs/
 *.jfm
 **/appsettings-connectionstrings.json
 .idea
+mariadb

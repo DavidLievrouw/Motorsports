@@ -21,7 +21,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       if (newState == null) throw new ArgumentNullException(nameof(newState));
 
       var numChanged = await _queryExecutor
-        .NewQuery("UPDATE [dbo].[Sport] SET [Name]=@Name, [FullName]=@FullName WHERE [Name]=@id")
+        .NewQuery("UPDATE Sport SET Name=@Name, FullName=@FullName WHERE Name=@id")
         .WithCommandType(CommandType.Text)
         .WithParameters(
           new {

@@ -17,6 +17,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Net.Sdk.Compilers.Toolset" Version="9.0.102" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.3" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>

@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Data;
-using System.Data.SqlClient;
+using MySqlConnector;
 
 namespace Motorsports.Scaffolding.Core.Dapper;
 
-public class SqlDbConnectionFactory : IDbConnectionFactory {
+public class MariaDbConnectionFactory : IDbConnectionFactory {
   readonly string _connectionString;
 
-  public SqlDbConnectionFactory(string connectionString) {
+  public MariaDbConnectionFactory(string connectionString) {
     _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
   }
 
   public IDbConnection CreateConnection() {
-    return new SqlConnection(_connectionString);
+    return new MySqlConnection(_connectionString);
   }
 }

@@ -110,7 +110,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       if (seasonEntry == null) throw new ArgumentNullException(nameof(seasonEntry));
 
       await _queryExecutor
-        .NewQuery("UPDATE [dbo].[SeasonEntry] SET Name=@Name WHERE [Season]=@Season AND [Team]=@Team")
+        .NewQuery("UPDATE SeasonEntry SET Name=@Name WHERE Season=@Season AND Team=@Team")
         .WithCommandType(CommandType.Text)
         .WithParameters(new {
           Season = seasonEntry.Season,

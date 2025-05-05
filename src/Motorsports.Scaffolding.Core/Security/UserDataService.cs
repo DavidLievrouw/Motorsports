@@ -18,9 +18,9 @@ namespace Motorsports.Scaffolding.Core.Security {
 
     public async Task<UserForAuthentication> GetUserForAuthentication(string username) {
       var query = @"
-        SELECT [Id], [Username], [PasswordHash], [Salt], [Iterations], [Prf], [ForceChangePassword], [Title], [GivenName], [FamilyName], [EmailAddress]
-        FROM [dbo].[User] 
-        WHERE [Username] = @Username AND [IsDeleted] = 0";
+        SELECT Id, Username, PasswordHash, Salt, Iterations, Prf, ForceChangePassword, Title, GivenName, FamilyName, EmailAddress
+        FROM User
+        WHERE Username = @Username AND IsDeleted = 0";
       var results = await _queryExecutor.NewQuery(query)
         .WithParameters(new {Username = username})
         .ExecuteDynamicAsync();

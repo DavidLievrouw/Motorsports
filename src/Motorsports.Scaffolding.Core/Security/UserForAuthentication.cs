@@ -5,7 +5,7 @@ using System.Security.Claims;
 
 namespace Motorsports.Scaffolding.Core.Security {
   public class UserForAuthentication {
-    public Guid Id { get; set; }
+    public string Id { get; set; }
     public string Username { get; set; }
     public HashedPassword Password { get; set; }
     public bool ForceChangePassword { get; set; }
@@ -15,7 +15,7 @@ namespace Motorsports.Scaffolding.Core.Security {
     public string EmailAddress { get; set; }
 
     public IEnumerable<Claim> AsClaims() {
-      if (Id == Guid.Empty) yield return new Claim(ClaimTypes.Sid, Guid.Empty.ToString());
+      if (string.IsNullOrEmpty(Id)) yield return new Claim(ClaimTypes.Sid, Guid.Empty.ToString());
       else yield return new Claim(ClaimTypes.Sid, Id.ToString());
       var name = string.Join(" ", new[] {Title, FirstName, LastName}.Where(s => s != null));
       yield return new Claim(ClaimTypes.Name, name);

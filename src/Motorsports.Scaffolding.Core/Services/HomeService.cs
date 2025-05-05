@@ -33,19 +33,19 @@ namespace Motorsports.Scaffolding.Core.Services {
       return _queryExecutor.NewQuery(
           @"
         SELECT
-          S.[Sport],
-          R.[Id],
-          R.[Number],
-          R.[Date],
-          R.[Name],
-          R.[Venue]
+          S.Sport,
+          R.Id,
+          R.Number,
+          R.Date,
+          R.Name,
+          R.Venue
         FROM
-          [dbo].[Round] R
-          INNER JOIN [dbo].[Season] S ON S.[Id] = R.[Season]
-          INNER JOIN [dbo].[Status] ST ON ST.[Name] = R.[Status]
+          Round R
+          INNER JOIN Season S ON S.Id = R.Season
+          INNER JOIN Status ST ON ST.Name = R.Status
         WHERE
-          ST.[Step] = 0 -- Scheduled but not ReadyToWatch
-          AND R.[Date] <= @Today")
+          ST.Step = 0 -- Scheduled but not ReadyToWatch
+          AND R.Date <= @Today")
         .WithCommandType(CommandType.Text)
         .WithParameters(new { Today = DateTime.Now.Date })
         .ExecuteAsync<RoundToAcquire>();
@@ -54,31 +54,31 @@ namespace Motorsports.Scaffolding.Core.Services {
     public Task<IEnumerable<NextUp>> GetRoundsNextUp() {
       return _queryExecutor.NewQuery(
           @"
-          ;WITH Partitioned AS (
-            SELECT
-              S.[Sport],
-	            R.[Id],
-	            R.[Number],
-	            R.[Date],
-	            R.[Name],
-	            R.[Venue],
-	            ROW_NUMBER() OVER(PARTITION BY S.[Sport] ORDER BY R.[Date]) AS seq
-            FROM
-	            [dbo].[Round] R
-	            INNER JOIN [dbo].[Season] S ON S.[Id] = R.[Season]
-              INNER JOIN [dbo].[Status] ST ON ST.[Name] = R.[Status]
-            WHERE
-	            ST.[Step] < 2 -- Scheduled or ReadyToWatch
-          )
-          SELECT 
-            P.[Sport],
-            P.[Id],
-            P.[Number],
-            P.[Date],
-            P.[Name],
-            P.[Venue]
-          FROM Partitioned P 
-          WHERE P.seq = 1")
+WITH Partitioned AS (
+  SELECT
+    S.Sport,
+    R.Id,
+    R.Number,
+    R.Date,
+    R.Name,
+    R.Venue,
+    ROW_NUMBER() OVER(PARTITION BY S.Sport ORDER BY R.Date) AS seq
+  FROM
+    Round R
+    INNER JOIN Season S ON S.Id = R.Season
+    INNER JOIN Status ST ON ST.Name = R.Status
+  WHERE
+    ST.Step < 2 -- Scheduled or ReadyToWatch
+)
+SELECT 
+  P.Sport,
+  P.Id,
+  P.Number,
+  P.Date,
+  P.Name,
+  P.Venue
+FROM Partitioned P 
+WHERE P.seq = 1;")
         .WithCommandType(CommandType.Text)
         .ExecuteAsync<NextUp>();
     }

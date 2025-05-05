@@ -163,7 +163,7 @@ namespace Motorsports.Scaffolding.Core.Services {
       using (var transactionalQueryExecutor = _queryExecutor.BeginTransaction()) {
         try {
           await transactionalQueryExecutor
-            .NewQuery("DELETE FROM [dbo].[RoundWinner] WHERE [Round]=@Round")
+            .NewQuery("DELETE FROM RoundWinner WHERE Round=@Round")
             .WithCommandType(CommandType.Text)
             .WithParameters(new { Round = round.Id })
             .ExecuteAsync();
@@ -175,9 +175,9 @@ namespace Motorsports.Scaffolding.Core.Services {
           foreach (var winner in winnersToAdd) {
             await transactionalQueryExecutor
               .NewQuery(
-                @"INSERT INTO [dbo].[RoundWinner]
-                         ([Round]
-                         ,[Participant])
+                @"INSERT INTO RoundWinner
+                         (Round
+                         ,Participant)
                   VALUES
                          (@Round
                          ,@Participant)")
@@ -213,36 +213,41 @@ namespace Motorsports.Scaffolding.Core.Services {
 
       return await _queryExecutor.NewQuery(
           @"
-        SELECT TOP 5
-          R.[Id],
-          R.[Date],
-          R.[Rating],
-          R.[Rain],
-          SE.[Name] AS WinningTeam,
-          STRING_AGG(P.[FirstName] + ' ' + P.[LastName], ', ') WITHIN GROUP (ORDER BY P.[LastName] ASC, P.[FirstName] ASC) AS WinningParticipants
+        SELECT
+          R.Id,
+          R.Date,
+          R.Rating,
+          R.Rain,
+          SE.Name AS WinningTeam,
+          GROUP_CONCAT(
+            CONCAT(P.FirstName, ' ', P.LastName) 
+            ORDER BY P.LastName ASC, P.FirstName ASC 
+            SEPARATOR ', '
+          ) AS WinningParticipants
         FROM
-          [dbo].[Round] R
-          INNER JOIN [dbo].[Season] S ON R.[Season] = S.[Id]
-          INNER JOIN [dbo].[Status] ST ON ST.[Name] = R.[Status]
-          LEFT JOIN [dbo].[SeasonEntry] SE ON SE.[Season] = S.[Id] AND SE.[Team] = R.[WinningTeam]
-          LEFT JOIN [dbo].[RoundWinner] RW ON R.[Id] = RW.[Round]
-          LEFT JOIN [dbo].[Participant] P ON P.[Id] = RW.[Participant]
+          Round R
+          INNER JOIN Season S ON R.Season = S.Id
+          INNER JOIN Status ST ON ST.Name = R.Status
+          LEFT JOIN SeasonEntry SE ON SE.Season = S.Id AND SE.Team = R.WinningTeam
+          LEFT JOIN RoundWinner RW ON R.Id = RW.Round
+          LEFT JOIN Participant P ON P.Id = RW.Participant
         WHERE
-          R.[Venue] = @Venue
+          R.Venue = @Venue
           -- If the requested round is non-championship, only get history of non-championship events
           -- If the requested round is part of the championship, exclude non-championship events
-          AND ((@IsNonChampionship = 1 AND R.[Number] = 0) OR (@IsNonChampionship = 0 AND R.[Number] > 0))
-          AND ST.[Step] > 1
-          AND S.[Sport] = @Sport
-          AND R.[Date] <= @Date
+          AND ((@IsNonChampionship = 1 AND R.Number = 0) OR (@IsNonChampionship = 0 AND R.Number > 0))
+          AND ST.Step > 1
+          AND S.Sport = @Sport
+          AND R.Date <= @Date
         GROUP BY
-          R.[Id],
-          R.[Date],
-          R.[Rating],
-          R.[Rain],
-          SE.[Name]
+          R.Id,
+          R.Date,
+          R.Rating,
+          R.Rain,
+          SE.Name
         ORDER BY
-          R.[Date] DESC")
+          R.Date DESC
+        LIMIT 15")
         .WithCommandType(CommandType.Text)
         .WithParameters(
           new {
