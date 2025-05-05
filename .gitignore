@@ -31,4 +31,4 @@ Import Schema Logs/
 *.jfm
 **/appsettings-connectionstrings.json
 .idea
-mariadb
+docker-compose/mariadb/motorsports_db

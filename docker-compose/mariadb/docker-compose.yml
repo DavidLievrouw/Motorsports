@@ -1,0 +1,30 @@
+services:
+  mariadb:
+    image: mariadb:11.7
+    hostname: mariadb
+    container_name: mariadb
+    restart: always
+    environment:
+      - MARIADB_ROOT_PASSWORD=S3cr37_4321
+      - MARIADB_USER=motorsports
+      - MARIADB_PASSWORD=S3cr37_1234
+      - MARIADB_DATABASE=motorsports
+    volumes:
+      - /var/dalion/motorsports/mariadb:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - motorsports_network
+    logging:
+      options:
+        max-size: "25m"
+        max-file: "3"  
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+networks:
+  motorsports_network:
+    name: motorsports_net
+    external: true
