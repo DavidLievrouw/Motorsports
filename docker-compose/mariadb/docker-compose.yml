@@ -10,15 +10,11 @@ services:
       - MARIADB_PASSWORD=S3cr37_1234
       - MARIADB_DATABASE=motorsports
     volumes:
-      - /var/dalion/motorsports/mariadb:/var/lib/mysql
+      - /etc/dalion/motorsports/mariadb:/var/lib/mysql
     ports:
       - "3306:3306"
     networks:
       - motorsports_network
-    logging:
-      options:
-        max-size: "25m"
-        max-file: "3"  
     deploy:
       resources:
         limits:

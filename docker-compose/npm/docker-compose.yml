@@ -1,0 +1,31 @@
+services:
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:2.12.3
+    container_name: nginx-proxy-manager
+    hostname: nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "81:81"
+      - "443:443"
+    environment:
+      - INITIAL_ADMIN_EMAIL=david@davidlievrouw.dev
+      - INITIAL_ADMIN_PASSWORD=S3cr37
+    volumes:
+      - /etc/dalion/motorsports/npm/data/:/data/
+      - /etc/dalion/motorsports/npm/letsencrypt/:/etc/letsencrypt/
+      - type: bind
+        source: ./server_proxy.conf
+        target: /data/nginx/custom/server_proxy.conf
+        read_only: false # NPM attempts to change ownership
+      - type: bind
+        source: ./ssl-ciphers.conf
+        target: /etc/nginx/conf.d/include/ssl-ciphers.conf
+        read_only: false # NPM attempts to change ownership
+    networks:
+      - motorsports_network
+
+networks:
+  motorsports_network:
+    name: motorsports_net
+    external: true
