@@ -1,0 +1,17 @@
+services:
+  motorsports-web:
+    image: motorsports-web:latest
+    container_name: motorsports-web
+    restart: unless-stopped
+    environment:
+      - ConnectionStrings__Motorsports=${MOTORSPORTS_CONNECTION_STRING}
+      - App__TimeZone=Europe/Brussels
+    ports:
+      - "8080:8080"
+    networks:
+      - motorsports_network
+
+networks:
+  motorsports_network:
+    name: motorsports_net
+    external: true

@@ -90,3 +90,17 @@ No "Overdue" necessary. The sorting behavior of the legacy app home page rounds 
 
 ensure that the information you learned is in either agents.md or plan.md. Not only what I decided. The next agent will start from scratch.
 
+-------------------
+
+STEER
+Update agents.md and plan.md with the issues you encountered, and replace incorrect info, if there is any. Keep those up-to-date after every implemented phase. Also add a "handover" segment to Plan, so the next agent knows where you left off.
+After every phase, fix any warnings, or roslynator reported issues, and then format the code using CSharpier.
+Consider this a general instruction, for the whole scope of this project. So add it to AGENTS.md.
+
+-------------------
+
+Yes, continue with those. Stop when phase 0 is complete.
+But first: Update AGENTS.md with general information about this project: Its purpose and architecture. With the information you now learned.
+
+-------------------
+

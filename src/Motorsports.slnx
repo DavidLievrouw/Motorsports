@@ -2,8 +2,16 @@
   <Folder Name="/Legacy/">
     <Project Path="Motorsports.Scaffolding.Core/Motorsports.Scaffolding.Core.csproj" />
   </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="tests/Motorsports.ArchitectureTests/Motorsports.ArchitectureTests.csproj" />
+    <Project Path="tests/Motorsports.Benchmarks/Motorsports.Benchmarks.csproj" />
+    <Project Path="tests/Motorsports.UnitTests/Motorsports.UnitTests.csproj" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path="../AGENTS.md" />
     <File Path="PLAN.md" />
   </Folder>
+  <Project Path="Motorsports.Common/Motorsports.Common.csproj" />
+  <Project Path="Motorsports.Infrastructure/Motorsports.Infrastructure.csproj" />
+  <Project Path="Motorsports.Web/Motorsports.Web.csproj" />
 </Solution>

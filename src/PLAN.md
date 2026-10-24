@@ -205,7 +205,7 @@ Approach:
 
 ## 6. Phases
 
-### Phase 0 – Scaffolding `[ ]`
+### Phase 0 – Scaffolding `[x]` (done 2026-10-24; remaining nice-to-haves in Handover)
 - `Directory.Build.props` (net10.0, Nullable, TreatWarningsAsErrors, analyzers, imports `version.props`), `Directory.Packages.props`, `global.json` (SDK 10.0.200 is installed), `.editorconfig`, `.csharpierrc.yaml`, dotnet-tools manifest (`csharpier`, `dotnet-ef`).
 - Versioning: create tracked `src/version.props` reading `../version.txt` (property function), remove `src/version.props` from `.gitignore`, wire `SourceRevisionId`, show version in footer. Verify the legacy csproj still builds with it.
 - Projects: `Motorsports.Web`, `Motorsports.Common`, `Motorsports.Infrastructure`, slice RCLs (create each when its phase starts), test projects. Add all to `Motorsports.slnx`.
@@ -265,3 +265,49 @@ Open (ask the user when reached):
 - `dotnet csharpier check .`, `dotnet build -warnaserror`, `dotnet test` all green.
 - Performance: `dotnet counters`/logs show no per-keystroke DB calls, Home query count is constant, circuit memory per session measured and recorded in PLAN.md.
 - PLAN.md checklist updated.
+- End-of-phase routine from AGENTS.md ("End-of-phase routine") done: zero warnings/analyzer issues, CSharpier formatted, Issues and Handover sections updated.
+
+## 9. Issues encountered and corrections (keep updated every phase)
+
+Corrections to earlier assumptions (verified against the real MariaDB dump and the running app):
+- Real column widths differ from the legacy EF model: `Venue.Name` and `Round.Venue` are `varchar(100)` (legacy model said 50); `Round.Note` is `text`; `Round.Number` is `smallint`; `Status.Step` is `tinyint`. Validation max lengths must follow the **DB**: Participant Title 10, First/Last 100, Team Name 50, Sport Name 50 / FullName 100, Season Label 100, SeasonEntry Name 50, Round Name 100, Venue Name 100.
+- Real FK constraint names are `<Table>_<Col>_FK` (e.g. `Round_Season_FK`), not the legacy model's `FK_Season_Round`. Nothing depends on them; do not hardcode either.
+- DB collation is `utf8mb4_uca1400_ai_ci` (case- and accent-insensitive). So plain `==` in LINQ on string columns is already case/accent-insensitive in SQL, which matches the uniqueness rules. Do not use `ToLower()` in queries (defeats indexes).
+- The dump has 0 rows in `User`; there are no real credentials to test with. Auth tests must seed users with a legacy-style hash generated in the test.
+- `dotnet ef migrations add` generates a full `CreateTable` baseline. Hand-edit `Baseline.Up/Down` to be empty (done). The second migration `AddUserAuthColumns` was scaffolded as an empty diff (the entity already holds the columns, so the snapshot is right) and its `Up/Down` were filled by hand with `ADD COLUMN IF NOT EXISTS` / `DROP COLUMN IF EXISTS`.
+- EF Core's own `Migrate()` already takes a named lock (`__<db>_EFMigrationsLock`). `DatabaseMigrator` still holds `motorsports-migrate` on the same connection as an explicit guard and skips work when nothing is pending.
+- `EnableRetryOnFailure` is **not** enabled: it forbids user-started transactions unless wrapped in `CreateExecutionStrategy().ExecuteAsync`, which conflicts with the validate-in-transaction pattern. Revisit only with a concrete need.
+- `Directory.Build.props`/`Directory.Packages.props` sit in `src/`, so they would also apply to the legacy projects. They are guarded with `IsLegacyProject`; the legacy csproj still pins its own versions.
+- Provider spike (Phase 0): Pomelo 9.0.0 + EF Core 9.0.21 on net10.0 connects to MariaDB 11.7, runs `GET_LOCK`/`RELEASE_LOCK`, `CREATE TABLE IF NOT EXISTS`, and applied the empty baseline. DateOnly/decimal/char(2) mapping is **not yet proven** with data reads: do that first in Phase 1. Provider stays Pomelo.
+- Analyzers: `AnalysisLevel=latest` (not `latest-recommended`, too noisy). Disabled with reasons in `.editorconfig`: CA1716, CA1000 (public `Result<T>` API), RCS1181, RCS1161, RCS1043 (extension classes must be `partial`), RCS1201 (EF fluent config).
+- `InvariantGlobalization=true` cannot rely on `string.Normalize`; `FuzzyMatcher.Normalize` uses its own Latin-1/Latin Extended-A fold tables. Verify on Linux in the Docker image.
+- Vogen is deferred (plain int/string keys). Decision recorded in AGENTS.md.
+- Template cleanup: bootstrap, Counter, Weather, NavMenu css removed; the Web project uses MudBlazor only.
+- FIXED: `GET /` returned 500 because `TimeZoneInfo.FindSystemTimeZoneById("Europe/Brussels")` throws on Windows. `UserClock.ResolveZone` falls back to the local zone. Linux/Docker (tzdata) resolves IANA ids directly (verified in the container).
+- CSharpier does **not** support an `excludes:` key in `.csharpierrc.yaml`. Exclusions live in `.csharpierignore` (legacy app, `src/Build`, Migrations, bin, obj). Before this was fixed, `csharpier format .` reformatted the legacy projects; they were restored with `git checkout`. Always check `git status src/Motorsports.Scaffolding.Core src/Build` is clean after formatting.
+- .NET 10 SDK + xunit.v3 (Microsoft.Testing.Platform): VSTest mode is refused. `global.json` has `"test": {"runner": "Microsoft.Testing.Platform"}`; run `dotnet test --solution src/Motorsports.slnx`. Test projects need `<OutputType>Exe</OutputType>` and `<Using Include="Xunit" />`.
+- Test projects live in `src/tests/` (not the repo-root `tests/`) so `Directory.Build.props` applies to them. `Motorsports.CharacteristicsTests` is created in Phase 1 (needs Testcontainers).
+- The `create` tool and a `Remove-Item`/`New-Item` in the same parallel batch race; create directories first, in a separate call.
+- MudBlazor 9: the `PickerActions` context is `MudPicker<DateTime?>`, not `MudDatePicker`.
+- Docker: `src/Motorsports.Web/Dockerfile` (build context = repo root: `docker build -f src/Motorsports.Web/Dockerfile -t motorsports-web:latest .`), base `10.0-noble`, installs tzdata + curl, healthcheck on `/health`, listens on 8080. Verified: container starts against the dev DB, `/` 200, `/health` Healthy, second start logs "Database is up to date" (idempotent migrations), `/usr/share/zoneinfo/Europe/Brussels` exists. From a container, reach the host DB via `host.docker.internal`.
+- The legacy csproj still builds (0 warnings, 0 errors) with the new `global.json`, `version.props` and `Directory.*.props`.
+- Interactive behaviour of `FuzzySelect`/`FuzzyMultiSelect`/`DateField` is only verified by static prerender (HTTP 200, markup present). Click/typing behaviour needs a browser test (Playwright) or manual check in Phase 3/4.
+
+## 10. Handover (rewrite at the end of every phase)
+
+Date: 2026-10-24. Phase 0 is done. Nothing is committed from Phase 0 beyond the earlier "v2: Partial phase 0" commit; the rest is in the working tree.
+
+State:
+- `dotnet build src/Motorsports.slnx -warnaserror` is clean; 14 unit/architecture tests pass; CSharpier check is clean.
+- Projects: Common, Infrastructure, Web, `tests/Motorsports.UnitTests` (FuzzyMatcher, UserClock), `tests/Motorsports.ArchitectureTests` (layering), `tests/Motorsports.Benchmarks` (BenchmarkDotNet, run with `dotnet run -c Release --project src/tests/Motorsports.Benchmarks`).
+- Shared UI in `Motorsports.Web/Components/Shared`: `FuzzySelect<T>`, `FuzzyMultiSelect<T>` (chips, selected items hidden from suggestions), `DateField` (editable, `yyyy-MM-dd` mask, Today button, MinDate/MaxDate), `SportAccent` (colour by sport name, subtle left border).
+- Docker image, `.dockerignore` and `docker-compose/motorsports-web/docker-compose.yml` exist and are verified (see section 9).
+- Dev DB `motorsports_web_dev` in the `mariadb` container; connection string in user-secrets of `Motorsports.Web`. Dev URL http://localhost:4100.
+
+Known gaps / not done:
+- No `docker-run.sh` (the compose file replaces it; add only if the user asks).
+- No CharacteristicsTests project yet (Phase 1). Provider data reads (DateOnly, decimal, char(2)) are still unproven.
+- The nav menu only has Home; `Home` is a placeholder; no auth yet, so all pages are currently anonymous.
+- Component interaction is not browser-tested (see section 9).
+
+Next: Phase 1 (Testcontainers MariaDB fixture, schema-only extract + synthetic seed, prove DB reads and migrator idempotency/concurrency tests), then Phase 2 (Auth), and so on per section 6. No CI/CD work, and never touch `src/Db/*` dumps.

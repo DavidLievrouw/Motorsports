@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <MotorsportsVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)../version.txt').Trim())</MotorsportsVersion>
+    <Version>$(MotorsportsVersion)</Version>
+    <AssemblyVersion>$(MotorsportsVersion).0</AssemblyVersion>
+    <FileVersion>$(MotorsportsVersion).0</FileVersion>
+    <InformationalVersion Condition="'$(SourceRevisionId)' == ''">$(MotorsportsVersion)</InformationalVersion>
+    <InformationalVersion Condition="'$(SourceRevisionId)' != ''"
+      >$(MotorsportsVersion)+$(SourceRevisionId)</InformationalVersion>
+  </PropertyGroup>
+</Project>

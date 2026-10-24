@@ -1,0 +1,65 @@
+@inherits LayoutComponentBase
+@inject IJSRuntime Js
+@inject UserClock Clock
+@inject BuildInfo Build
+
+<MudThemeProvider Theme="_theme" @bind-IsDarkMode="_dark" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Dense="true">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" aria-label="Menu" />
+        <MudText Typo="Typo.h6" Class="ml-2">Motorsports</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                       Color="Color.Inherit" OnClick="ToggleTheme" aria-label="Toggle theme" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always" Elevation="0">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-2 pa-sm-4">
+            @Body
+        </MudContainer>
+        <MudText Typo="Typo.caption" Align="Align.Center" Class="mud-text-secondary pb-2">v@(Build.Display)</MudText>
+    </MudMainContent>
+</MudLayout>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    [CascadingParameter(Name = "InitialDarkMode")]
+    public bool InitialDarkMode { get; set; } = true;
+
+    private static readonly MudTheme _theme = new();
+    private bool _dark = true;
+    private bool _drawerOpen = true;
+
+    protected override void OnInitialized() => _dark = InitialDarkMode;
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    private async Task ToggleTheme()
+    {
+        _dark = !_dark;
+        await Js.InvokeVoidAsync("msSetCookie", "theme", _dark ? "dark" : "light");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var zone = await Js.InvokeAsync<string?>("msTimeZone");
+            if (Clock.TrySetZone(zone))
+            {
+                StateHasChanged();
+            }
+        }
+    }
+}

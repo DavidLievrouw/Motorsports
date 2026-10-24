@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="NetArchTest.Rules" />
+    <ProjectReference Include="..\..\Motorsports.Common\Motorsports.Common.csproj" />
+    <ProjectReference Include="..\..\Motorsports.Infrastructure\Motorsports.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Motorsports.Web\Motorsports.Web.csproj" />
+  </ItemGroup>
+</Project>

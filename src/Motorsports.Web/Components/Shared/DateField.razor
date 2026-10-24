@@ -1,0 +1,48 @@
+@inject UserClock Clock
+
+<MudDatePicker Date="Value?.ToDateTime(TimeOnly.MinValue)"
+               DateChanged="OnDateChanged"
+               Label="@Label"
+               Editable="true"
+               Mask="@_mask"
+               DateFormat="yyyy-MM-dd"
+               Placeholder="yyyy-mm-dd"
+               MinDate="MinDate?.ToDateTime(TimeOnly.MinValue)"
+               MaxDate="MaxDate?.ToDateTime(TimeOnly.MinValue)"
+               Required="Required"
+               Error="Error"
+               ErrorText="@ErrorText"
+               Disabled="Disabled"
+               Variant="Variant.Outlined"
+               Margin="Margin.Dense"
+               PickerVariant="PickerVariant.Dialog"
+               Clearable="true"
+               FirstDayOfWeek="DayOfWeek.Monday"
+               OpenTo="OpenTo.Date">
+    <PickerActions>
+        <MudButton OnClick="@(() => SetAsync(Clock.Today, context))">Today</MudButton>
+    </PickerActions>
+</MudDatePicker>
+
+@code {
+    private static readonly PatternMask _mask = new("0000-00-00") { MaskChars = [new MaskChar('0', @"[0-9]")] };
+
+    [Parameter] public DateOnly? Value { get; set; }
+    [Parameter] public EventCallback<DateOnly?> ValueChanged { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public DateOnly? MinDate { get; set; }
+    [Parameter] public DateOnly? MaxDate { get; set; }
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Error { get; set; }
+    [Parameter] public string? ErrorText { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private Task OnDateChanged(DateTime? date) =>
+        ValueChanged.InvokeAsync(date is { } d ? DateOnly.FromDateTime(d) : null);
+
+    private async Task SetAsync(DateOnly day, MudPicker<DateTime?> picker)
+    {
+        await picker.CloseAsync();
+        await ValueChanged.InvokeAsync(day);
+    }
+}

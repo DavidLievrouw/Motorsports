@@ -18,6 +18,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Assets", "Assets", "{1DF628
 		PLAN.md = PLAN.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Motorsports.Web", "Motorsports.Web\Motorsports.Web.csproj", "{FC509EE7-2BE3-4812-AEB4-C2CAB951CF60}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,6 +40,10 @@ Global
 		{EB8AF470-270C-4EA4-BEF6-3515BE7AF904}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EB8AF470-270C-4EA4-BEF6-3515BE7AF904}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EB8AF470-270C-4EA4-BEF6-3515BE7AF904}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC509EE7-2BE3-4812-AEB4-C2CAB951CF60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC509EE7-2BE3-4812-AEB4-C2CAB951CF60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC509EE7-2BE3-4812-AEB4-C2CAB951CF60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC509EE7-2BE3-4812-AEB4-C2CAB951CF60}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

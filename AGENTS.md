@@ -1,5 +1,45 @@
 # Motorsports – AI Agent Guide
 
+## Project purpose & overview
+
+Motorsports is a personal tracker for motorsport events (F1, MotoGP, etc.). The owner (single user) records, per sport,
+seasons, the teams entered in each season (season entries), and the rounds (races/events) of each season, including
+venue, date, status, and winners (drivers/participants and teams). The home page shows what to watch next
+("Next up": the earliest still-scheduled round not yet marked finished/cancelled; rounds the owner skipped stay
+"Scheduled" by design) and the event history. Everything is behind login.
+
+### Two applications, one database
+
+- `src/Motorsports.Scaffolding.Core`: LEGACY .NET 8 MVC app. Buggy (especially DB access via `IQueryExecutor`).
+  Read-only reference; keep it running and building during the transition. Do not refactor it.
+- `src/Motorsports.Web`: the NEW app (.NET 10, Blazor interactive server, MudBlazor, EF Core, MariaDB). Aim for feature
+  parity; the UI may differ but must be responsive (phone + browser), dark by default, with a subtle per-sport accent.
+- Both share the same MariaDB schema. Schema changes must be additive and legacy-compatible. The only intended data
+  change is the user password hash (new column `PasswordHashV3`; legacy hash still verified, then rehashed).
+  Migrations run automatically and idempotently at startup (`DatabaseMigrator`, with `GET_LOCK`).
+
+### Domain model (tables)
+
+Sport → Team (belongs to one sport, never changes sport) → SeasonEntry (team in a season, with its own display name) ;
+Season (belongs to a sport, has a label) → Round (number, name, venue, date, status, note) ; Participant
+(Title/First/Last/Country, unique together) ; Status (ordered by `Step`; defines end states) ; Venue ; User.
+FKs are all Restrict (no DB cascades); deletes are guarded in application code (e.g. season only deletable with 0 rounds,
+team not deletable with season entries). Details in `src/PLAN.md`.
+
+### Architecture (new app)
+
+- `Motorsports.Common`: cross-cutting, dependency-free (Result/Error, UserClock, fuzzy matching, DI scan helpers).
+- `Motorsports.Infrastructure`: EF Core entities, `MotorsportsDbContext`, migrations, migrator, DB configuration.
+- `Motorsports.Web`: Blazor UI + vertical feature slices (each slice owns its pages, queries, commands, validators).
+- Tests in `src/tests/` (unit, characteristics via Testcontainers MariaDB, architecture, benchmarks).
+- Runs only in Docker on Linux (Ubuntu); no IIS. Dev ports: legacy 4000/5000, new 4100, container 8080.
+- Key behaviours: "today" is the user's time zone (`UserClock`); `returnUrl` must be relative; optimistic concurrency
+  returns 409 and is shown gracefully; fuzzy-search pickers (team names across history only in season-entry editing).
+- Gotchas learned: collation is case/accent-insensitive (don't `ToLower()`); IANA time zones need tzdata on Linux and fall
+  back to the local zone on Windows dev; no `EnableRetryOnFailure` (conflicts with user transactions).
+
+For the full plan, decisions, phases and the current handover, read `src/PLAN.md` first.
+
 ## Architectural Characteristics & Decisions
 
 ### Decision: Vertical Slice Architecture
@@ -38,6 +78,7 @@ public static partial class Extensions
 Use this form for all new extensions. Reference: `Extensions.IServiceCollection.cs` in `Motorsports.Common`.
 
 ### Value Objects (Vogen)
+**Status: deferred.** Entities and handlers currently use plain `int`/`string` keys (Phase 0 decision to keep EF mapping simple). Introduce Vogen ids when a slice needs them; do not mix both styles inside one slice.
 Strongly-typed IDs use [Vogen](https://github.com/SteveDunn/Vogen) (`SeasonId`, `RoundId`, `TeamId`, `ParticipantId`, ...). Assembly defaults live in `Motorsports.Common/Vogen.cs`. Map to DB columns with EF value converters (Vogen-generated) in `Motorsports.Infrastructure`. Natural string keys (Sport, Venue, Status, Country ISO) also get value objects.
 
 ### DI Auto-scan
@@ -58,6 +99,13 @@ Follow architecture roles strict:
 - Keep feature behavior (Razor components, handlers, validators, queries) inside slice projects; avoid cross-slice coupling. Slices never reference each other. Shared needs go to Common or Infrastructure.
 - Legacy app `Motorsports.Scaffolding.Core` is read-only reference. Do not edit it, do not reference it.
 
+### End-of-phase routine (applies to the whole project, every phase, no exceptions)
+1. `dotnet build src/Motorsports.slnx -warnaserror`: fix every compiler warning and Roslynator/analyzer diagnostic. Fix the cause; a suppression needs a comment saying why.
+2. `dotnet csharpier format .` (tool manifest `dotnet-tools.json` in repo root), then `dotnet csharpier check .`.
+3. `dotnet test --solution src/Motorsports.slnx` green.
+4. Update `src/PLAN.md`: tick the phase, correct anything that turned out wrong, add the issues you hit to "Issues encountered", and rewrite the **Handover** section (done, in progress, next steps, known bugs).
+5. Update this file when a rule, command or fact changed. Replace incorrect info; do not leave stale statements.
+
 ## Project layout (target)
 
 ```
@@ -67,9 +115,9 @@ src/Motorsports.Common           cross-cutting: Vogen, Result, extensions, DI sc
 src/Motorsports.Infrastructure   EF Core, DbContext, entities, migrations, user store, password hasher
 src/Motorsports.<Slice>          RCL (Microsoft.NET.Sdk.Razor): Home, Auth, Sports, Venues, Teams,
                                  Participants, Seasons, Rounds
-tests/Motorsports.CharacteristicsTests
-tests/Motorsports.UnitTests
-tests/Motorsports.ArchitectureTests
+src/tests/Motorsports.CharacteristicsTests
+src/tests/Motorsports.UnitTests
+src/tests/Motorsports.ArchitectureTests
 ```
 Full plan and phases: `src/PLAN.md`. Update its checklist as you finish work.
 
@@ -115,7 +163,7 @@ CPU cycles are drinking water. Memory bytes are gold. Every change is judged on 
 - Circuits: small state only (ids, form models). Never hold entity graphs, big lists or `DbContext` in a circuit. Shared lookups (sports, venues, countries, statuses, participants, teams, season-entry names) live in one singleton cache as immutable arrays/`FrozenDictionary`, not per user. **Freshness is mandatory**: (a) every write path in a slice calls the cache's `Invalidate(kind)` after commit, so a participant/team/entry I just added is in the next picker, (b) the legacy app also writes to this DB and cannot invalidate us, so entries also expire by `MaxAge` (default 30 s, option `Cache:MaxAge`) with background stale-while-revalidate, and opening any form with a picker triggers a revalidation if older than 5 s. One query per kind (id + label columns only), swapped atomically (`Interlocked.Exchange`). Add tests: create participant -> immediately searchable; change made by raw SQL (simulating legacy) -> visible after `MaxAge`. Short `DisconnectedCircuitRetentionPeriod`, low `DisconnectedCircuitMaxRetained`.
 - EF: `AddPooledDbContextFactory`, `AsNoTracking`, project only the columns used (no entity loading for display), `EF.CompileAsyncQuery` for hot queries (Home, lists), `ExecuteUpdate`/`ExecuteDelete` for set-based writes, `AsSplitQuery` only when it measurably helps, pagination in SQL, `Any`/`Count` in SQL not memory. Never `ToList()` then filter. No lazy loading.
 - Allocation: `Span`/`ReadOnlySpan`, `ArrayPool`, `stackalloc` for small buffers, `ValueTask` on hot paths that often complete sync, `readonly record struct`/`struct` for small DTOs on hot paths, `static` lambdas, no LINQ in hot loops, no string concat in loops (`string.Create`/`StringBuilder` pooling), cache `SearchValues`/`CompositeFormat`. `sealed` all classes by default.
-- Host: Server GC off, concurrent GC off, `TieredPGO` on, `PublishReadyToRun` true, `InvariantGlobalization=true` (no ICU; en-US formats are set explicitly), `TrimMode` partial only if safe. Response compression (Brotli) and long-lived cache headers for static assets (`MapStaticAssets`). Container memory limit set in the run script.
+- Host: Server GC off, concurrent GC off, `TieredPGO` on, `PublishReadyToRun` true, `InvariantGlobalization=true` (no ICU; en-US formats are set explicitly; do not use `string.Normalize`, `CompareInfo` or culture-aware collation: `FuzzyMatcher` folds diacritics with its own tables), `TrimMode` partial only if safe. Response compression (Brotli) and long-lived cache headers for static assets (`MapStaticAssets`). Container memory limit set in the run script.
 - Measure, don't guess: BenchmarkDotNet for the fuzzy matcher and Home query path; a test asserting SQL command count per page (Home = O(1) commands); log slow queries (>100 ms) at Warning.
 - No premature caching of mutable data without an invalidation path and a test.
 
@@ -135,14 +183,17 @@ CPU cycles are drinking water. Memory bytes are gold. Every change is judged on 
 - Dumps contain real data and `User` password hashes: never print them, never copy them into tests or logs. Tests use a schema-only extract plus synthetic seed data.
 - Secrets: connection string via user-secrets (`ConnectionStrings:Motorsports`) or env var `ConnectionStrings__Motorsports`. Legacy `appsettings-connectionstrings.json` is gitignored. Do not read it into output.
 - Ports: legacy app `4000/5000`; new app dev `http://localhost:4100`; container listens on 8080. Both run side by side on the same DB.
-- Commands: build `dotnet build src/Motorsports.slnx -warnaserror`; test `dotnet test src/Motorsports.slnx`; format `dotnet csharpier .` (tool manifest); EF `dotnet ef ... --project src/Motorsports.Infrastructure --startup-project src/Motorsports.Web`.
+- Local dev DB: container `mariadb` (port 3306), database `motorsports_web_dev` (restored from the newest dump; the dump has no `USE`/`CREATE DATABASE`, so it never touches the legacy `motorsports` DB), user `msweb`, password only in user-secrets of `Motorsports.Web`. Run SQL without printing secrets: pipe the SQL to `docker exec -i mariadb sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" motorsports_web_dev'` (PowerShell mangles inline quotes/backticks; always pipe).
+- Repo-level config: `global.json` (SDK 10.0.200), `dotnet-tools.json` (csharpier, dotnet-ef 9.0.21; at repo root, not `.config/`), `.editorconfig` (Roslynator severities, noisy rules disabled with reason; migrations are `generated_code`), `.csharpierrc.yaml`, `.csharpierignore` (CSharpier ignores legacy/Build/Migrations only via this file; `excludes:` in the yaml is NOT supported). `global.json` selects the Microsoft.Testing.Platform runner for `dotnet test`. `src/Directory.Build.props` and `src/Directory.Packages.props` skip the legacy projects (`Motorsports.Scaffolding.Core`, `Build`) via `IsLegacyProject`; keep it that way or the legacy build breaks.
+- Tooling gotchas: the `create` tool fails on existing files (delete first, or use `edit`); `Stop-Process` needs a literal `-Id`; run the web app in an async shell, not `Start-Process`; always rebuild before `dotnet run --no-build`.
+- Commands: build `dotnet build src/Motorsports.slnx -warnaserror`; test `dotnet test --solution src/Motorsports.slnx`; format `dotnet csharpier format .` (tool manifest); EF `dotnet ef ... --project src/Motorsports.Infrastructure --startup-project src/Motorsports.Web`.
 
 ## Code quality
 
-- Formatting: **CSharpier** (`dotnet csharpier .`). Run before finishing. Config `.csharpierrc.yaml`. New code uses CSharpier style (not the legacy 2-space/K&R style).
+- Formatting: **CSharpier** (`dotnet csharpier format .`; check with `dotnet csharpier check .`). Run before finishing. Config `.csharpierrc.yaml` + `.csharpierignore`; afterwards verify `git status src/Motorsports.Scaffolding.Core src/Build` is clean. New code uses CSharpier style (not the legacy 2-space/K&R style).
 - Analyzers: **Roslynator** (`Roslynator.Analyzers`, `Roslynator.CodeAnalysis.Analyzers`, `Roslynator.Formatting.Analyzers`) via `Directory.Build.props`, severities in `.editorconfig`. Fix warnings, don't suppress without a comment.
 - Build must be clean: `dotnet build src/Motorsports.slnx -warnaserror`.
-- Test: `dotnet test src/Motorsports.slnx`.
+- Test: `dotnet test --solution src/Motorsports.slnx`.
 
 Testing priority rules:
 - Prefer characteristics/integration tests over unit tests when validating end-to-end behavior and regression safety.

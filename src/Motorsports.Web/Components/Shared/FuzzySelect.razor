@@ -1,0 +1,66 @@
+@typeparam T where T : class
+@using Motorsports.Common.Fuzzy
+
+<MudAutocomplete T="T"
+                 Value="Value"
+                 ValueChanged="ValueChanged"
+                 Label="@Label"
+                 Required="Required"
+                 RequiredError="@RequiredError"
+                 Error="Error"
+                 ErrorText="@ErrorText"
+                 Disabled="Disabled"
+                 SearchFunc="Search"
+                 ToStringFunc="Text"
+                 ItemTemplate="ItemTemplate"
+                 MaxItems="MaxItems"
+                 DebounceInterval="80"
+                 CoerceText="false"
+                 CoerceValue="false"
+                 ResetValueOnEmptyText="true"
+                 Clearable="true"
+                 SelectOnActivation="true"
+                 SelectValueOnTab="true"
+                 Variant="Variant.Outlined"
+                 Margin="Margin.Dense"
+                 OpenOnFocus="true" />
+
+@code {
+    [Parameter] public T? Value { get; set; }
+    [Parameter] public EventCallback<T?> ValueChanged { get; set; }
+    [Parameter, EditorRequired] public IReadOnlyList<T> Items { get; set; } = [];
+    [Parameter, EditorRequired] public Func<T, string> Text { get; set; } = null!;
+
+    /// <summary>Extra searchable strings per item (for example former names). Defaults to the display text.</summary>
+    [Parameter] public Func<T, string[]>? Keys { get; set; }
+
+    [Parameter] public RenderFragment<T>? ItemTemplate { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public string? RequiredError { get; set; }
+    [Parameter] public bool Error { get; set; }
+    [Parameter] public string? ErrorText { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public int MaxItems { get; set; } = 30;
+
+    private IReadOnlyList<T>? _indexedItems;
+    private FuzzyIndex<T> _index = null!;
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(_indexedItems, Items))
+        {
+            _indexedItems = Items;
+            var entries = new (T, string[])[Items.Count];
+            for (var i = 0; i < entries.Length; i++)
+            {
+                entries[i] = (Items[i], Keys?.Invoke(Items[i]) ?? [Text(Items[i])]);
+            }
+
+            _index = new FuzzyIndex<T>(entries);
+        }
+    }
+
+    private Task<IEnumerable<T>> Search(string? query, CancellationToken token) =>
+        Task.FromResult<IEnumerable<T>>(_index.Search(query, MaxItems));
+}

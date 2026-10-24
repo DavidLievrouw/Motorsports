@@ -1,0 +1,38 @@
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+end_of_line = lf
+
+[*.{cs,razor}]
+indent_style = space
+indent_size = 4
+
+[*.{csproj,props,targets,slnx,json,yml,yaml}]
+indent_size = 2
+
+# Legacy project keeps its own style
+[src/Motorsports.Scaffolding.Core/**]
+end_of_line = unset
+
+[src/{Motorsports.*,tests}/**.cs]
+dotnet_analyzer_diagnostic.category-Roslynator.severity = warning
+# Style choices that fight CSharpier or add noise
+dotnet_diagnostic.RCS1090.severity = none
+dotnet_diagnostic.RCS1123.severity = none
+dotnet_diagnostic.RCS1163.severity = suggestion
+dotnet_diagnostic.RCS1018.severity = none
+dotnet_diagnostic.RCS0053.severity = none
+dotnet_diagnostic.RCS0056.severity = none
+dotnet_diagnostic.RCS1194.severity = none
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA2007.severity = none
+dotnet_diagnostic.CA1848.severity = none
+dotnet_diagnostic.CA1716.severity = none
+dotnet_diagnostic.CA1000.severity = none
+dotnet_diagnostic.RCS1181.severity = none
+dotnet_diagnostic.RCS1161.severity = none
+dotnet_diagnostic.RCS1043.severity = none
+dotnet_diagnostic.RCS1201.severity = none
