@@ -1,10 +1,21 @@
 <Solution>
+  <Folder Name="/Assets/">
+    <File Path="../.editorconfig" />
+    <File Path="../AGENTS.md" />
+    <File Path="../README.md" />
+    <File Path="../version.txt" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="PLAN.md" />
+    <File Path="version.props" />
+  </Folder>
   <Folder Name="/Legacy/">
     <Project Path="Motorsports.Scaffolding.Core/Motorsports.Scaffolding.Core.csproj" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/Motorsports.ArchitectureTests/Motorsports.ArchitectureTests.csproj" />
     <Project Path="tests/Motorsports.Benchmarks/Motorsports.Benchmarks.csproj" />
+    <Project Path="tests/Motorsports.CharacteristicsTests/Motorsports.CharacteristicsTests.csproj" />
     <Project Path="tests/Motorsports.UnitTests/Motorsports.UnitTests.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">

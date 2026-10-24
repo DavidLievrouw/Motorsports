@@ -6,6 +6,8 @@ public sealed class Country
     public string? Name { get; set; }
     public string? NiceName { get; set; }
     public string? Iso3 { get; set; }
+    public short? NumCode { get; set; }
+    public short? PhoneCode { get; set; }
 }
 
 public sealed class Sport
@@ -17,7 +19,7 @@ public sealed class Sport
 public sealed class Status
 {
     public string Name { get; set; } = "";
-    public byte Step { get; set; }
+    public sbyte Step { get; set; }
 }
 
 public sealed class Venue
@@ -100,8 +102,8 @@ public sealed class User
 {
     public string Id { get; set; } = "";
     public string Username { get; set; } = "";
-    public byte[]? PasswordHash { get; set; }
-    public byte[]? Salt { get; set; }
+    public byte[] PasswordHash { get; set; } = [];
+    public byte[] Salt { get; set; } = [];
     public int Iterations { get; set; }
     public string Prf { get; set; } = "HMACSHA512";
     public bool ForceChangePassword { get; set; }

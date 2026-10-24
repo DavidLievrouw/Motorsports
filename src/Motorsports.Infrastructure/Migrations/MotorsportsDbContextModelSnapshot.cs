@@ -40,6 +40,12 @@ namespace Motorsports.Infrastructure.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("varchar(80)");
 
+                    b.Property<short?>("NumCode")
+                        .HasColumnType("smallint");
+
+                    b.Property<short?>("PhoneCode")
+                        .HasColumnType("smallint");
+
                     b.HasKey("Iso");
 
                     b.ToTable("Country", (string)null);
@@ -324,7 +330,8 @@ namespace Motorsports.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<byte[]>("PasswordHash")
-                        .HasColumnType("longblob");
+                        .IsRequired()
+                        .HasColumnType("varbinary(50)");
 
                     b.Property<string>("PasswordHashV3")
                         .HasMaxLength(512)
@@ -336,7 +343,8 @@ namespace Motorsports.Infrastructure.Migrations
                         .HasColumnType("varchar(10)");
 
                     b.Property<byte[]>("Salt")
-                        .HasColumnType("longblob");
+                        .IsRequired()
+                        .HasColumnType("varbinary(50)");
 
                     b.Property<string>("SecurityStamp")
                         .HasMaxLength(64)

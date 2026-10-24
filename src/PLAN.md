@@ -216,10 +216,11 @@ Approach:
 - Packages: latest stable at time of work (MudBlazor 9.x, FluentValidation, Vogen, Roslynator, CSharpier, Testcontainers.MariaDb, bUnit, Playwright, NetArchTest, BenchmarkDotNet). Spike first: Pomelo 9.0.0 + EF Core 9 on net10 against MariaDB (connect, query, `GET_LOCK`, `IF NOT EXISTS` DDL, DateOnly, char(2), decimal). If it fails, switch to `MySql.EntityFrameworkCore` 10.x and record it here.
 - Exit: solution builds clean, `/health` OK in Docker, empty authorized home.
 
-### Phase 1 – Infrastructure & baseline `[ ]`
+### Phase 1 – Infrastructure & baseline `[x]` (done 2026-10-24)
 - Scaffold entities + `MotorsportsDbContext` from the real schema (mirror `Models/MotorsportsContext.cs`, same table/column names, lengths, FKs, types). Use value converters for Vogen IDs, `DateOnly` for Round.Date.
 - Compare model against the real DB (`dotnet ef migrations add Baseline` must produce an **empty** diff for existing tables; delete or ignore baseline create statements, use `--no-create` approach: baseline migration with empty Up). Confirm with `dotnet ef migrations script`.
-- Testcontainers MariaDB fixture that loads a schema (from latest backup, schema only) + seed.
+- Testcontainers MariaDB fixture loads schema-only DDL for the legacy tables and synthetic seed data; no dump rows are included.
+- Verify DateOnly, decimal, char(2), and binary mappings against MariaDB; verify startup migration twice, concurrently, and with the auth columns already present.
 - Characteristics tests for the legacy rules in section 3 written against the **new** handlers as slices land (red first).
 - Exit: DbContext matches DB; fixture works.
 
@@ -278,7 +279,8 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 - EF Core's own `Migrate()` already takes a named lock (`__<db>_EFMigrationsLock`). `DatabaseMigrator` still holds `motorsports-migrate` on the same connection as an explicit guard and skips work when nothing is pending.
 - `EnableRetryOnFailure` is **not** enabled: it forbids user-started transactions unless wrapped in `CreateExecutionStrategy().ExecuteAsync`, which conflicts with the validate-in-transaction pattern. Revisit only with a concrete need.
 - `Directory.Build.props`/`Directory.Packages.props` sit in `src/`, so they would also apply to the legacy projects. They are guarded with `IsLegacyProject`; the legacy csproj still pins its own versions.
-- Provider spike (Phase 0): Pomelo 9.0.0 + EF Core 9.0.21 on net10.0 connects to MariaDB 11.7, runs `GET_LOCK`/`RELEASE_LOCK`, `CREATE TABLE IF NOT EXISTS`, and applied the empty baseline. DateOnly/decimal/char(2) mapping is **not yet proven** with data reads: do that first in Phase 1. Provider stays Pomelo.
+- Provider spike (Phase 0): Pomelo 9.0.0 + EF Core 9.0.21 on net10.0 connects to MariaDB 11.7, runs `GET_LOCK`/`RELEASE_LOCK`, `CREATE TABLE IF NOT EXISTS`, and applies the empty baseline. Phase 1 confirmed typed reads against MariaDB; provider stays Pomelo.
+- Phase 1 MariaDB reads confirmed `DateOnly`, decimal, `char(2)`, and binary values. The schema fixture exposed that legacy password bytes need `varbinary(50)` mapping and Status.Step is signed `tinyint`; both are aligned in the entity model. Country's two smallint columns are now represented as well.
 - Analyzers: `AnalysisLevel=latest` (not `latest-recommended`, too noisy). Disabled with reasons in `.editorconfig`: CA1716, CA1000 (public `Result<T>` API), RCS1181, RCS1161, RCS1043 (extension classes must be `partial`), RCS1201 (EF fluent config).
 - `InvariantGlobalization=true` cannot rely on `string.Normalize`; `FuzzyMatcher.Normalize` uses its own Latin-1/Latin Extended-A fold tables. Verify on Linux in the Docker image.
 - Vogen is deferred (plain int/string keys). Decision recorded in AGENTS.md.
@@ -295,19 +297,20 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 
 ## 10. Handover (rewrite at the end of every phase)
 
-Date: 2026-10-24. Phase 0 is done. Nothing is committed from Phase 0 beyond the earlier "v2: Partial phase 0" commit; the rest is in the working tree.
+Date: 2026-10-24. Phases 0 and 1 are done. Changes remain in the working tree; no commit was created.
 
 State:
-- `dotnet build src/Motorsports.slnx -warnaserror` is clean; 14 unit/architecture tests pass; CSharpier check is clean.
-- Projects: Common, Infrastructure, Web, `tests/Motorsports.UnitTests` (FuzzyMatcher, UserClock), `tests/Motorsports.ArchitectureTests` (layering), `tests/Motorsports.Benchmarks` (BenchmarkDotNet, run with `dotnet run -c Release --project src/tests/Motorsports.Benchmarks`).
+- `Motorsports.CharacteristicsTests` now runs on Testcontainers MariaDB 11.7.2 using `Fixtures/LegacySchema.sql` (DDL only) and synthetic data; it covers typed reads and migration idempotency, concurrent startup, and pre-existing auth columns.
+- EF Core's migration snapshot matches the model; the baseline remains empty and the auth migration is self-guarding.
+- Projects: Common, Infrastructure, Web, `tests/Motorsports.UnitTests` (FuzzyMatcher, UserClock), `tests/Motorsports.ArchitectureTests` (layering), `tests/Motorsports.Benchmarks` (BenchmarkDotNet, run with `dotnet run -c Release --project src/tests/Motorsports.Benchmarks`), and `tests/Motorsports.CharacteristicsTests`.
 - Shared UI in `Motorsports.Web/Components/Shared`: `FuzzySelect<T>`, `FuzzyMultiSelect<T>` (chips, selected items hidden from suggestions), `DateField` (editable, `yyyy-MM-dd` mask, Today button, MinDate/MaxDate), `SportAccent` (colour by sport name, subtle left border).
 - Docker image, `.dockerignore` and `docker-compose/motorsports-web/docker-compose.yml` exist and are verified (see section 9).
 - Dev DB `motorsports_web_dev` in the `mariadb` container; connection string in user-secrets of `Motorsports.Web`. Dev URL http://localhost:4100.
 
 Known gaps / not done:
 - No `docker-run.sh` (the compose file replaces it; add only if the user asks).
-- No CharacteristicsTests project yet (Phase 1). Provider data reads (DateOnly, decimal, char(2)) are still unproven.
+- Slice features and auth are still pending; characteristics coverage for business rules will be added as their handlers land.
 - The nav menu only has Home; `Home` is a placeholder; no auth yet, so all pages are currently anonymous.
 - Component interaction is not browser-tested (see section 9).
 
-Next: Phase 1 (Testcontainers MariaDB fixture, schema-only extract + synthetic seed, prove DB reads and migrator idempotency/concurrency tests), then Phase 2 (Auth), and so on per section 6. No CI/CD work, and never touch `src/Db/*` dumps.
+Next: Phase 2 (Auth), then Phase 3 (reference data slices), per section 6. No CI/CD work, and never touch `src/Db/*` dumps.
