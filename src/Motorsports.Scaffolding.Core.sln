@@ -9,6 +9,15 @@ Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "Db", "Db\Db.sqlproj", "{EDA
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Build", "Build\Build.csproj", "{EB8AF470-270C-4EA4-BEF6-3515BE7AF904}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Assets", "Assets", "{1DF628EC-6B90-49D0-8E9A-F05A493268B8}"
+	ProjectSection(SolutionItems) = preProject
+		..\AGENTS.md = ..\AGENTS.md
+		..\.gitignore = ..\.gitignore
+		..\README.md = ..\README.md
+		..\version.txt = ..\version.txt
+		PLAN.md = PLAN.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

@@ -1,0 +1,92 @@
+Decisions.
+1. Create Motorsports.Web dotnet 10 = OK
+2. Blazor = OK
+3. MudBlazor, but make sure the datepicker is equally easy to use.
+4. Data-access: EF Core only. and fix the IQueryExecutor issues. These are known issues, causing errors, but were never fixed.
+5. Auth is OK, migrate on start.
+6. Validation: OK
+7. Structure should be Vertical Slice Architecture, but with a Infrastructure and Common library, for cross-cutting concerns. Docker support should remain.
+8. Config: OK
+9. OK. Use Roslynator for rules, and CSharpier for formatting. Leave CI/CD alone, I will deal with that later. Deploying manually for now.
+10. The database should ideally not be touched, except for the migration of the user password.
+11. Only docker on a linux machine (ubuntu). IIS is dead.
+
+On the issues:
+- You can create an aggregated query for all home page data.
+- Improve Include and Select, and add AsNoTracking if data is not modified.
+- Use transactions for validations and conflict tracking
+- Validation should occur before mutation
+- MarkReadyToWatch should indeed be a POST
+
+Other:
+- The UI does not have to be the same, but it needs to work on a phone and in a browser, so it has to be responsive.
+- It would be nice to see the full history of an event, on the home page, not just the latest 20 events.
+- Use .slnx file.
+
+I have created a starter AGENTS.md file in the repo root. Read it and extend it.
+Ask additional questions if you have more. 
+
+Also create a markdown file with a plan for this task, next to the slnx file. So a follow-up coding-agent can take it from there.
+
+
+-----------------
+
+Question answers:
+- No need for exact Pomelo EF10 provider. Pick one that is compatible with Mariadb and dotnet10
+- The sql backups stay in the repo. Ignore those. I update those manually.
+- I would prefer it in the first weeks to still run the old app.
+- Default dark theme, branding per sport is fine, see the image that corresponds to it to know how. but don't make it too intrusive. just a visual clue is fine.
+
+Additional remarks:
+- add a chapter about versioning using version.props to the AGENTS.md file.
+- Make sure the option selector, and winners selector work in a similar user-friendly way, with fuzzy search, and multi-select for winning drivers. Analyze the current solution to see what i mean.
+- Make sure the migration works idempotently and automatically when starting the app.
+- Performance is key! CPU cycles are like drinking water. Memory bytes are like gold.
+
+Update plan and agents md.
+
+-----------------
+
+- Versioning: Yes, the file will no longer be created by cake build. All is correct.
+- Team picker should be filtered by the sport of the detail page that you are editing. Compare with what there is now. It works that way in the old application.
+- Additional functionality required: When creating season entries, when selecting a team, it should display the history of that team on the page. When selecting one, it now shows the original name of the team. It should also show the name of the team in the latest season in which it is entered. That makes it easier to find a team, when I can't remember what it was originally called way back when.
+- Winners selector is fine, and should render First Last, so no Country. Also, I often start typing the last name. Then the match should appear.
+- Caching: Fine, but make sure that the cache is updated (or invalidated) when I add a participant or team.
+- The first release should indeed be 2.0.0
+- Minimum round date is now 2026-01-01, the past is the past
+- Schema suggestions are fine to apply, but ensure compatibility with the legacy app, at least for the short-term future.
+
+Update plan and agents md.
+
+Then, verify that you have collected all information a coding agent will need, and that that information is in the markdown files.
+Check if there will be missing functionality, and list which functionality is new.
+Ask any remaining questions you might have.
+
+-----------------
+
+- Fuzzy search over every name a team has had: Only for season entries. If a round or season is edited, it should only match the name of the team in that season.
+- Investigate if there are any missing business, UI or validation rules in the plan. Watch the queries that are performed to fill in UI controls, validations in the mvc pages, etc.
+
+-----------------
+
+Add cascades that make sense in the database. list them, and leave it up to me to decide.
+Season deletes are only allowed if they have 0 rounds
+Fix the validation holes in the new app
+where is "today" used in the plan? UI only? it should be in the timezone of the user, if that is the case
+ReturnUrl can only be relative!
+Participant is unique in Title,First,Last,Country. No wildcards!
+Team uniqueness is the name, within the sport. No wildcards!
+The "Next up" block is intentionally showing rounds I need to watch, so they do not necessarily show the real-time next round. If i did not watch the round, it is still in "Scheduled" state. So the legacy app behavior is correct.
+A team's sport should never be allowed to be edited. And it can only be deleted if it is not a season or round winner for that sport.
+Yes, optimistic concurrency is fine. Return 409 conflict on conflict, and show it gracefully in the UI.
+No "Overdue" necessary. The sorting behavior of the legacy app home page rounds is also ok: the first round to show is the earliest scheduled round that I did not mark as "finished", "cancelled" or another end state.
+
+-------------------
+
+- the cascades reflect what the old db schema (sql) reflects?
+- it should not be possible to delete a team if it has any season entries. and season entries can only be deleted when there are no rounds that has it as a winner, and it is not a season winning team.
+
+-------------------
+
+ensure that the information you learned is in either agents.md or plan.md. Not only what I decided. The next agent will start from scratch.
+

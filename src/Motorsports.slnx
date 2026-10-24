@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Legacy/">
+    <Project Path="Motorsports.Scaffolding.Core/Motorsports.Scaffolding.Core.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="../AGENTS.md" />
+    <File Path="PLAN.md" />
+  </Folder>
+</Solution>
