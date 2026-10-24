@@ -9,4 +9,10 @@
     <PackageReference Include="Microsoft.Extensions.Identity.Core" />
     <ProjectReference Include="..\Motorsports.Common\Motorsports.Common.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource
+      Include="Migrations\SportImages\*.png"
+      LogicalName="Motorsports.Infrastructure.Migrations.SportImages.%(Filename)%(Extension)"
+    />
+  </ItemGroup>
 </Project>

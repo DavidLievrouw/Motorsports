@@ -11,6 +11,11 @@ using Motorsports.Auth;
 using Motorsports.Common;
 using Motorsports.Infrastructure;
 using Motorsports.Infrastructure.Auth;
+using Motorsports.Infrastructure.Lookups;
+using Motorsports.Participants;
+using Motorsports.Sports;
+using Motorsports.Teams;
+using Motorsports.Venues;
 using Motorsports.Web;
 using Motorsports.Web.Components;
 using MudBlazor.Services;
@@ -43,6 +48,11 @@ builder.Services.AddSingleton(
 
 // Auth: Identity over the legacy User table, cookie sign-in, everything requires login unless [AllowAnonymous].
 builder.Services.AddAuthServices(builder.Configuration);
+
+// Reference-data slices and the shared lookup cache they invalidate after commits.
+builder.Services.Configure<LookupCacheOptions>(builder.Configuration.GetSection(LookupCacheOptions.Section));
+builder.Services.AddLookupCache();
+builder.Services.AddSportsServices().AddVenuesServices().AddTeamsServices().AddParticipantsServices();
 builder.Services.AddMotorsportsIdentity().AddSignInManager();
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme).AddIdentityCookies();
 builder
@@ -122,7 +132,16 @@ app.UseAntiforgery();
 app.MapHealthChecks("/health").AllowAnonymous();
 app.MapStaticAssets().AllowAnonymous();
 app.MapAuthEndpoints();
-app.MapRazorComponents<App>().AddInteractiveServerRenderMode().AddAdditionalAssemblies(typeof(AuthOptions).Assembly);
+app.MapSportImages();
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode()
+    .AddAdditionalAssemblies(
+        typeof(AuthOptions).Assembly,
+        SportsModule.Assembly,
+        VenuesModule.Assembly,
+        TeamsModule.Assembly,
+        ParticipantsModule.Assembly
+    );
 
 await app.RunAsync();
 

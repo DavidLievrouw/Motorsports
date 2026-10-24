@@ -38,3 +38,15 @@ h1:focus {
 .ms-main > .ms-footer {
     margin-top: auto;
 }
+
+/* Header row must be clearly distinct from data rows. */
+.mud-table .mud-table-head .mud-table-cell,
+.mud-table .mud-table-head .mud-table-cell .mud-button-root,
+.mud-table .mud-table-head .mud-table-cell .mud-sort-icon {
+    font-weight: 700;
+}
+
+.mud-table .mud-table-head .mud-table-cell {
+    background-color: var(--mud-palette-action-default-hover);
+    border-bottom: 2px solid var(--mud-palette-lines-inputs);
+}

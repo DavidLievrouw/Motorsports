@@ -41,7 +41,20 @@
     [CascadingParameter(Name = "InitialDarkMode")]
     public bool InitialDarkMode { get; set; } = true;
 
-    private static readonly MudTheme _theme = new();
+    private static readonly MudTheme _theme = new()
+    {
+        PaletteDark = new PaletteDark
+        {
+            TableStriped = "rgba(255,255,255,0.035)",
+            TableHover = "rgba(255,255,255,0.08)",
+            TableLines = "rgba(255,255,255,0.12)",
+        },
+        PaletteLight = new PaletteLight
+        {
+            TableStriped = "rgba(0,0,0,0.03)",
+            TableHover = "rgba(0,0,0,0.06)",
+        },
+    };
     private bool _dark = true;
     private bool _drawerOpen = true;
 

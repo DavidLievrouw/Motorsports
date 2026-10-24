@@ -13,5 +13,10 @@
     <ProjectReference Include="..\Motorsports.Auth\Motorsports.Auth.csproj" />
     <ProjectReference Include="..\Motorsports.Common\Motorsports.Common.csproj" />
     <ProjectReference Include="..\Motorsports.Infrastructure\Motorsports.Infrastructure.csproj" />
+    <ProjectReference Include="..\Motorsports.Participants\Motorsports.Participants.csproj" />
+    <ProjectReference Include="..\Motorsports.Sports\Motorsports.Sports.csproj" />
+    <ProjectReference Include="..\Motorsports.Teams\Motorsports.Teams.csproj" />
+    <ProjectReference Include="..\Motorsports.Ui\Motorsports.Ui.csproj" />
+    <ProjectReference Include="..\Motorsports.Venues\Motorsports.Venues.csproj" />
   </ItemGroup>
 </Project>

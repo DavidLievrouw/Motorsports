@@ -29,8 +29,57 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
 
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
         var appliedMigrations = await context.Database.GetAppliedMigrationsAsync(cancellationToken);
-        appliedMigrations.ShouldBe(["20261024151208_Baseline", "20261024151224_AddUserAuthColumns"]);
+        appliedMigrations.ShouldBe([
+            "20261024151208_Baseline",
+            "20261024151224_AddUserAuthColumns",
+            "20261024163411_AddSportImages",
+        ]);
         (await context.Users.CountAsync(cancellationToken)).ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Sport_image_migration_seeds_the_current_legacy_logos()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await fixture.ResetSchemaAsync();
+        await fixture.ExecuteSqlAsync(
+            "INSERT INTO `Sport` (`Name`) VALUES ('f1'),('fe'),('indycar'),('motogp'),('nascar'),('wec')"
+        );
+
+        var factory = fixture.CreateContextFactory();
+        await CreateMigrator(factory).MigrateAsync(cancellationToken);
+
+        await using var context = await factory.CreateDbContextAsync(cancellationToken);
+        var images = await context
+            .Sports.AsNoTracking()
+            .ToDictionaryAsync(sport => sport.Name, sport => sport.Image, cancellationToken);
+        foreach (var name in new[] { "f1", "fe", "indycar", "motogp", "nascar", "wec" })
+        {
+            using var stream = typeof(MotorsportsDbContext).Assembly.GetManifestResourceStream(
+                $"Motorsports.Infrastructure.Migrations.SportImages.{name}.png"
+            )!;
+            using var expected = new MemoryStream();
+            await stream.CopyToAsync(expected, cancellationToken);
+            images[name].ShouldBe(expected.ToArray());
+        }
+    }
+
+    [Fact]
+    public async Task Sport_image_migration_accepts_an_image_column_that_already_exists()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await fixture.ResetSchemaAsync();
+        await fixture.ExecuteSqlAsync(
+            "ALTER TABLE `Sport` ADD COLUMN `Image` longblob NULL; " + "INSERT INTO `Sport` (`Name`) VALUES ('f1')"
+        );
+
+        var factory = fixture.CreateContextFactory();
+        await CreateMigrator(factory).MigrateAsync(cancellationToken);
+
+        await using var context = await factory.CreateDbContextAsync(cancellationToken);
+        (
+            await context.Sports.AsNoTracking().Select(sport => sport.Image).SingleAsync(cancellationToken)
+        ).ShouldNotBeNull();
     }
 
     [Fact]
@@ -74,7 +123,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
         await Task.WhenAll(first, second);
 
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
-        (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).Count().ShouldBe(2);
+        (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).Count().ShouldBe(3);
     }
 
     [Fact]

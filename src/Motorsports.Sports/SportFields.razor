@@ -1,0 +1,79 @@
+@using Motorsports.Common.Images
+
+<MudTextField @bind-Value="Form.Name" Label="Name" Required="true" Immediate="true" AutoFocus="true"
+              MaxLength="@SportFormValidator.MaxNameLength"
+              Error="@Errors.Has(nameof(SportForm.Name))" ErrorText="@Errors.Text(nameof(SportForm.Name))" />
+<MudTextField @bind-Value="Form.FullName" Label="Full name" Immediate="true"
+              MaxLength="@SportFormValidator.MaxFullNameLength"
+              Error="@Errors.Has(nameof(SportForm.FullName))" ErrorText="@Errors.Text(nameof(SportForm.FullName))" />
+<MudStack Spacing="1">
+    <MudText Typo="Typo.subtitle2">Sport image</MudText>
+    @if (Form.ImageReplaced && Form.Image is not null)
+    {
+        <MudText Typo="Typo.body2">New image selected (@(Form.Image.Length / 1024) KB). Save to apply.</MudText>
+    }
+    else if (Form.StoredImageName is not null && Form.Image is not null)
+    {
+        <MudImage Src="@SportImage.Url(Form.StoredImageName)" Alt="@($"{Form.StoredImageName} logo")" Width="160" Height="100" ObjectFit="ObjectFit.Contain" />
+    }
+
+    @if (Form.Image is not null)
+    {
+        <MudButton OnClick="ClearImage" Variant="Variant.Text" Color="Color.Error" Size="Size.Small">Remove image</MudButton>
+    }
+    <InputFile OnChange="SelectImageAsync" accept="image/png,image/jpeg,image/webp" />
+    <MudText Typo="Typo.caption">PNG, JPEG, or WebP; maximum 2 MB.</MudText>
+    @if (_imageError is not null)
+    {
+        <MudAlert Severity="Severity.Error">@_imageError</MudAlert>
+    }
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired]
+    public SportForm Form { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public FormErrors Errors { get; set; } = default!;
+
+    private string? _imageError;
+
+    private async Task SelectImageAsync(InputFileChangeEventArgs args)
+    {
+        var file = args.File;
+        if (file.Size is <= 0 or > SportImage.MaxBytes)
+        {
+            SetImageError("Choose an image no larger than 2 MB.");
+            return;
+        }
+
+        try
+        {
+            await using var stream = file.OpenReadStream(SportImage.MaxBytes);
+            var image = new byte[(int)file.Size];
+            await stream.ReadExactlyAsync(image);
+            if (SportImage.ContentType(image) is null)
+            {
+                SetImageError("Choose a valid PNG, JPEG, or WebP image.");
+                return;
+            }
+
+            Form.Image = image;
+            Form.ImageReplaced = true;
+            SetImageError(null);
+        }
+        catch (IOException)
+        {
+            SetImageError("The image could not be read. Choose a smaller image and try again.");
+        }
+    }
+
+    private void ClearImage()
+    {
+        Form.Image = null;
+        Form.ImageReplaced = false;
+        SetImageError(null);
+    }
+
+    private void SetImageError(string? error) => Form.ImageUploadError = _imageError = error;
+}

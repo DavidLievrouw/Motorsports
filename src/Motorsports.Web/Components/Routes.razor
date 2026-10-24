@@ -1,4 +1,4 @@
-<Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="[typeof(Motorsports.Auth.AuthOptions).Assembly]" NotFoundPage="typeof(Pages.NotFound)">
+<Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="[typeof(Motorsports.Auth.AuthOptions).Assembly, Motorsports.Sports.SportsModule.Assembly, Motorsports.Venues.VenuesModule.Assembly, Motorsports.Teams.TeamsModule.Assembly, Motorsports.Participants.ParticipantsModule.Assembly]" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
         <CascadingValue Value="DarkMode" Name="InitialDarkMode">
             <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">

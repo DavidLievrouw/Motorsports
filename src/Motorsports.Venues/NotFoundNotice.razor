@@ -1,0 +1,15 @@
+@if (HttpContext is { Response.HasStarted: false })
+{
+    HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+}
+
+<MudAlert Severity="Severity.Warning" Class="my-2">@Message</MudAlert>
+<MudButton Href="/venues" Variant="Variant.Text">Back to venues</MudButton>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    [Parameter]
+    public string Message { get; set; } = "Not found.";
+}

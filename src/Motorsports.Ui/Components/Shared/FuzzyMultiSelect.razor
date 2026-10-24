@@ -7,7 +7,7 @@
                  Label="@Label"
                  Disabled="Disabled"
                  SearchFunc="Search"
-                 ToStringFunc="Text"
+                 ToStringFunc="SafeText"
                  ItemTemplate="ItemTemplate"
                  MaxItems="MaxItems"
                  DebounceInterval="80"
@@ -61,7 +61,6 @@
         }
     }
 
-    // Already selected items are hidden from the suggestions.
     private Task<IEnumerable<T>> Search(string? query, CancellationToken token) =>
         Task.FromResult<IEnumerable<T>>(_index.Search(query, MaxItems + Values.Count).Where(i => !Values.Contains(i)).Take(MaxItems));
 
@@ -77,4 +76,6 @@
     }
 
     private Task Remove(T item) => ValuesChanged.InvokeAsync([.. Values.Where(v => !ReferenceEquals(v, item))]);
+
+    private string? SafeText(T? item) => item is null ? null : Text(item);
 }

@@ -1,0 +1,63 @@
+@inject LookupCache Lookups
+
+<MudTextField @bind-Value="Form.Name" Label="Name" Required="true" Immediate="true" AutoFocus="true"
+              MaxLength="@TeamFormValidator.MaxNameLength"
+              Error="@Errors.Has(nameof(TeamForm.Name))" ErrorText="@Errors.Text(nameof(TeamForm.Name))" />
+<FuzzySelect T="SportOption" Value="_selectedSport" ValueChanged="SportChangedAsync" Items="_sports"
+             Text="SportText" Label="Sport" Required="true" RequiredError="Select a sport."
+             Disabled="SportReadOnly" Error="@Errors.Has(nameof(TeamForm.Sport))"
+             ErrorText="@Errors.Text(nameof(TeamForm.Sport))" />
+<FuzzySelect T="CountryOption" Value="_selectedCountry" ValueChanged="CountryChangedAsync" Items="_countries"
+             Text="CountryText" Keys="CountryKeys" Label="Country" Required="true" RequiredError="Select a country."
+             Error="@Errors.Has(nameof(TeamForm.Country))" ErrorText="@Errors.Text(nameof(TeamForm.Country))" />
+
+@code {
+    private IReadOnlyList<CountryOption> _countries = [];
+    private IReadOnlyList<SportOption> _sports = [];
+    private CountryOption? _selectedCountry;
+    private SportOption? _selectedSport;
+
+    [Parameter, EditorRequired]
+    public TeamForm Form { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public FormErrors Errors { get; set; } = default!;
+
+    [Parameter]
+    public bool SportReadOnly { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _selectedCountry = _countries.FirstOrDefault(country => country.Iso == Form.Country);
+        _selectedSport = _sports.FirstOrDefault(sport => sport.Name == Form.Sport);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Lookups.RevalidateAsync(LookupKind.Countries);
+        await Lookups.RevalidateAsync(LookupKind.Sports);
+        _countries = await Lookups.GetCountriesAsync();
+        _sports = await Lookups.GetSportsAsync();
+        OnParametersSet();
+    }
+
+    private static string CountryText(CountryOption country) => CountryFlag.WithName(country.Iso, country.Name);
+
+    private static string SportText(SportOption sport) => sport.Name;
+
+    private static string[] CountryKeys(CountryOption country) => [country.Name];
+
+    private Task CountryChangedAsync(CountryOption? country)
+    {
+        _selectedCountry = country;
+        Form.Country = country?.Iso;
+        return Task.CompletedTask;
+    }
+
+    private Task SportChangedAsync(SportOption? sport)
+    {
+        _selectedSport = sport;
+        Form.Sport = sport?.Name;
+        return Task.CompletedTask;
+    }
+}

@@ -1,0 +1,58 @@
+@page "/sports/details/{Name}"
+@attribute [Authorize]
+@inject SportService Service
+@using Motorsports.Common.Images
+
+<PageTitle>Sport</PageTitle>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_sport is null)
+{
+    <NotFoundNotice Message="Sport not found." />
+}
+else
+{
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+        @if (_sport.HasImage)
+        {
+            <MudImage Src="@SportImage.Url(_sport.Name)" Alt="@($"{_sport.Name} logo")" Width="80" Height="60" ObjectFit="ObjectFit.Contain" />
+        }
+        <MudText Typo="Typo.h4" HtmlTag="h1">@_sport.Name</MudText>
+    </MudStack>
+    <MudPaper Class="pa-4 mb-2" Style="max-width:40rem">
+        <MudSimpleTable Dense="true" Style="overflow-x:auto">
+            <tbody>
+                <tr><th>Name</th><td>@_sport.Name</td></tr>
+                <tr><th>Full name</th><td>@_sport.FullName</td></tr>
+                <tr><th>Teams</th><td>@_sport.TeamCount</td></tr>
+                <tr><th>Seasons</th><td>@_sport.SeasonCount</td></tr>
+                <tr><th>Latest season</th><td>@(_sport.LatestSeasonLabel ?? "—")</td></tr>
+                <tr><th>Latest winning participants</th><td>@(_sport.WinningParticipants.Count == 0 ? "—" : string.Join(", ", _sport.WinningParticipants))</td></tr>
+                <tr><th>Latest winning team</th><td>@(_sport.WinningTeamName ?? "—")</td></tr>
+                <tr><th>Next round</th><td>@(_sport.NextRoundDate?.ToString("yyyy-MM-dd") ?? "—")</td></tr>
+            </tbody>
+        </MudSimpleTable>
+    </MudPaper>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Href="@($"/sports/edit/{Uri.EscapeDataString(_sport.Name)}")" Variant="Variant.Filled" Color="Color.Primary">Edit</MudButton>
+        <MudButton Href="/sports" Variant="Variant.Text">Back to sports</MudButton>
+    </MudStack>
+}
+
+@code {
+    private SportInfo? _sport;
+    private bool _loading = true;
+
+    [Parameter]
+    public string Name { get; set; } = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _sport = await Service.GetAsync(Name);
+        _loading = false;
+    }
+}

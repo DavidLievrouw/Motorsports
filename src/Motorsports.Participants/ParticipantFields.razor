@@ -1,0 +1,46 @@
+@inject LookupCache Lookups
+
+<MudTextField @bind-Value="Form.Title" Label="Title" Immediate="true"
+              MaxLength="@ParticipantFormValidator.MaxTitleLength"
+              Error="@Errors.Has(nameof(ParticipantForm.Title))" ErrorText="@Errors.Text(nameof(ParticipantForm.Title))" />
+<MudTextField @bind-Value="Form.FirstName" Label="First name" Required="true" Immediate="true" AutoFocus="true"
+              MaxLength="@ParticipantFormValidator.MaxFirstNameLength"
+              Error="@Errors.Has(nameof(ParticipantForm.FirstName))" ErrorText="@Errors.Text(nameof(ParticipantForm.FirstName))" />
+<MudTextField @bind-Value="Form.LastName" Label="Last name" Required="true" Immediate="true"
+              MaxLength="@ParticipantFormValidator.MaxLastNameLength"
+              Error="@Errors.Has(nameof(ParticipantForm.LastName))" ErrorText="@Errors.Text(nameof(ParticipantForm.LastName))" />
+<FuzzySelect T="CountryOption" Value="_selectedCountry" ValueChanged="CountryChangedAsync" Items="_countries"
+             Text="CountryText" Keys="CountryKeys" Label="Country" Required="true" RequiredError="Select a country."
+             Error="@Errors.Has(nameof(ParticipantForm.Country))" ErrorText="@Errors.Text(nameof(ParticipantForm.Country))" />
+
+@code {
+    private IReadOnlyList<CountryOption> _countries = [];
+    private CountryOption? _selectedCountry;
+
+    [Parameter, EditorRequired]
+    public ParticipantForm Form { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public FormErrors Errors { get; set; } = default!;
+
+    protected override void OnParametersSet() =>
+        _selectedCountry = _countries.FirstOrDefault(country => country.Iso == Form.Country);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Lookups.RevalidateAsync(LookupKind.Countries);
+        _countries = await Lookups.GetCountriesAsync();
+        _selectedCountry = _countries.FirstOrDefault(country => country.Iso == Form.Country);
+    }
+
+    private static string CountryText(CountryOption country) => CountryFlag.WithName(country.Iso, country.Name);
+
+    private static string[] CountryKeys(CountryOption country) => [country.Name];
+
+    private Task CountryChangedAsync(CountryOption? country)
+    {
+        _selectedCountry = country;
+        Form.Country = country?.Iso;
+        return Task.CompletedTask;
+    }
+}

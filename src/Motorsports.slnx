@@ -2,6 +2,7 @@
   <Folder Name="/Assets/">
     <File Path="../.editorconfig" />
     <File Path="../AGENTS.md" />
+    <File Path="../prompt_history_v2.txt" />
     <File Path="../README.md" />
     <File Path="../version.txt" />
     <File Path="Directory.Build.props" />
@@ -25,5 +26,10 @@
   <Project Path="Motorsports.Auth/Motorsports.Auth.csproj" />
   <Project Path="Motorsports.Common/Motorsports.Common.csproj" />
   <Project Path="Motorsports.Infrastructure/Motorsports.Infrastructure.csproj" />
+  <Project Path="Motorsports.Participants/Motorsports.Participants.csproj" />
+  <Project Path="Motorsports.Sports/Motorsports.Sports.csproj" />
+  <Project Path="Motorsports.Teams/Motorsports.Teams.csproj" />
+  <Project Path="Motorsports.Ui/Motorsports.Ui.csproj" />
+  <Project Path="Motorsports.Venues/Motorsports.Venues.csproj" />
   <Project Path="Motorsports.Web/Motorsports.Web.csproj" />
 </Solution>

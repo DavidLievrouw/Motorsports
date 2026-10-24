@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="MudBlazor" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <ProjectReference Include="..\Motorsports.Common\Motorsports.Common.csproj" />
+    <ProjectReference Include="..\Motorsports.Infrastructure\Motorsports.Infrastructure.csproj" />
+    <ProjectReference Include="..\Motorsports.Ui\Motorsports.Ui.csproj" />
+  </ItemGroup>
+</Project>

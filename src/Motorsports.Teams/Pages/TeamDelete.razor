@@ -1,0 +1,84 @@
+@page "/teams/delete/{Id:int}"
+@attribute [Authorize]
+@inject TeamService Service
+@inject NavigationManager Navigation
+
+<PageTitle>Delete team</PageTitle>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_team is null)
+{
+    <NotFoundNotice Message="Team not found." />
+}
+else
+{
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">Delete team</MudText>
+    <MudPaper Class="pa-4" Style="max-width:40rem">
+        <MudStack Spacing="2">
+            @if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error">@_error</MudAlert>
+            }
+            else if (_team.SeasonEntryCount > 0)
+            {
+                <MudAlert Severity="Severity.Warning">@TeamService.InUseMessage</MudAlert>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Warning">Delete team <strong>@_team.Name</strong> (@_team.Sport)? This cannot be undone.</MudAlert>
+            }
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAsync" Disabled="@(_saving || _team.SeasonEntryCount > 0)">Delete</MudButton>
+                <MudButton Href="@($"/teams/details/{_team.Id}")" Variant="Variant.Text">Cancel</MudButton>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    private TeamInfo? _team;
+    private bool _loading = true;
+    private bool _saving;
+    private string? _error;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _team = await Service.GetAsync(Id);
+        _loading = false;
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (_saving)
+        {
+            return;
+        }
+
+        _saving = true;
+        _error = null;
+        var result = await Service.DeleteAsync(Id);
+        _saving = false;
+        if (result.IsSuccess)
+        {
+            Navigation.NavigateTo("/teams");
+            return;
+        }
+
+        _error = result.Error.Message;
+        if (result.Error.Kind == ErrorKind.NotFound)
+        {
+            _team = null;
+        }
+        else
+        {
+            _team = await Service.GetAsync(Id);
+        }
+    }
+}

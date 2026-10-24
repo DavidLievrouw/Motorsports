@@ -14,6 +14,7 @@ public sealed class Sport
 {
     public string Name { get; set; } = "";
     public string? FullName { get; set; }
+    public byte[]? Image { get; set; }
 }
 
 public sealed class Status

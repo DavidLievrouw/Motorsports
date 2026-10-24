@@ -248,6 +248,9 @@ namespace Motorsports.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
+                    b.Property<byte[]>("Image")
+                        .HasColumnType("longblob");
+
                     b.HasKey("Name");
 
                     b.ToTable("Sport", (string)null);

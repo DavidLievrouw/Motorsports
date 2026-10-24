@@ -10,9 +10,9 @@ Status legend: `[ ]` todo, `[x]` done. Update as you go.
 |---|---|
 | Target | `net10.0`, C# 14, new `src/Motorsports.slnx` (legacy project stays in it until cut-over) |
 | UI | Blazor Web App, interactive server render mode, MudBlazor, responsive (phone + desktop) |
-| Architecture | Vertical slices as Razor class libraries + `Motorsports.Common` + `Motorsports.Infrastructure`; host `Motorsports.Web` |
+| Architecture | Vertical slices as Razor class libraries + dependency-free `Motorsports.Common` + shared `Motorsports.Ui` + `Motorsports.Infrastructure`; host `Motorsports.Web` |
 | Data | EF Core only. MariaDB via `Pomelo.EntityFrameworkCore.MySql` 9.0.0 + EF Core 9.x on net10.0 (Pomelo has no EF 10 stable; Oracle `MySql.EntityFrameworkCore` 10.x is the fallback if the Phase 0 spike fails). Dapper/`IQueryExecutor` dropped |
-| DB | Existing MariaDB schema untouched, except additive change on `User` (section 5). Legacy app keeps running against the same DB for the first weeks |
+| DB | Existing MariaDB schema kept legacy-compatible. Additive nullable `User` auth columns and `Sport.Image longblob` are approved; current sport logos are backfilled. Legacy app keeps running against the same DB for the first weeks |
 | Theme | Dark default, light optional. Per-sport branding = logo + subtle accent only |
 | Performance | Hard requirement, see AGENTS.md "Performance" |
 | Versioning | `version.txt` -> tracked `src/version.props` -> all projects (AGENTS.md "Versioning") |
@@ -34,10 +34,10 @@ Enums in legacy: `RoundStatus` (Scheduled 0, ReadyToWatch 1, Postponed 10, Finis
 |---|---|---|---|
 | Auth | Login (+returnUrl), logout (POST), access denied, error page | `LoginController`, `Security/*` | [x] (Phase 2; automated tests, no browser check) |
 | Home | Very-next-up round (across sports), next-up per sport, rounds to acquire, latest 2 seasons per sport, sport logos with fallback, **full** event history (see 4) | `HomeController`, `HomeService`, `Views/Home/*` | [ ] |
-| Sports | list, details, create, edit | `SportsController`, `SportService` | [ ] |
-| Venues | list, details, create, edit | `VenuesController`, `VenueService` | [ ] |
-| Teams | list, details, create, edit | `TeamsController` | [ ] |
-| Participants | list, details, create, edit | `ParticipantsController` | [ ] |
+| Sports | list, details, create, edit | `SportsController`, `SportService` | [x] (Phase 3) |
+| Venues | list, details, create, edit | `VenuesController`, `VenueService` | [x] (Phase 3) |
+| Teams | list, details, create, edit | `TeamsController` | [x] (Phase 3; plus delete when no season entries) |
+| Participants | list, details, create, edit | `ParticipantsController` | [x] (Phase 3) |
 | Seasons | list, details, create, edit, delete; winners (participants) and winning team | `SeasonsController`, `SeasonService` | [ ] |
 | SeasonEntries | list per season, details, create, edit, delete (team name during season) | `SeasonEntriesController`, `SeasonEntryService` | [ ] |
 | Rounds | list per season, details (+event history), create, edit (name, date, number, venue, rain, rating, status, note, winning team, winning participants), delete, **MarkReadyToWatch (POST)** | `RoundsController`, `RoundService` | [ ] |
@@ -92,7 +92,7 @@ Known legacy defects. Do not port them:
 ## 4a. Pickers (parity with legacy select2)
 
 Legacy uses select2 in `Views/Shared/EditorTemplates/*.cshtml`: `Team.cshtml` (single, **grouped by sport**, clearable, placeholder), `WinningParticipants.cshtml` (**multi**, max 4, clearable; legacy label `First Last (Country)`, new label `First Last`, see AGENTS.md), plus `Season`, `Sport`, `Venue`, `Country`, `Status`, `SeasonEntry` single selects, and `Date.cshtml` (typed or picked, `DD/MM/YYYY`). Team picker is filtered by the sport of the page's season. Rebuild as:
-- `FuzzySelect<T>` for all single selects (grouping optional). Winning team in a round is limited to that season's entries (shown by the name during the season).
+- `FuzzySelect<T>` in `Motorsports.Ui` for all searchable single selects (grouping optional); do not use `MudSelect` where users type a query. Winning team in a round is limited to that season's entries (shown by the name during the season).
 - `FuzzyMultiSelect<T>` for winning participants (chips, max 4, remove with chip x or backspace) and season winners.
 - `DateField` for dates (typed `dd/MM/yyyy` or ISO accepted, picker optional, today shortcut; minimum **2026-01-01** for new/changed dates, existing older rounds stay editable when the date is unchanged).
 - Lookup lists come from the shared singleton cache (no query per keystroke). Matching spec in AGENTS.md. Keyboard: arrows/enter/escape, works with touch, 44px targets.
@@ -117,6 +117,25 @@ See AGENTS.md "Caching". Write paths invalidate in-process; legacy writes are pi
 ## 4e. New functionality vs legacy
 
 Full event history (paged, grouped by year, no 15 cap); team history on season-entry; fuzzy search over all team names (season-entry create only) and last-name-first participants; dark theme + per-sport accent; responsive/phone layout; POST for MarkReadyToWatch and logout; atomic winner updates and validate-before-mutate; password rehash on login + change-password page for `ForceChangePassword`; health endpoint (`/health`); migrate-on-start; aggregated one-query home.
+
+## 4h. Reference-data presentation and image follow-up `[x]`
+
+- Keep accented text intact from MariaDB through Blazor: source is UTF-8, DB connections use `utf8mb4`, and the page is UTF-8. Synthetic regression coverage uses `Autódromo Hermanos Rodríguez, Mexico City`; existing literal `?` data cannot be reconstructed without a source value.
+- Move `FuzzySelect`, `FuzzyMultiSelect`, and `DateField` into `Motorsports.Ui`, and use fuzzy autocomplete for Country and Sport fields. The matcher searches the complete query, not each key separately.
+- Use the standard MudBlazor `MudDataGrid` for reference-data listings so column headers are visually distinct.
+- Add nullable `Sport.Image longblob` with an idempotent, legacy-safe migration. Seed bytes for the current `f1.png`, `fe.png`, `indycar.png`, `motogp.png`, `nascar.png`, and `wec.png` files; embed copies from `src/Motorsports.Scaffolding.Core/wwwroot/img` so migration and SQL-script generation do not depend on a source checkout path. Keep `notfound.png` as the no-image fallback, not a Sport row.
+- Sport create/edit accepts PNG/JPEG/WebP files up to 2 MB; validate signatures and size, preserve/remove existing image explicitly, include image bytes in optimistic concurrency, and show images beside sport names on edit/details.
+- Sport details show the latest season's participant winners and winning team, plus the next round with `Status.Step < 2` or null. “Latest” uses the existing `StartDate` ordering from section 3 (roundless seasons first).
+- Venue details show all associated rounds with date/name, each round's sport image, winning participants/team, status, rating and rain. Nullable values render as an em dash; query winners in one batch, never N+1.
+
+### 4h-2. Follow-up fixes (second round)
+
+- Test output must stay small: sport images are served by `GET /sports/image/{name}` (authorized, ETag, `private, max-age=300`) and pages reference that URL; no inline base64. EF command logging is `Warning` (`Microsoft.EntityFrameworkCore.Database.Command`) so migration hex literals are never logged.
+- Accent corruption (`Aut??dromo`) was the local dev DB, restored with a non-utf8mb4 client; the dump is correct. Restore with `mariadb --default-character-set=utf8mb4`. Blazor HTML-encodes non-ASCII (`&#xF3;`): tests `HtmlDecode` before asserting text.
+- Sports list shows the logo. Country flag emoji (regional-indicator pair from ISO code, `CountryFlag`, no images) prefixes country in Venue/Team/Participant lists, details and country pickers. Windows Chrome/Edge render the letters, not flags (OS font limitation).
+- `FuzzySelect`/`FuzzyMultiSelect` convert a null value safely (`MudAutocomplete` calls `ToStringFunc(null)`).
+- ChangePassword renders in `MainLayout` (navbar, title, footer stay visible); only Login/AccessDenied use `AuthLayout`.
+- Dark theme: subtler striped rows (`PaletteDark.TableStriped/TableHover/TableLines`); grid header cells bold with a distinct background (`app.css`).
 
 ## 4f. Second audit: rules and behaviours the legacy code has or lacks
 
@@ -210,7 +229,7 @@ Approach:
 - Versioning: create tracked `src/version.props` reading `../version.txt` (property function), remove `src/version.props` from `.gitignore`, wire `SourceRevisionId`, show version in footer. Verify the legacy csproj still builds with it.
 - Projects: `Motorsports.Web`, `Motorsports.Common`, `Motorsports.Infrastructure`, slice RCLs (create each when its phase starts), test projects. Add all to `Motorsports.slnx`.
 - Common: Vogen defaults, DI scan `AddAll<T>`, `[ExcludeFromDiScan]`, `Result<T>`/error model, `TimeProvider` usage.
-- Common UI (or Web shared): `FuzzySelect<T>`, `FuzzyMultiSelect<T>`, `DateField`, allocation-free `FuzzyMatcher` + benchmarks + unit tests. See section 4a.
+- Shared UI (`Motorsports.Ui`): `FuzzySelect<T>`, `FuzzyMultiSelect<T>`, `DateField`; allocation-free `FuzzyMatcher` remains in dependency-free Common, with benchmarks + unit tests. See section 4a.
 - Web: `Program.cs`, MudBlazor layout (drawer nav on desktop, hamburger/bottom nav on phone), dark-default theme with light toggle (cookie), per-sport accent helper, health endpoint `/health`, Options validation, `DatabaseMigrator`.
 - Dockerfile (+ `.dockerignore`), `docker-compose.yml` for local MariaDB. Replace legacy `Docker_Run.cmd` with a bash `docker-run.sh` for the new app (leave legacy script). Legacy app and new app must be runnable side by side (different ports, same DB).
 - Packages: latest stable at time of work (MudBlazor 9.x, FluentValidation, Vogen, Roslynator, CSharpier, Testcontainers.MariaDb, bUnit, Playwright, NetArchTest, BenchmarkDotNet). Spike first: Pomelo 9.0.0 + EF Core 9 on net10 against MariaDB (connect, query, `GET_LOCK`, `IF NOT EXISTS` DDL, DateOnly, char(2), decimal). If it fails, switch to `MySql.EntityFrameworkCore` 10.x and record it here.
@@ -229,8 +248,20 @@ Section 5. Login page (MudBlazor, mobile friendly), logout (POST), access denied
 
 Delivered: `Motorsports.Auth` slice (RCL: login/logout/access denied/change password, endpoints, validators, force-change middleware, rate limit); `Infrastructure/Auth` (`UserStore`, `LegacyPasswordHasher` PBKDF2 HMACSHA1/256/512 verify + rehash to Identity v3 in `PasswordHashV3`, claims factory); Web wiring (cookie `ms.auth` HttpOnly, SameSite=Lax, Secure unless `Auth:SecureCookies=false`; fallback authorize policy; revalidating auth state). Deleted users cannot sign in. Footer layout fixed (`ms-main` flex column, footer `margin-top:auto`). Tests: unit (hasher, LocalUrl, validators), architecture (Auth not dependent on Web), 22 characteristics tests incl. end-to-end WebApplicationFactory login flows.
 
-### Phase 3 – Reference data slices `[ ]`
-Sports, Venues, Participants (list with search/filter, details, create, edit; no delete). Teams: same plus delete only when the team has no season entries (sport read-only on edit). Shared UI building blocks in Web or Common (e.g. responsive list, form layout, country select, confirm dialog, conflict alert). Country, Status lookups cached.
+### Phase 3 – Reference data slices `[x]` (done 2026-10-24; no browser check, see Handover)
+Sports, Venues, Participants (list with search/filter, details, create, edit; no delete). Teams: same plus delete only when the team has no season entries (sport read-only on edit). Shared UI building blocks in `Motorsports.Ui` (e.g. fuzzy pickers and date field); Country and Sport lookups are cached.
+
+Delivered (checklist):
+- [x] Four slice RCLs `Motorsports.Sports|Venues|Teams|Participants`, each referencing Common + Infrastructure and reusable UI where needed (architecture tests enforce no slice-to-slice or Web dependencies). Web references them, adds them to `Router.AdditionalAssemblies` / `MapRazorComponents`, calls `AddXServices()`, and shows nav links inside `AuthorizeView`.
+- [x] Per slice: list (search + paging for Venues/Teams/Participants; Sports is a short plain list), details, create, edit. Teams also have a delete page. Routes: `/x`, `/x/create`, `/x/details/{key}`, `/x/edit/{key}`, `/teams/delete/{id}`; string keys (Sport/Venue name) are URL-escaped. Every routed page has explicit `[Authorize]` (architecture test reflects over all routed components); anonymous requests redirect to `/login` (characteristics test over all 17 routes).
+- [x] Form models + FluentValidation (trim, required, DB max lengths; a unit test compares the limits with the EF model). All validation runs before any mutation; FK keys (country, sport) are looked up and the **canonical stored key** is written.
+- [x] Uniqueness by plain equality (collation does the case/accent folding): Sport.Name, Venue.Name, Team(Name, Sport) excluding self, Participant(Title, First, Last, Country). Team and Participant have no DB unique index, so create/edit run `Serializable` and a deadlock is retried (see `DbOperations`); Sport/Venue duplicates are also backed by the PK (mapped to a friendly conflict).
+- [x] Sport/Venue rename: one transaction, re-check uniqueness, insert new PK row, repoint dependents (Sport -> Team, Season; Venue -> Round) with `ExecuteUpdate`, delete the old row. A case/accent-only rename goes through a temporary key (`~<guid>`), then the final key.
+- [x] Optimistic concurrency without schema changes: the form carries `RowVersion` = SHA-256 prefix of the loaded values (`Common/RowVersion`); inside the transaction the row is locked with `SELECT ... FOR UPDATE`, re-read and compared. Mismatch -> `Error.Conflict`; the page keeps the typed values and offers Reload / Show differences. Unknown ids -> `NotFound` result; pages render a not-found notice with HTTP 404 during prerender.
+- [x] Teams: Sport is read-only on edit (UI) and rejected server-side if it differs; Country may change. Delete locks the team row, re-counts `SeasonEntry` in the same transaction, blocks with a conflict when > 0 (other restricting FKs, e.g. Season/Round winning team, are also mapped to a conflict, never a 500).
+- [x] Country displays `Country.NiceName` (fallback Name, ISO), country list sorted by it. Participants sorted LastName, FirstName, Country (nice name).
+- [x] Shared infra: `Infrastructure/DbOperations.InTransactionAsync` (one context per operation, rollback on failed result, deadlock retry, DB error -> result mapping), `Infrastructure/Lookups/LookupCache` (Countries, Sports; `Invalidate` after commits, `MaxAge` 30 s via `Cache:MaxAge`, entries served stale then refreshed once in the background, `RevalidateAsync` when a form opens re-reads if older than 5 s), `Common/{RowVersion, FormErrors, Paging}`.
+- [x] Tests: unit (validators, limits vs EF model, RowVersion, FormErrors), architecture (slice isolation, `[Authorize]` on routed pages), characteristics on Testcontainers MariaDB with synthetic rows (21 reference-data service tests incl. renames with/without dependents and case-only, duplicates, FK/length validation, stale conflict, not found, team delete allowed/blocked, concurrent duplicate creates, cache) and 2 web tests (anonymous redirect for all routes; signed-in render + 404).
 
 ### Phase 4 – Seasons & SeasonEntries `[ ]`
 Season CRUD + winners + winning team + delete rule. SeasonEntries per season. Date handling with the shared `DateField`; winners via `FuzzyMultiSelect` (section 4a).
@@ -239,7 +270,7 @@ Season CRUD + winners + winning team + delete rule. SeasonEntries per season. Da
 Round list per season, details, create, edit (rain select, rating whole number 0..10 (as legacy), status, venue autocomplete, winning team via `FuzzySelect` limited to season entries, winners via `FuzzyMultiSelect` max 4), delete, `MarkReadyToWatch` POST (idempotent, rejects invalid transition). Event history component (shared within slice).
 
 ### Phase 6 – Home `[ ]`
-Single `GetHomeOverview` handler: very-next-up, next-up per sport, rounds to acquire, latest seasons. Event history: full history for very-next-up/selected event, virtualized/paged, grouped by year, collapsible. Sport logos via static assets (copy `wwwroot/img/*.png`; fallback `notfound.png`). Mobile layout first. Event history comes from one query per selected round (no limit), streamed/paged in the UI; sport accent via logo + thin border.
+Single `GetHomeOverview` handler: very-next-up, next-up per sport, rounds to acquire, latest seasons. Event history: full history for very-next-up/selected event, virtualized/paged, grouped by year, collapsible. Sport logos come from `Sport.Image` (the migration seeds current logos); retain `notfound.png` as the no-image fallback. Mobile layout first. Event history comes from one query per selected round (no limit), streamed/paged in the UI; sport accent via logo + thin border.
 
 ### Phase 7 – Hardening & parity `[ ]`
 - Walk the section 2 table, tick every row after a manual phone-width + desktop check.
@@ -303,22 +334,29 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 - Login rate limit is per remote IP (fixed window, `Auth:LoginPermitLimit`/`LoginWindowSeconds`). Forwarded headers are accepted only from configured `ForwardedHeaders:KnownProxies` addresses (default framework loopback proxies); set `ForwardedHeaders__KnownProxies__0` to the TLS proxy address in deployment. Account lockout was not implemented (optional in plan).
 - Tooling note: in this environment only PowerShell was available for file edits (no create/edit tools); `R` is an alias of Invoke-History, so do not name helpers `R`.
 - Interactive behaviour of `FuzzySelect`/`FuzzyMultiSelect`/`DateField` is only verified by static prerender (HTTP 200, markup present). Click/typing behaviour needs a browser test (Playwright) or manual check in Phase 3/4.
-
+- Phase 3: this environment has no create/edit tool; all files were written through PowerShell with .NET `WriteAllText` (no BOM). PowerShell 5.1 `Set-Content -Encoding utf8` adds a BOM, avoid it.
+- Phase 3: `FluentValidation` 12 has no `RuleFor().Transform`; trimming is done with `Must(v => v.Trim().Length <= Max)` and the service stores the trimmed value. A routed page and a record cannot share a name in one namespace (`SportDetails` page vs record): records are named `*Info`.
+- Phase 3: `FromSql("... FOR UPDATE")` must be followed only by `AsNoTracking().ToListAsync()`; composing `SingleOrDefault` wraps it in a subquery and the lock is lost.
+- Phase 3: Pomelo's execution strategy can wrap the `MySqlException` in an `InvalidOperationException` ("likely due to a transient failure") even without `EnableRetryOnFailure`; `DbOperations` classifies the whole exception chain. A concurrent-create test caught that (Serializable duplicate-check races deadlock; retried up to 5 times with jitter, then a Busy conflict).
+- Phase 3 follow-up: shared pickers now live in `Motorsports.Ui`; Country/Sport fields use `MudAutocomplete` through `FuzzySelect`, backed by the in-memory `FuzzyIndex`.
+- Phase 3 deviation: lookup cache holds Countries and Sports only. Phase 4/5 pickers for Teams/Participants/Venues must add `LookupKind` entries and call `Invalidate` from the Teams/Participants/Venues write paths (currently only `SportService` invalidates; Team/Venue/Participant writes do not cache anything yet).
+- Phase 3: pages are interactive (InteractiveServer) with `EditForm OnSubmit`; search commits on Enter/blur, never per keystroke. No browser verification of MudBlazor interaction, mobile layout or `%2F` in a Sport/Venue name route segment.
+- Reference-data follow-up: `AddSportImages` adds nullable `Sport.Image` idempotently and seeds the six current legacy logos from embedded image resources; the migration tests compare persisted bytes with the embedded files.
 ## 10. Handover (rewrite at the end of every phase)
 
-Date: 2026-10-24. Phases 0, 1 and 2 are done. Changes remain in the working tree; no commit was created.
+Date: 2026-10-24. Phases 0 to 3 and the reference-data follow-up are done. Changes remain in the working tree; no commit was created.
 
 State:
-- Projects: Common, Infrastructure (incl. `Auth/`), `Motorsports.Auth` (first slice, RCL), Web, and tests: UnitTests (FuzzyMatcher, UserClock, LegacyPasswordHasher, LocalUrl, validators), ArchitectureTests (layering incl. Auth), Benchmarks, CharacteristicsTests (Testcontainers MariaDB 11.7.2; DB characteristics plus `AuthCharacteristicsTests` using `WebApplicationFactory<Program>`).
-- Auth works end to end in tests: legacy SHA1/256/512 login + rehash, deleted users rejected, generic failure message, local-only returnUrl, antiforgery (login, logout), rate limit 429, forced password change flow, cookie flags. Validation: `dotnet build src/Motorsports.slnx -warnaserror` clean, CSharpier clean, 67 tests pass.
-- Footer fix: `MainLayout` uses `ms-main`; `app.css` makes it a min-viewport-height flex column with the footer pushed down by `margin-top:auto`.
-- Config: `Auth:SecureCookies` (default true, false in Development), `Auth:LoginPermitLimit` (5), `Auth:LoginWindowSeconds` (60).
-- Shared UI in `Motorsports.Web/Components/Shared` as in Phase 1. Dev DB `motorsports_web_dev` in the `mariadb` container; dev URL http://localhost:4100.
+- Projects: Common, shared UI RCL (`Motorsports.Ui`), Infrastructure (incl. `Auth/`, `Lookups/`, `DbOperations`), feature slices (may reference Common + Infrastructure + shared UI, never Web or another slice), Web host/wiring/nav, and UnitTests, ArchitectureTests, Benchmarks, and Testcontainers CharacteristicsTests.
+- Reference-data slices work as described under Phase 3. Pattern to copy for Phase 4/5: `XService(IDbContextFactory, validator)`, form model + `RowVersion`, `InTransactionAsync` with `FOR UPDATE` re-read and stale check, `Error` kinds (Validation/NotFound/Conflict) shown by `FormErrors`, `*Info`/`*Row` projection records, `NotFoundNotice`, `XFields` component shared by create/edit.
+- Reference-data follow-up adds `AddSportImages` (`Sport.Image` nullable `longblob` plus legacy-logo backfill), utf8mb4 regression coverage, fuzzy pickers, MudDataGrid listings, and sport/venue detail projections.
+- Config: `Cache:MaxAge` (default 30 s) plus the Auth settings from Phase 2.
 
 Known gaps / not done:
-- No browser check: footer placement (short vs long pages), login/logout look and mobile layout, interactive logout button were verified only by markup/HTTP tests. Do a manual pass.
-- No user creation/admin UI (out of scope; users come from the legacy table). No account lockout, only per-IP rate limiting.
-- The compose file/Docker image was not re-verified with auth; over http set `Auth__SecureCookies=false`.
-- No `docker-run.sh`. Component interaction not browser-tested.
+- No browser check of any UI (Phase 2 and Phase 3 pages): MudBlazor interaction, mobile layout, conflict alert flow, Reload/Show differences. Only prerender HTTP/markup and service-level tests exist. Interactive circuit behaviour (e.g. submit) is untested.
+- Sports list has no search/paging (few rows). `notfound.png` remains a static fallback for the Home slice.
+- No pessimistic UI hints beyond conflict handling; no edit of Team sport (by rule).
+- Cache invalidation hooks exist only for Sports; see Issues for what Phase 4/5 must add.
+- Carry-over from Phase 2: no admin/user UI, no account lockout, Docker image not re-verified with auth.
 
-Next: Phase 3 (reference data slices) per section 6: new slices must reference only Common/Infrastructure, mark pages `[Authorize]`, and never touch `src/Db/*` dumps.
+Second-round fixes (section 4h-2) are done: build -warnaserror, csharpier check, 112 tests and the idempotent migration script (~770 KB, hex-embedded logos) are green. Dev DB ``motorsports_web_dev`` was re-restored from the newest dump with utf8mb4. Still no browser check. Next: continue Phase 4 (Seasons and SeasonEntries) per section 6. New slices reference Common/Infrastructure and shared UI only, use explicit `[Authorize]`, and do not edit `src/Db/*`. Reuse `DbOperations`, `RowVersion`, `FormErrors`, `Paging`, and `LookupCache` (extend kinds as needed).

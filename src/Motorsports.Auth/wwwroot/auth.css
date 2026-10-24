@@ -92,3 +92,10 @@ html[data-theme='light'] .auth-shell {
 ul.auth-error {
     list-style: none;
 }
+/* Auth card inside the main layout (keeps navbar, title and footer visible). */
+.auth-shell.auth-embedded {
+    background: transparent;
+    justify-content: center;
+    min-height: 60vh;
+    padding: 0;
+}

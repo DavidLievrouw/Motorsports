@@ -1,0 +1,51 @@
+@page "/teams/details/{Id:int}"
+@attribute [Authorize]
+@inject TeamService Service
+
+<PageTitle>Team</PageTitle>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_team is null)
+{
+    <NotFoundNotice Message="Team not found." />
+}
+else
+{
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">@_team.Name</MudText>
+    <MudPaper Class="pa-4 mb-2" Style="max-width:40rem">
+        <MudSimpleTable Dense="true" Style="overflow-x:auto">
+            <tbody>
+                <tr><th>Name</th><td>@_team.Name</td></tr>
+                <tr><th>Sport</th><td>@_team.Sport</td></tr>
+                <tr><th>Country</th><td>@CountryFlag.WithName(_team.Country, _team.CountryName)</td></tr>
+                <tr><th>Season entries</th><td>@_team.SeasonEntryCount</td></tr>
+            </tbody>
+        </MudSimpleTable>
+    </MudPaper>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Href="@($"/teams/edit/{_team.Id}")" Variant="Variant.Filled" Color="Color.Primary">Edit</MudButton>
+        @if (_team.SeasonEntryCount == 0)
+        {
+            <MudButton Href="@($"/teams/delete/{_team.Id}")" Variant="Variant.Outlined" Color="Color.Error">Delete</MudButton>
+        }
+        <MudButton Href="/teams" Variant="Variant.Text">Back to teams</MudButton>
+    </MudStack>
+}
+
+@code {
+    private TeamInfo? _team;
+    private bool _loading = true;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _team = await Service.GetAsync(Id);
+        _loading = false;
+    }
+}

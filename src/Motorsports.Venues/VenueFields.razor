@@ -1,0 +1,40 @@
+@inject LookupCache Lookups
+
+<MudTextField @bind-Value="Form.Name" Label="Name" Required="true" Immediate="true" AutoFocus="true"
+              MaxLength="@VenueFormValidator.MaxNameLength"
+              Error="@Errors.Has(nameof(VenueForm.Name))" ErrorText="@Errors.Text(nameof(VenueForm.Name))" />
+<FuzzySelect T="CountryOption" Value="_selectedCountry" ValueChanged="CountryChangedAsync" Items="_countries"
+             Text="CountryText" Keys="CountryKeys" Label="Country" Required="true" RequiredError="Select a country."
+             Error="@Errors.Has(nameof(VenueForm.Country))" ErrorText="@Errors.Text(nameof(VenueForm.Country))" />
+
+@code {
+    private IReadOnlyList<CountryOption> _countries = [];
+    private CountryOption? _selectedCountry;
+
+    [Parameter, EditorRequired]
+    public VenueForm Form { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public FormErrors Errors { get; set; } = default!;
+
+    protected override void OnParametersSet() =>
+        _selectedCountry = _countries.FirstOrDefault(country => country.Iso == Form.Country);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Lookups.RevalidateAsync(LookupKind.Countries);
+        _countries = await Lookups.GetCountriesAsync();
+        _selectedCountry = _countries.FirstOrDefault(country => country.Iso == Form.Country);
+    }
+
+    private static string CountryText(CountryOption country) => CountryFlag.WithName(country.Iso, country.Name);
+
+    private static string[] CountryKeys(CountryOption country) => [country.Name];
+
+    private Task CountryChangedAsync(CountryOption? country)
+    {
+        _selectedCountry = country;
+        Form.Country = country?.Iso;
+        return Task.CompletedTask;
+    }
+}

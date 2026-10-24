@@ -1,0 +1,114 @@
+@page "/sports/edit/{Name}"
+@attribute [Authorize]
+@inject SportService Service
+@inject NavigationManager Navigation
+
+<PageTitle>Edit sport</PageTitle>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_form is null)
+{
+    <NotFoundNotice Message="Sport not found." />
+}
+else
+{
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">Edit sport</MudText>
+
+    <EditForm Model="_form" OnSubmit="SaveAsync">
+        <MudPaper Class="pa-4" Style="max-width:40rem">
+            <MudStack Spacing="2">
+                @if (_conflict)
+                {
+                    <MudAlert Severity="Severity.Warning">
+                        @_errors.Summary
+                        <MudStack Row="true" Spacing="2" Class="mt-2">
+                            <MudButton Variant="Variant.Outlined" OnClick="ReloadAsync">Reload</MudButton>
+                            <MudButton Variant="Variant.Outlined" OnClick="ShowDifferencesAsync">Show differences</MudButton>
+                        </MudStack>
+                    </MudAlert>
+                    @if (_current is not null)
+                    {
+                        <MudSimpleTable Dense="true" Style="overflow-x:auto">
+                            <thead><tr><th>Field</th><th>Your entry</th><th>Current</th></tr></thead>
+                            <tbody>
+                                <tr><td>Name</td><td>@_form.Name</td><td>@_current.Name</td></tr>
+                                <tr><td>Full name</td><td>@_form.FullName</td><td>@_current.FullName</td></tr>
+                            </tbody>
+                        </MudSimpleTable>
+                    }
+                }
+                else if (_errors.Summary is not null)
+                {
+                    <MudAlert Severity="Severity.Error">@_errors.Summary</MudAlert>
+                }
+                <SportFields Form="_form" Errors="_errors" />
+                <MudStack Row="true" Spacing="2">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Disabled="_saving">Save</MudButton>
+                    <MudButton Href="@($"/sports/details/{Uri.EscapeDataString(Name)}")" Variant="Variant.Text">Cancel</MudButton>
+                </MudStack>
+            </MudStack>
+        </MudPaper>
+    </EditForm>
+}
+
+@code {
+    private SportForm? _form;
+    private SportForm? _current;
+    private readonly FormErrors _errors = new();
+    private bool _loading = true;
+    private bool _saving;
+    private bool _conflict;
+
+    [Parameter]
+    public string Name { get; set; } = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _form = await Service.GetFormAsync(Name);
+        _loading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_saving || _form is null)
+        {
+            return;
+        }
+
+        _saving = true;
+        _errors.Clear();
+        _conflict = false;
+        _current = null;
+        var result = await Service.UpdateAsync(Name, _form);
+        _saving = false;
+        if (result.IsSuccess)
+        {
+            Navigation.NavigateTo($"/sports/details/{Uri.EscapeDataString(result.Value)}");
+            return;
+        }
+
+        _errors.Set(result.Error);
+        if (result.Error.Kind == ErrorKind.NotFound)
+        {
+            _form = null;
+        }
+        else
+        {
+            _conflict = result.Error.Kind == ErrorKind.Conflict;
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        _errors.Clear();
+        _conflict = false;
+        _current = null;
+        _form = await Service.GetFormAsync(Name);
+    }
+
+    private async Task ShowDifferencesAsync() => _current = await Service.GetFormAsync(Name);
+}

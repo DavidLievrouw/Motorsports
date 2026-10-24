@@ -38,6 +38,7 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
             e.HasKey(x => x.Name);
             e.Property(x => x.Name).HasMaxLength(50).ValueGeneratedNever();
             e.Property(x => x.FullName).HasMaxLength(100);
+            e.Property(x => x.Image).HasColumnType("longblob");
         });
 
         modelBuilder.Entity<Status>(e =>

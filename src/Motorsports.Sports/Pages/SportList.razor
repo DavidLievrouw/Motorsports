@@ -1,0 +1,45 @@
+@page "/sports"
+@attribute [Authorize]
+@inject SportService Service
+@using Motorsports.Common.Images
+
+<PageTitle>Sports</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Sports</MudText>
+    <MudButton Href="/sports/create" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">New sport</MudButton>
+</MudStack>
+
+@if (_items is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <MudDataGrid T="SportRow" Items="_items" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1">
+        <Columns>
+            <TemplateColumn Title="Logo" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.HasImage)
+                    {
+                        <MudImage Src="@SportImage.Url(context.Item.Name)" Alt="@($"{context.Item.Name} logo")" Width="48" Height="36" ObjectFit="ObjectFit.Contain" />
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="sport => sport.Name" Title="Name" />
+            <PropertyColumn Property="sport => sport.FullName" Title="Full name" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudButton Href="@($"/sports/details/{Uri.EscapeDataString(context.Item.Name)}")" Size="Size.Small">Details</MudButton>
+                    <MudButton Href="@($"/sports/edit/{Uri.EscapeDataString(context.Item.Name)}")" Size="Size.Small">Edit</MudButton>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+}
+
+@code {
+    private IReadOnlyList<SportRow>? _items;
+
+    protected override async Task OnInitializedAsync() => _items = await Service.ListAsync();
+}

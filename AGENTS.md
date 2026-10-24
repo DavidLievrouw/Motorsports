@@ -14,8 +14,8 @@ venue, date, status, and winners (drivers/participants and teams). The home page
   Read-only reference; keep it running and building during the transition. Do not refactor it.
 - `src/Motorsports.Web`: the NEW app (.NET 10, Blazor interactive server, MudBlazor, EF Core, MariaDB). Aim for feature
   parity; the UI may differ but must be responsive (phone + browser), dark by default, with a subtle per-sport accent.
-- Both share the same MariaDB schema. Schema changes must be additive and legacy-compatible. The only intended data
-  change is the user password hash (new column `PasswordHashV3`; legacy hash still verified, then rehashed).
+- Both share the same MariaDB schema. Schema changes must be additive and legacy-compatible. Approved additions are
+  nullable `User` auth columns and nullable `Sport.Image` bytes; legacy columns and rows stay intact.
   Migrations run automatically and idempotently at startup (`DatabaseMigrator`, with `GET_LOCK`).
 
 ### Domain model (tables)
@@ -29,8 +29,9 @@ team not deletable with season entries). Details in `src/PLAN.md`.
 ### Architecture (new app)
 
 - `Motorsports.Common`: cross-cutting, dependency-free (Result/Error, UserClock, fuzzy matching, DI scan helpers).
+- `Motorsports.Ui`: shared MudBlazor Razor components; may depend on Common, never on slices or Infrastructure.
 - `Motorsports.Infrastructure`: EF Core entities, `MotorsportsDbContext`, migrations, migrator, DB configuration.
-- `Motorsports.Web`: Blazor UI + vertical feature slices (each slice owns its pages, queries, commands, validators).
+- `Motorsports.Web`: Blazor host and composition; each feature slice owns its pages, queries, commands, and validators.
 - Tests in `src/tests/` (unit, characteristics via Testcontainers MariaDB, architecture, benchmarks).
 - Runs only in Docker on Linux (Ubuntu); no IIS. Dev ports: legacy 4000/5000, new 4100, container 8080.
 - Key behaviours: "today" is the user's time zone (`UserClock`); `returnUrl` must be relative; optimistic concurrency
@@ -95,8 +96,9 @@ Central Package Management (`Directory.Packages.props`) — do **not** add `Vers
 Follow architecture roles strict:
 - Keep host composition and startup wiring in `Motorsports.Web`.
 - Keep shared cross-cutting abstractions/utilities in `Motorsports.Common`.
+- Keep reusable MudBlazor controls in `Motorsports.Ui`; slices may reference it, but it must not reference feature or data projects.
 - Keep EF Core (`MotorsportsDbContext`, entity classes, configurations, value converters, migrations) in `Motorsports.Infrastructure`.
-- Keep feature behavior (Razor components, handlers, validators, queries) inside slice projects; avoid cross-slice coupling. Slices never reference each other. Shared needs go to Common or Infrastructure.
+- Keep feature behavior (Razor components, handlers, validators, queries) inside slice projects; avoid cross-slice coupling. Slices never reference each other. Shared domain/data needs go to Common or Infrastructure; reusable MudBlazor UI goes to `Motorsports.Ui`.
 - Legacy app `Motorsports.Scaffolding.Core` is read-only reference. Do not edit it, do not reference it.
 
 ### End-of-phase routine (applies to the whole project, every phase, no exceptions)
@@ -112,6 +114,7 @@ Follow architecture roles strict:
 src/Motorsports.slnx
 src/Motorsports.Web              host: Program.cs, layout, auth wiring, Dockerfile
 src/Motorsports.Common           cross-cutting: Vogen, Result, extensions, DI scan, time abstraction
+src/Motorsports.Ui               shared MudBlazor controls (depends on Common)
 src/Motorsports.Infrastructure   EF Core, DbContext, entities, migrations, user store, password hasher
 src/Motorsports.<Slice>          RCL (Microsoft.NET.Sdk.Razor): Home, Auth, Sports, Venues, Teams,
                                  Participants, Seasons, Rounds
@@ -125,22 +128,31 @@ Full plan and phases: `src/PLAN.md`. Update its checklist as you finish work.
 
 - Target `net10.0`, C# 14, `Nullable` enabled, `TreatWarningsAsErrors` true, `ImplicitUsings` enabled. Settings in `Directory.Build.props`.
 - UI: Blazor Web App (interactive server), **MudBlazor** only. No jQuery, no Bootstrap, no select2. Mobile-first and responsive (MudBlazor breakpoints, `MudDataGrid`/cards on phone). Test layouts at 360px and desktop.
-- Theme: **dark by default**, light selectable (persist choice in a cookie, no JS libs). Per-sport branding = a small visual clue only (sport logo from `wwwroot/img/<sport>.png` + a thin accent colour on card border/chip). No full-page recolouring.
+- Theme: **dark by default**, light selectable (persist choice in a cookie, no JS libs). Per-sport branding = a small visual clue only (sport image from nullable `Sport.Image` + a thin accent colour on card border/chip). No full-page recolouring.
 - Business rules beyond PLAN.md sections 3 and 4f (second audit) are binding: real FKs are RESTRICT (no cascades; proposed cascades in 4g are NOT applied until the user approves), sport/venue rename and team delete need transactional multi-table handling, team delete only with zero season entries, season delete only with 0 rounds, submitted values must be validated (not a DB copy), plain equality (never `LIKE`) for uniqueness, team sport is read-only, edits use optimistic concurrency (409 + graceful UI), "today" is the user's browser time zone (fallback `App:TimeZone`) passed as a parameter, validate max lengths.
 - Dates: `MudDatePicker` with `Editable="true"`, mask, `yyyy-MM-dd`, "today" action, dialog variant on phones. Typing a date must be as easy as picking one. Use `DateOnly` for `Round.Date`. Minimum round date is **2026-01-01** (picker `MinDate` + server validation), enforced only when the date is new or changed. Existing older rounds stay editable if their date is unchanged.
-- Pickers (parity with legacy select2, in `Motorsports.Common` UI or Web shared components, one implementation reused by all slices):
+- Pickers (parity with legacy select2, in `Motorsports.Ui`, one implementation reused by all slices):
   - `FuzzySelect<T>`: single select, type-to-search, fuzzy, clearable, optional grouping (teams grouped by sport), placeholder, autofocus. Built on `MudAutocomplete`.
   - `FuzzyMultiSelect<T>`: multi select with removable chips, same search, `MaxSelection` (winning participants: 4), clearable. Participant chip/option label is `First Last` (no country). Show the country as a dimmed secondary text in the dropdown only when two participants share the same full name.
   - Each option has a display label plus extra **search keys**. Participants: match on `First Last` and `Last First`, so typing a last name (`verst`) or `ver max` finds the participant; ranking puts last-name prefix first. Teams: search keys are **context dependent**. Only in the **SeasonEntry create/edit** team picker the keys are the team name **and every season-entry name** of that team (people remember old/new names). In every other picker (round/season winning team, which lists the season's entries) only the entry name **in that season** matches, never other seasons' names or the original team name.
   - Candidate lists are **filtered by context**, as in the legacy app: the team picker on SeasonEntry create/edit only lists teams of the **season's sport**; winning team on Round/Season edit lists only that season's entries (by name during the season); season selects are grouped by sport.
   - Fuzzy = case-/diacritic-insensitive, tolerant of typos and token order, ranks prefix > word-start > subsequence. Matching is in-memory over a cached lookup list (no DB call per keystroke), debounced (~150 ms), max ~50 results shown. Implement an allocation-free matcher (`ReadOnlySpan<char>`, `stackalloc`/`ArrayPool`), benchmarked with BenchmarkDotNet.
+  - Do not use `MudSelect` for searchable reference data: its keyboard selection matches each keystroke independently. Use `FuzzySelect` so the complete current input is fuzzy-matched.
   - SeasonEntry create: when a team is selected, show that team's history on the same page (all season entries: season label, name in that season, newest first, plus the original `Team.Name` and the name in the latest season it was entered). Prefill the entry name (when empty) with the team's name in its latest season, falling back to `Team.Name`.
 - Data access: **EF Core only**. No Dapper, no raw `IDbConnection`. Raw SQL via `FromSql` only when LINQ can't express it.
   - Inject `IDbContextFactory<MotorsportsDbContext>`. One context per operation/handler. Never keep a context in a singleton or a long-lived circuit component.
   - Read paths: `AsNoTracking()` + `Select` projection to DTO. No `Include` + `Select` combo. No loading whole graphs for display.
   - Write paths: validate **before** mutating. Validation and conflict checks run inside the same transaction as the write (`IsolationLevel.Serializable` or `RepeatableRead` as needed). Handle `DbUpdateException` / unique/FK violations as conflict results, not 500s.
   - No N+1. Aggregate queries for pages (e.g. Home = one query handler).
-- DB schema is **shared with the legacy app**, which keeps running during the first weeks. Do **not** change existing tables/columns. Allowed changes are additive and legacy-safe only: (1) the `User` columns in PLAN.md, (2) **non-unique indexes** listed in PLAN.md section 4b. Forbidden for now: new unique constraints, new NOT NULL columns without default, new FKs/check constraints, renames, type changes, dropping anything, triggers. Each change is its own idempotent migration (`CREATE INDEX IF NOT EXISTS`) with a matching `Down` (`DROP INDEX IF EXISTS`). Before adding an index, prove the benefit (EXPLAIN / measured query time) and record it in PLAN.md 4b.
+- DB schema is **shared with the legacy app**, which keeps running during the first weeks. Do **not** change existing tables/columns except approved additive compatibility changes: nullable `User` columns and nullable `Sport.Image longblob` in PLAN.md. Non-unique indexes in PLAN.md section 4b are allowed only after proving their benefit. No new unique constraints, new NOT NULL columns without defaults, FKs/check constraints, renames, type changes, or unrelated drops/triggers. Each schema change gets its own idempotent migration and matching `Down`; record it in PLAN.md.
+- Unicode text must remain UTF-8 end to end: source files are UTF-8, MariaDB connections use `utf8mb4`, and UI pages retain UTF-8 HTML. Never replace unsupported characters with `?` or manually transcode database strings. Regression tests use synthetic accented text; existing stored `?` characters are not recoverable without a known source value.
+- Sport images are nullable PNG/JPEG/WebP bytes in `Sport.Image`, capped at 2 MB. Validate size and inspect file signatures; never trust the client MIME type or filename. Serve only recognized image MIME types. The `AddSportImages` migration embeds and seeds the six current legacy sport logos; keep the legacy project read-only.
+- Images are served by an authorized, cacheable endpoint (e.g. `/sports/image/{name}`), never inlined as base64 in pages: huge markup breaks tests and the circuit. Keep EF command logging at `Warning` so blob/hex SQL is never logged, and never print response bodies or blobs in test output.
+- Country is always shown with a flag emoji built from the ISO code (`CountryFlag` in Common, no image files) in lists, details and pickers. Pickers searching by name use `Keys` so the flag does not affect matching. Picker `ToStringFunc` must tolerate null.
+- Auth pages that a signed-in user visits (e.g. change password) render inside `MainLayout` so navbar, title and footer stay visible; only anonymous pages (login, access denied) use `AuthLayout`.
+- Grid header cells are bold with a distinct background (`app.css`); dark-mode striped rows use subtle theme palette values (`PaletteDark.TableStriped`), never high-contrast stripes.
+- Restore dumps with `--default-character-set=utf8mb4`; Blazor HTML-encodes non-ASCII, so tests `HtmlDecode` markup before asserting accented text.
+- Standard tabular listings use MudBlazor `MudDataGrid` with visible column headers, borders, and striped rows rather than plain-text table headers.
 - Migrations: applied automatically at startup, **idempotent**, safe to run repeatedly and concurrently from several instances.
   - Run via a hosted migrator before the app accepts requests, guarded by a MariaDB named lock (`GET_LOCK`/`RELEASE_LOCK`) on a dedicated connection.
   - MariaDB DDL is not transactional, so every migration statement must be self-guarding (`ADD COLUMN IF NOT EXISTS`, `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`) via `migrationBuilder.Sql`.
@@ -155,6 +167,10 @@ Full plan and phases: `src/PLAN.md`. Update its checklist as you finish work.
 - Auth redirect: `returnUrl` must be a relative path starting with a single `/` (reject `//`, `/\`, schemes).
 - Provider: `Pomelo.EntityFrameworkCore.MySql` 9.0.0 with EF Core 9.x on net10.0 (first-class MariaDB support, already proven against this DB in the legacy app). Pomelo has no EF 10 stable yet. Upgrade when it ships. Fallback only if the Phase 0 spike fails: `MySql.EntityFrameworkCore` 10.x.
 
+## Slice conventions (from Phase 3)
+- Data writes go through `IDbContextFactory.InTransactionAsync` (`Infrastructure/DbOperations`): one context per operation, rollback on a failed `Result`, deadlock retry, DB errors mapped to `Error.Conflict`/`Validation`. Edits lock the row (`FromSql ... FOR UPDATE` then `AsNoTracking().ToListAsync()`) and compare a `RowVersion` hash of the loaded values; no schema changes for concurrency.
+- Lookups used by pickers come from `LookupCache` (`GetCountriesAsync`, `GetSportsAsync`); any write that changes a cached kind calls `Invalidate(kind)` after commit, and forms call `RevalidateAsync(kind)` when opened.
+- Routes: `/x`, `/x/create`, `/x/details/{key}`, `/x/edit/{key}`; escape string keys with `Uri.EscapeDataString`. Records for display are `*Row`/`*Info` (never the page name). Every routed page carries `@attribute [Authorize]`; slices never reference Web or each other.
 ## Performance (hard requirement)
 
 CPU cycles are drinking water. Memory bytes are gold. Every change is judged on it.

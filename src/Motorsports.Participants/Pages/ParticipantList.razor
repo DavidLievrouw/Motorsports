@@ -1,0 +1,96 @@
+@page "/participants"
+@attribute [Authorize]
+@inject ParticipantService Service
+@inject NavigationManager Navigation
+
+<PageTitle>Participants</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Participants</MudText>
+    <MudButton Href="/participants/create" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">New participant</MudButton>
+</MudStack>
+
+<MudTextField T="string" @bind-Value="_search" Label="Search" Immediate="false" Clearable="true"
+              OnKeyDown="OnKeyDown" OnBlur="SearchAsync" Class="mb-2" Style="max-width:24rem" />
+
+@if (_result is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <MudDataGrid T="ParticipantRow" Items="_result.Items" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1">
+        <Columns>
+            <PropertyColumn Property="participant => participant.LastName" Title="Last name" />
+            <PropertyColumn Property="participant => participant.FirstName" Title="First name" />
+            <PropertyColumn Property="participant => participant.Title" Title="Title" />
+            <PropertyColumn Property="participant => participant.CountryName" Title="Country"><CellTemplate>@CountryFlag.WithName(context.Item.Country, context.Item.CountryName)</CellTemplate></PropertyColumn>
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudButton Href="@($"/participants/details/{context.Item.Id}")" Size="Size.Small">Details</MudButton>
+                    <MudButton Href="@($"/participants/edit/{context.Item.Id}")" Size="Size.Small">Edit</MudButton>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+    @if (_result.PageCount > 1)
+    {
+        <MudPagination Class="mt-2" Count="_result.PageCount" Selected="_result.Page" SelectedChanged="GoToPage" />
+    }
+}
+
+@code {
+    private PagedResult<ParticipantRow>? _result;
+    private string? _search;
+
+    [SupplyParameterFromQuery(Name = "q")]
+    public string? Query { get; set; }
+
+    [SupplyParameterFromQuery(Name = "page")]
+    public int? PageNumber { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _search = Query;
+        _result = await Service.ListAsync(Query, PageNumber ?? 1);
+    }
+
+    private void OnKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            Search();
+        }
+    }
+
+    private Task SearchAsync()
+    {
+        if (Paging.NormalizeSearch(_search) != Paging.NormalizeSearch(Query))
+        {
+            Search();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void Search() => Navigation.NavigateTo(Url(Paging.NormalizeSearch(_search), 1));
+
+    private void GoToPage(int page) => Navigation.NavigateTo(Url(Paging.NormalizeSearch(Query), page));
+
+    private static string Url(string? q, int page)
+    {
+        var url = "/participants";
+        var parts = new List<string>();
+        if (q is not null)
+        {
+            parts.Add("q=" + Uri.EscapeDataString(q));
+        }
+
+        if (page > 1)
+        {
+            parts.Add("page=" + page);
+        }
+
+        return parts.Count == 0 ? url : url + "?" + string.Join('&', parts);
+    }
+}

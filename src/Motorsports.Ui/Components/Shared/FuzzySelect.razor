@@ -11,7 +11,7 @@
                  ErrorText="@ErrorText"
                  Disabled="Disabled"
                  SearchFunc="Search"
-                 ToStringFunc="Text"
+                 ToStringFunc="SafeText"
                  ItemTemplate="ItemTemplate"
                  MaxItems="MaxItems"
                  DebounceInterval="80"
@@ -30,10 +30,7 @@
     [Parameter] public EventCallback<T?> ValueChanged { get; set; }
     [Parameter, EditorRequired] public IReadOnlyList<T> Items { get; set; } = [];
     [Parameter, EditorRequired] public Func<T, string> Text { get; set; } = null!;
-
-    /// <summary>Extra searchable strings per item (for example former names). Defaults to the display text.</summary>
     [Parameter] public Func<T, string[]>? Keys { get; set; }
-
     [Parameter] public RenderFragment<T>? ItemTemplate { get; set; }
     [Parameter] public string? Label { get; set; }
     [Parameter] public bool Required { get; set; }
@@ -60,6 +57,9 @@
             _index = new FuzzyIndex<T>(entries);
         }
     }
+
+    // MudAutocomplete converts a null value (nothing selected) as well.
+    private string? SafeText(T? item) => item is null ? null : Text(item);
 
     private Task<IEnumerable<T>> Search(string? query, CancellationToken token) =>
         Task.FromResult<IEnumerable<T>>(_index.Search(query, MaxItems));

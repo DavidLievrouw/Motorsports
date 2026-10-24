@@ -24,7 +24,7 @@ Other:
 - Use .slnx file.
 
 I have created a starter AGENTS.md file in the repo root. Read it and extend it.
-Ask additional questions if you have more. 
+Ask additional questions if you have more.
 
 Also create a markdown file with a plan for this task, next to the slnx file. So a follow-up coding-agent can take it from there.
 
@@ -103,4 +103,32 @@ Yes, continue with those. Stop when phase 0 is complete.
 But first: Update AGENTS.md with general information about this project: Its purpose and architecture. With the information you now learned.
 
 -------------------
+
+several issues:
+- Strings not rendered correctly: e.g. Aut??dromo Hermanos Rodr??guez, Mexico City.
+- The images of the sports should be displayed next to them, in the detail and edit screens. Add the image as a column to Sport, and make sure I can upload one when creating or editing a sport.
+- Table header rows are not really noticable. They are just plain text, formatted like any other row. Check the chosen UI framework for solutions, and implement the standard one.
+- Typing in selection boxes does not work correctly. Every letter I type is matching the first letter. If I want to select "Belgium", I type B, which selects Bahamas, then E, which selects ecuador, etc. This is not a pleasant user experience. I want fuzzy matching of the complete string i typed. Like it was in the legacy application.
+- The Venues details page should also list the rounds that are scheduled for that venue, and the winners, winning team, status, rating, and rain. Might be null. Also use the image of the sport, as rounds at a venue can be for multiple sports.
+- The sports details page should list the latest winning participant(s) and team, and when the next round is (might be null).
+- Make sure the migration step adds the current images to the database. The sources are in: C:_git\Motorsports\src\Motorsports.Scaffolding.Core\wwwroot\img
+
+Add this info to PLAN.md. Generic directions to AGENTS.md. Ask any questions if you need to. If you have no more questions, do the changes.
+
+-------------------
+
+The last "dotnet test" failed. It seems to write out a bunch of BASE64, crashing it. So fix that first, before you continue, or run the tests!
+
+These are the issues with the current state. Fix these before we continue to the next phase:
+- Test failingfailed Motorsports.CharacteristicsTests.AuthCharacteristicsTests.Reference_data_pages_render_for_signed_in_users_and_unknown_ids_return_not_found (870ms)
+- Strings still not rendered correctly: e.g. Aut??dromo Hermanos Rodr??guez, Mexico City. Should be Autódromo Hermanos Rodríguez, Mexico City.
+- The list with sports does not show images.
+- The list with venues should be prepended with a country flag, using an emoji code, rendered by a browser. so no binary images to add. Also in de venue Detail page.
+- Country selector items should be rendered with the flag before the name.
+- Teams and participants lists should also have that country prepended. And detail pages should show it too.
+- ChangePassword is a full page control. It should be contents, like any other page (venues, participants, ...), leaving the navbar, title and footer visible.
+- Dark mode alternating grid rows is horrible to look at. Make it more pleasant.
+- Make the table title row font **BOLD**, as I can hardly tell the difference between the header and the data rows.
+
+Add this info to PLAN.md. Generic directions to AGENTS.md. Ask any questions if you need to. If you have no more questions, do the changes.
 
