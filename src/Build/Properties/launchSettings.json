@@ -3,7 +3,7 @@
     "Build": {
       "commandName": "Project",
       "commandLineArgs": "--interactive",
-      "workingDirectory": "C:\\Workspace\\Motorsports"
+      "workingDirectory": "C:\\_git\\Motorsports\\src\\Motorsports.Scaffolding.Core"
     }
   }
 }
