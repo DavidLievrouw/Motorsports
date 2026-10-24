@@ -30,8 +30,8 @@ else
             <PropertyColumn Property="sport => sport.FullName" Title="Full name" />
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
-                    <MudButton Href="@($"/sports/details/{Uri.EscapeDataString(context.Item.Name)}")" Size="Size.Small">Details</MudButton>
-                    <MudButton Href="@($"/sports/edit/{Uri.EscapeDataString(context.Item.Name)}")" Size="Size.Small">Edit</MudButton>
+                    <MudButton Href="@($"/sports/details/{Uri.EscapeDataString(context.Item.Name)}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>
+                    <MudButton Href="@($"/sports/edit/{Uri.EscapeDataString(context.Item.Name)}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>

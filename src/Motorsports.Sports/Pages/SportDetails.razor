@@ -1,6 +1,7 @@
 @page "/sports/details/{Name}"
 @attribute [Authorize]
 @inject SportService Service
+@using System.Globalization
 @using Motorsports.Common.Images
 
 <PageTitle>Sport</PageTitle>
@@ -29,15 +30,15 @@ else
                 <tr><th>Full name</th><td>@_sport.FullName</td></tr>
                 <tr><th>Teams</th><td>@_sport.TeamCount</td></tr>
                 <tr><th>Seasons</th><td>@_sport.SeasonCount</td></tr>
-                <tr><th>Latest season</th><td>@(_sport.LatestSeasonLabel ?? "—")</td></tr>
-                <tr><th>Latest winning participants</th><td>@(_sport.WinningParticipants.Count == 0 ? "—" : string.Join(", ", _sport.WinningParticipants))</td></tr>
-                <tr><th>Latest winning team</th><td>@(_sport.WinningTeamName ?? "—")</td></tr>
-                <tr><th>Next round</th><td>@(_sport.NextRoundDate?.ToString("yyyy-MM-dd") ?? "—")</td></tr>
+                <tr><th>Latest completed season</th><td>@(_sport.LatestSeasonLabel ?? "—")</td></tr>
+                <tr><th>Winning participants</th><td>@(_sport.WinningParticipants.Count == 0 ? "—" : string.Join(", ", _sport.WinningParticipants))</td></tr>
+                <tr><th>Winning team</th><td>@(_sport.WinningTeamName ?? "—")</td></tr>
+                <tr><th>Next round</th><td>@(_sport.NextRoundDate?.ToString("MMMM d, yyyy", CultureInfo.InvariantCulture) ?? "—")</td></tr>
             </tbody>
         </MudSimpleTable>
     </MudPaper>
     <MudStack Row="true" Spacing="2">
-        <MudButton Href="@($"/sports/edit/{Uri.EscapeDataString(_sport.Name)}")" Variant="Variant.Filled" Color="Color.Primary">Edit</MudButton>
+        <MudButton Href="@($"/sports/edit/{Uri.EscapeDataString(_sport.Name)}")" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
         <MudButton Href="/sports" Variant="Variant.Text">Back to sports</MudButton>
     </MudStack>
 }

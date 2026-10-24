@@ -1,0 +1,89 @@
+@page "/season-entries/delete/{SeasonId:int}/{TeamId:int}"
+@attribute [Authorize]
+@inject SeasonEntryService Service
+@inject NavigationManager Navigation
+
+<PageTitle>Delete season entry</PageTitle>
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_entry is null)
+{
+    <NotFoundNotice Message="Season entry not found." />
+}
+else
+{
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">Delete season entry</MudText>
+    <MudPaper Class="pa-4" Style="max-width:40rem">
+        <MudStack Spacing="2">
+            @if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error">@_error</MudAlert>
+            }
+            @if (_entry.IsSeasonWinner || _entry.IsRoundWinner)
+            {
+                <MudAlert Severity="Severity.Warning">@SeasonEntryService.WinningEntryMessage</MudAlert>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Warning">
+                    Delete <strong>@_entry.Name</strong> for @_entry.SeasonLabel? This cannot be undone.
+                </MudAlert>
+            }
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAsync"
+                           Disabled="@(_saving || _entry.IsSeasonWinner || _entry.IsRoundWinner)">Delete</MudButton>
+                <MudButton Href="@($"/season-entries/details/{SeasonId}/{TeamId}")" Variant="Variant.Text">Cancel</MudButton>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    private SeasonEntryInfo? _entry;
+    private bool _loading = true;
+    private bool _saving;
+    private string? _error;
+
+    [Parameter]
+    public int SeasonId { get; set; }
+
+    [Parameter]
+    public int TeamId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _entry = await Service.GetAsync(SeasonId, TeamId);
+        _loading = false;
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (_saving)
+        {
+            return;
+        }
+
+        _saving = true;
+        _error = null;
+        var result = await Service.DeleteAsync(SeasonId, TeamId);
+        _saving = false;
+        if (result.IsSuccess)
+        {
+            Navigation.NavigateTo($"/seasons/{SeasonId}/entries");
+            return;
+        }
+
+        _error = result.Error.Message;
+        if (result.Error.Kind == ErrorKind.NotFound)
+        {
+            _entry = null;
+        }
+        else
+        {
+            _entry = await Service.GetAsync(SeasonId, TeamId);
+        }
+    }
+}

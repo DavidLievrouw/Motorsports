@@ -1,6 +1,7 @@
 @page "/venues/details/{Name}"
 @attribute [Authorize]
 @inject VenueService Service
+@using System.Globalization
 @using Motorsports.Common.Images
 
 <PageTitle>Venue</PageTitle>
@@ -36,7 +37,7 @@ else
                      Bordered="true" Elevation="1" Class="mb-4">
             <Columns>
                 <TemplateColumn Title="Date" Sortable="false">
-                    <CellTemplate>@context.Item.Date.ToString("yyyy-MM-dd")</CellTemplate>
+                    <CellTemplate>@context.Item.Date.ToString("MMMM d, yyyy", CultureInfo.InvariantCulture)</CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Sport" Sortable="false">
                     <CellTemplate>
@@ -58,7 +59,7 @@ else
                 </TemplateColumn>
                 <PropertyColumn Property="round => round.Status" Title="Status" />
                 <TemplateColumn Title="Rating" Sortable="false">
-                    <CellTemplate>@(context.Item.Rating?.ToString("0.0") ?? "—")</CellTemplate>
+                    <CellTemplate>@(context.Item.Rating is { } rating ? $"{rating.ToString("0", CultureInfo.InvariantCulture)} / 10" : "—")</CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Rain" Sortable="false">
                     <CellTemplate>@(context.Item.Rain?.ToString("0") ?? "—")</CellTemplate>
@@ -67,7 +68,7 @@ else
         </MudDataGrid>
     }
     <MudStack Row="true" Spacing="2">
-        <MudButton Href="@($"/venues/edit/{Uri.EscapeDataString(_venue.Name)}")" Variant="Variant.Filled" Color="Color.Primary">Edit</MudButton>
+        <MudButton Href="@($"/venues/edit/{Uri.EscapeDataString(_venue.Name)}")" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
         <MudButton Href="/venues" Variant="Variant.Text">Back to venues</MudButton>
     </MudStack>
 }

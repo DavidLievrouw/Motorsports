@@ -28,7 +28,6 @@ Ask additional questions if you have more.
 
 Also create a markdown file with a plan for this task, next to the slnx file. So a follow-up coding-agent can take it from there.
 
-
 -----------------
 
 Question answers:
@@ -132,3 +131,48 @@ These are the issues with the current state. Fix these before we continue to the
 
 Add this info to PLAN.md. Generic directions to AGENTS.md. Ask any questions if you need to. If you have no more questions, do the changes.
 
+-------------------
+
+Changes:
+- Season detail: Last season, participant and winning team is not filled in. Should be the latest season that is not yet complete.
+- Dates should be rendered not as YYYY-MM-DD, but as March 31, 2022.
+- Ratings are not decimal numbers. They should be rendered as a score on 10. e.g. "6 / 10".
+- I can't use the light/dark mode switch on the ChangePassword page. Fix that.
+- The Season Entry combobox that selects the team: The value in the combobox should be the name (as it is now), with also the most recent name mentioned, in the latest season it is added. e.g. "e.Dams (2026 - Nissan Formula E Team)".
+- When editing a Season Entry, "Team" should be read-only. Only the name during the season can be changed.
+- The participants and teams search boxes require me to press enter twice before changes are applied. Fix that.
+- "DETAILS" and "EDIT" and "DELETE" buttons links should have an icon. "TEAMS" can have the same icon as the menu item.
+- The Sport image in the Create or Edit Sport page should be centered.
+
+Implement those, and add to PLAN.md as updates and clarifications.
+
+Other plan updates and clarifications:
+- Update the plan for the Rounds: In the list, it should show the country flag next to the venue. Also in the details page. Actually, wherever venues are shown, make sure to include the country flag. Do not start phase 5 yet, just make sure it is clear for the next agent.
+- In the details of the Participant, show a list with victories of rounds and season wins. Add it to the plan for phase 5. Make sure the agent will know about that.
+- In the details of a Team, show a list with victories of rounds and season wins. Add it to the plan for phase 5. Make sure the agent will know about that.
+
+------------------
+
+- In Sport details: Last Completed Season is still empty.
+- Venue details: Winners and Winning team should be prepended with their country flag.
+- Light/dark mode switch on the change password page is working now, but the control itself, with the inputs, does not respond. It stays black.
+- The "Season Entry" Team combobox works as intended, but the season is not filled in, probably because it is not labeled. In that case, put the year of the last round in the season as the prefix before the dash.
+- The participants and teams search boxes require me to press enter twice before changes are applied. Not fixed.
+
+-------------------
+
+- In Sport details: Winning participants and team should be prepended with their country flag.
+- The participants and teams search boxes are fixed, but I would like it to filter "live", with a debounce, so that I don't need to press enter at all.
+
+-------------------
+
+Check AGENTS.md and PLAN.md. You are an excellent coding agent. We are finishing up phase 4. Some minor issues remain, your predecessor stopped halfway through.
+
+- Season details: Winning participants and team should be prepended with their country flag.
+- Participant details: Should have a list of sports that the participant has participated in.
+- "Change password" should not be a nav bar menu item. It should be a menu item when clicking the user profile name. That should also have an icon in front of it. Log out should also be an option of that account context menu.
+- NotFound.png is referenced in code, but does not appear to be a static asset. It is currently located in the legacy application: "C:\_git\Motorsports\src\Motorsports.Scaffolding.Core\wwwroot\img\notfound.png". Ensure that it can be used by the new application.
+
+Then update the PLAN.md handover for the next agent.
+
+-------------------

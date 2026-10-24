@@ -26,10 +26,10 @@ else
         </MudSimpleTable>
     </MudPaper>
     <MudStack Row="true" Spacing="2">
-        <MudButton Href="@($"/teams/edit/{_team.Id}")" Variant="Variant.Filled" Color="Color.Primary">Edit</MudButton>
+        <MudButton Href="@($"/teams/edit/{_team.Id}")" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
         @if (_team.SeasonEntryCount == 0)
         {
-            <MudButton Href="@($"/teams/delete/{_team.Id}")" Variant="Variant.Outlined" Color="Color.Error">Delete</MudButton>
+            <MudButton Href="@($"/teams/delete/{_team.Id}")" Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
         }
         <MudButton Href="/teams" Variant="Variant.Text">Back to teams</MudButton>
     </MudStack>

@@ -9,6 +9,9 @@ public enum LookupKind
 {
     Countries,
     Sports,
+    Participants,
+    Teams,
+    SeasonEntries,
 }
 
 public sealed class LookupCacheOptions
@@ -23,6 +26,33 @@ public sealed record CountryOption(string Iso, string Name);
 
 public sealed record SportOption(string Name, string? FullName);
 
+public sealed record ParticipantOption(int Id, string FirstName, string LastName, string Country, string CountryName);
+
+public sealed record TeamHistoryOption(int SeasonId, string? SeasonLabel, string Name, DateOnly? StartDate);
+
+public sealed record TeamOption(
+    int Id,
+    string Name,
+    string Sport,
+    string Country,
+    string CountryName,
+    TeamHistoryOption[] History
+)
+{
+    public string LatestEntryName => History.Length == 0 ? Name : History[0].Name;
+}
+
+public sealed record SeasonEntryOption(
+    int SeasonId,
+    int TeamId,
+    string Name,
+    string? SeasonLabel,
+    string Sport,
+    string TeamName,
+    string Country,
+    string CountryName
+);
+
 /// <summary>
 /// Shared, immutable lookup lists (one query per kind). Writers call <see cref="Invalidate"/> after commit: the next read
 /// reloads synchronously. Entries older than <c>MaxAge</c> are served stale and refreshed in the background; forms
@@ -34,6 +64,9 @@ public sealed class LookupCache
 
     private readonly Slot<CountryOption> countries;
     private readonly Slot<SportOption> sports;
+    private readonly Slot<ParticipantOption> participants;
+    private readonly Slot<TeamOption> teams;
+    private readonly Slot<SeasonEntryOption> seasonEntries;
 
     public LookupCache(
         IDbContextFactory<MotorsportsDbContext> factory,
@@ -73,6 +106,115 @@ public sealed class LookupCache
             maxAge,
             logger
         );
+        participants = new Slot<ParticipantOption>(
+            async ct =>
+            {
+                await using var context = await factory.CreateDbContextAsync(ct);
+                var rows = await context
+                    .Participants.AsNoTracking()
+                    .OrderBy(p => p.LastName)
+                    .ThenBy(p => p.FirstName)
+                    .Select(p => new ParticipantOption(
+                        p.Id,
+                        p.FirstName,
+                        p.LastName,
+                        p.Country,
+                        p.CountryRef!.NiceName ?? p.CountryRef.Name ?? p.Country
+                    ))
+                    .ToArrayAsync(ct);
+                return rows;
+            },
+            time,
+            maxAge,
+            logger
+        );
+        teams = new Slot<TeamOption>(
+            async ct =>
+            {
+                await using var context = await factory.CreateDbContextAsync(ct);
+                var rows = await (
+                    from team in context.Teams.AsNoTracking()
+                    join entry in context.SeasonEntries.AsNoTracking() on team.Id equals entry.Team into entries
+                    from entry in entries.DefaultIfEmpty()
+                    select new
+                    {
+                        team.Id,
+                        team.Name,
+                        Sport = team.SportRef!.Name,
+                        team.Country,
+                        CountryName = team.CountryRef!.NiceName ?? team.CountryRef.Name ?? team.Country,
+                        SeasonId = (int?)entry!.Season,
+                        SeasonLabel = entry.SeasonRef!.Label,
+                        EntryName = entry.Name,
+                        StartDate = context
+                            .Rounds.Where(round => round.Season == entry.Season)
+                            .Select(round => (DateOnly?)round.Date)
+                            .Min(),
+                        EndDate = context
+                            .Rounds.Where(round => round.Season == entry.Season)
+                            .Select(round => (DateOnly?)round.Date)
+                            .Max(),
+                    }
+                ).ToListAsync(ct);
+                return rows.GroupBy(row => new
+                    {
+                        row.Id,
+                        row.Name,
+                        row.Sport,
+                        row.Country,
+                        row.CountryName,
+                    })
+                    .Select(group => new TeamOption(
+                        group.Key.Id,
+                        group.Key.Name,
+                        group.Key.Sport,
+                        group.Key.Country,
+                        group.Key.CountryName,
+                        group
+                            .Where(row => row.SeasonId.HasValue)
+                            .Select(row => new TeamHistoryOption(
+                                row.SeasonId!.Value,
+                                !string.IsNullOrWhiteSpace(row.SeasonLabel)
+                                    ? row.SeasonLabel
+                                    : row.EndDate?.Year.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                row.EntryName!,
+                                row.StartDate
+                            ))
+                            .OrderByDescending(entry => entry.StartDate is null)
+                            .ThenByDescending(entry => entry.StartDate)
+                            .ThenByDescending(entry => entry.SeasonId)
+                            .ToArray()
+                    ))
+                    .OrderBy(team => team.Name, StringComparer.Ordinal)
+                    .ToArray();
+            },
+            time,
+            maxAge,
+            logger
+        );
+        seasonEntries = new Slot<SeasonEntryOption>(
+            async ct =>
+            {
+                await using var context = await factory.CreateDbContextAsync(ct);
+                return await context
+                    .SeasonEntries.AsNoTracking()
+                    .OrderBy(entry => entry.Name)
+                    .Select(entry => new SeasonEntryOption(
+                        entry.Season,
+                        entry.Team,
+                        entry.Name,
+                        entry.SeasonRef!.Label,
+                        entry.SeasonRef.Sport,
+                        entry.TeamRef!.Name,
+                        entry.TeamRef.Country,
+                        entry.TeamRef.CountryRef!.NiceName ?? entry.TeamRef.CountryRef.Name ?? entry.TeamRef.Country
+                    ))
+                    .ToArrayAsync(ct);
+            },
+            time,
+            maxAge,
+            logger
+        );
     }
 
     /// <summary>Countries sorted by display name.</summary>
@@ -81,6 +223,15 @@ public sealed class LookupCache
 
     public ValueTask<SportOption[]> GetSportsAsync(CancellationToken cancellationToken = default) =>
         sports.GetAsync(null, cancellationToken);
+
+    public ValueTask<ParticipantOption[]> GetParticipantsAsync(CancellationToken cancellationToken = default) =>
+        participants.GetAsync(null, cancellationToken);
+
+    public ValueTask<TeamOption[]> GetTeamsAsync(CancellationToken cancellationToken = default) =>
+        teams.GetAsync(null, cancellationToken);
+
+    public ValueTask<SeasonEntryOption[]> GetSeasonEntriesAsync(CancellationToken cancellationToken = default) =>
+        seasonEntries.GetAsync(null, cancellationToken);
 
     /// <summary>Reloads the kinds a form needs when their data is older than <see cref="FormRevalidateAge"/>.</summary>
     public async Task RevalidateAsync(LookupKind kind, CancellationToken cancellationToken = default)
@@ -92,6 +243,15 @@ public sealed class LookupCache
                 break;
             case LookupKind.Sports:
                 await sports.GetAsync(FormRevalidateAge, cancellationToken);
+                break;
+            case LookupKind.Participants:
+                await participants.GetAsync(FormRevalidateAge, cancellationToken);
+                break;
+            case LookupKind.Teams:
+                await teams.GetAsync(FormRevalidateAge, cancellationToken);
+                break;
+            case LookupKind.SeasonEntries:
+                await seasonEntries.GetAsync(FormRevalidateAge, cancellationToken);
                 break;
         }
     }
@@ -105,6 +265,15 @@ public sealed class LookupCache
                 break;
             case LookupKind.Sports:
                 sports.Invalidate();
+                break;
+            case LookupKind.Participants:
+                participants.Invalidate();
+                break;
+            case LookupKind.Teams:
+                teams.Invalidate();
+                break;
+            case LookupKind.SeasonEntries:
+                seasonEntries.Invalidate();
                 break;
         }
     }

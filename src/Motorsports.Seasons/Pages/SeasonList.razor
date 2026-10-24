@@ -1,0 +1,63 @@
+@page "/seasons"
+@attribute [Authorize]
+@inject SeasonService Service
+@inject NavigationManager Navigation
+@using System.Globalization
+@using Motorsports.Common.Images
+
+<PageTitle>Seasons</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Seasons</MudText>
+    <MudButton Href="/seasons/create" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">New season</MudButton>
+</MudStack>
+
+@if (_items is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_items.Count == 0)
+{
+    <MudText>No seasons found.</MudText>
+}
+else
+{
+    @foreach (var group in _items.GroupBy(season => season.Sport))
+    {
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-4 mb-1">
+            @if (group.First().SportHasImage)
+            {
+                <MudImage Src="@SportImage.Url(group.Key)" Alt="@($"{group.Key} logo")" Width="40" Height="30" ObjectFit="ObjectFit.Contain" />
+            }
+            <MudText Typo="Typo.h5">@group.Key</MudText>
+        </MudStack>
+        <MudDataGrid T="SeasonRow" Items="group.ToList()" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1">
+            <Columns>
+                <PropertyColumn Property="season => season.Label" Title="Label" />
+                <TemplateColumn Title="Start" Sortable="false"><CellTemplate>@FormatDate(context.Item.StartDate)</CellTemplate></TemplateColumn>
+                <TemplateColumn Title="End" Sortable="false"><CellTemplate>@FormatDate(context.Item.EndDate)</CellTemplate></TemplateColumn>
+                <PropertyColumn Property="season => season.SeasonEntryCount" Title="Teams" />
+                <PropertyColumn Property="season => season.RoundCount" Title="Rounds" />
+                <TemplateColumn Title="Actions" Sortable="false">
+                    <CellTemplate>
+                        <MudButton Href="@($"/seasons/details/{context.Item.Id}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>
+                        <MudButton Href="@($"/seasons/edit/{context.Item.Id}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
+                        <MudButton Href="@($"/seasons/delete/{context.Item.Id}")" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
+                        <MudButton Href="@($"/seasons/{context.Item.Id}/entries")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Groups">Teams</MudButton>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    }
+}
+
+@code {
+    private IReadOnlyList<SeasonRow>? _items;
+
+    [SupplyParameterFromQuery(Name = "sport")]
+    public string? Sport { get; set; }
+
+    protected override async Task OnParametersSetAsync() => _items = await Service.ListAsync(Sport);
+
+    private static string FormatDate(DateOnly? date) => date?.ToString("MMMM d, yyyy", CultureInfo.InvariantCulture) ?? "—";
+}

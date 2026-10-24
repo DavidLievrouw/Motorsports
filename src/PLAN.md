@@ -38,8 +38,8 @@ Enums in legacy: `RoundStatus` (Scheduled 0, ReadyToWatch 1, Postponed 10, Finis
 | Venues | list, details, create, edit | `VenuesController`, `VenueService` | [x] (Phase 3) |
 | Teams | list, details, create, edit | `TeamsController` | [x] (Phase 3; plus delete when no season entries) |
 | Participants | list, details, create, edit | `ParticipantsController` | [x] (Phase 3) |
-| Seasons | list, details, create, edit, delete; winners (participants) and winning team | `SeasonsController`, `SeasonService` | [ ] |
-| SeasonEntries | list per season, details, create, edit, delete (team name during season) | `SeasonEntriesController`, `SeasonEntryService` | [ ] |
+| Seasons | list, details, create, edit, delete; winners (participants) and winning team | `SeasonsController`, `SeasonService` | [x] |
+| SeasonEntries | list per season, details, create, edit, delete (team name during season) | `SeasonEntriesController`, `SeasonEntryService` | [x] |
 | Rounds | list per season, details (+event history), create, edit (name, date, number, venue, rain, rating, status, note, winning team, winning participants), delete, **MarkReadyToWatch (POST)** | `RoundsController`, `RoundService` | [ ] |
 
 Master data (Countries, Statuses) is read-only lookups.
@@ -125,8 +125,8 @@ Full event history (paged, grouped by year, no 15 cap); team history on season-e
 - Use the standard MudBlazor `MudDataGrid` for reference-data listings so column headers are visually distinct.
 - Add nullable `Sport.Image longblob` with an idempotent, legacy-safe migration. Seed bytes for the current `f1.png`, `fe.png`, `indycar.png`, `motogp.png`, `nascar.png`, and `wec.png` files; embed copies from `src/Motorsports.Scaffolding.Core/wwwroot/img` so migration and SQL-script generation do not depend on a source checkout path. Keep `notfound.png` as the no-image fallback, not a Sport row.
 - Sport create/edit accepts PNG/JPEG/WebP files up to 2 MB; validate signatures and size, preserve/remove existing image explicitly, include image bytes in optimistic concurrency, and show images beside sport names on edit/details.
-- Sport details show the latest season's participant winners and winning team, plus the next round with `Status.Step < 2` or null. “Latest” uses the existing `StartDate` ordering from section 3 (roundless seasons first).
-- Venue details show all associated rounds with date/name, each round's sport image, winning participants/team, status, rating and rain. Nullable values render as an em dash; query winners in one batch, never N+1.
+- Sport details show the latest completed season with winner data (a winning team or at least one participant winner), plus the next round with `Status.Step < 2` or null. A season is complete when no round has `Status.Step <= 1`; among qualifying seasons, use the existing `StartDate` ordering from section 3 (roundless seasons first).
+- Venue details show all associated rounds with date/name, each round's sport image, winning participants/team, status, rating and rain. Nullable values render as an em dash; query winners in one batch, never N+1. Display dates as `MMMM d, yyyy` (for example, `March 31, 2022`) and ratings as whole-number scores on ten (`6 / 10`).
 
 ### 4h-2. Follow-up fixes (second round)
 
@@ -136,6 +136,19 @@ Full event history (paged, grouped by year, no 15 cap); team history on season-e
 - `FuzzySelect`/`FuzzyMultiSelect` convert a null value safely (`MudAutocomplete` calls `ToStringFunc(null)`).
 - ChangePassword renders in `MainLayout` (navbar, title, footer stay visible); only Login/AccessDenied use `AuthLayout`.
 - Dark theme: subtler striped rows (`PaletteDark.TableStriped/TableHover/TableLines`); grid header cells bold with a distinct background (`app.css`).
+
+### 4h-3. Presentation and lookup follow-ups
+
+- Sport details select the latest completed season (at least one round, none with `Status.Step < 2`; winners are not required); do not take winner summaries from a newer active season. Cause of the earlier empty value: the season had no label and a winner requirement; now the label falls back to the year of the last round.
+- Render displayed dates as `MMMM d, yyyy` in English (for example, `March 31, 2022`). Keep editable date fields in their existing typed `yyyy-MM-dd` format.
+- Render round ratings as integer scores on ten (`6 / 10`), never as decimal values such as `6.0`.
+- The SeasonEntry team selector label is `Team.Name (latest season label - latest season-entry name)` when history exists (unlabeled seasons use the year of their last round as the label; if the season has no rounds the prefix is omitted), and `Team.Name` otherwise. Editing keeps Team read-only; only the name during that season is editable.
+- Fuzzy participant/team pickers apply a selection after one Enter press; keep their query updates immediate so a just-typed match is selectable. List search boxes (Teams, Participants, Venues) filter live: `Immediate="true"` with `DebounceInterval="300"` and `@bind-Value:after`, navigating with `replace: true`; Enter still applies at once (the value used to commit only on change/blur, after the keydown handler ran).
+- Sport details and Venue details prefix winners and winning teams with their country flag.
+- ChangePassword card/inputs use MudBlazor palette CSS variables (`.auth-embedded`) so they follow the interactive light/dark toggle.
+- Use Material icons on Details (visibility), Edit (edit), and Delete links; the Teams link uses the same Groups icon as the navigation item.
+- Center the Sport image preview on Sport create/edit forms.
+- ChangePassword remains in the interactive `MainLayout` so the theme switch works. Submit password changes through an antiforgery-protected POST endpoint so the auth cookie is changed on a real HTTP response; Login and AccessDenied remain static anonymous pages.
 
 ## 4f. Second audit: rules and behaviours the legacy code has or lacks
 
@@ -263,11 +276,27 @@ Delivered (checklist):
 - [x] Shared infra: `Infrastructure/DbOperations.InTransactionAsync` (one context per operation, rollback on failed result, deadlock retry, DB error -> result mapping), `Infrastructure/Lookups/LookupCache` (Countries, Sports; `Invalidate` after commits, `MaxAge` 30 s via `Cache:MaxAge`, entries served stale then refreshed once in the background, `RevalidateAsync` when a form opens re-reads if older than 5 s), `Common/{RowVersion, FormErrors, Paging}`.
 - [x] Tests: unit (validators, limits vs EF model, RowVersion, FormErrors), architecture (slice isolation, `[Authorize]` on routed pages), characteristics on Testcontainers MariaDB with synthetic rows (21 reference-data service tests incl. renames with/without dependents and case-only, duplicates, FK/length validation, stale conflict, not found, team delete allowed/blocked, concurrent duplicate creates, cache) and 2 web tests (anonymous redirect for all routes; signed-in render + 404).
 
-### Phase 4 – Seasons & SeasonEntries `[ ]`
-Season CRUD + winners + winning team + delete rule. SeasonEntries per season. Date handling with the shared `DateField`; winners via `FuzzyMultiSelect` (section 4a).
+### Phase 4 – Seasons & SeasonEntries `[x]` (done 2026-10-24)
+- [x] Added the isolated `Motorsports.Seasons` slice and wired its services, routes, authorization, navigation, and architecture checks.
+- [x] Seasons list grouped by sport; create, details, edit, and delete. Details compute start/end dates from rounds and show entries, rounds, winning team, and participant winners.
+- [x] Season edit keeps Sport immutable and atomically replaces winners; validates participants and winning team against the submitted season; row-version includes the winner set.
+- [x] Season delete is transactional and only allowed with zero rounds; it explicitly removes season-winner links and entries and confirms their counts.
+- [x] Season entries list, details, create, edit, and delete. Team is fixed on edit; create filters teams to the season's sport and the server rechecks that constraint.
+- [x] Season-entry create/edit shows the original team name and all historical entries newest first; create search includes those entry names and prefills from the latest entry name.
+- [x] Added cached participants, teams with history, and season-entry lookup options; participant/team/season-entry writes invalidate the relevant caches after commit.
+- [x] Characteristics tests cover submitted-value validation, winner replacement, stale edits, sport filtering, season/entry delete rules, cache freshness, route authorization, and 404 behavior.
+- [x] Season details prepend country flags to winning participants and the winning team using their ISO country codes.
+- [x] Participant details list distinct sports from the participant's round wins and season wins.
+- [x] The profile-name menu contains icon-prefixed Change password and POST logout actions; Change password is no longer in the navigation drawer.
+- [x] Verified `Motorsports.Web/wwwroot/img/notfound.png` matches the legacy asset byte-for-byte; missing or unrecognized sport images redirect to `/img/notfound.png`.
+- Note: seasons have no stored start/end fields; dates are computed from their rounds, so no date input is appropriate in this phase.
 
 ### Phase 5 – Rounds `[ ]`
 Round list per season, details, create, edit (rain select, rating whole number 0..10 (as legacy), status, venue autocomplete, winning team via `FuzzySelect` limited to season entries, winners via `FuzzyMultiSelect` max 4), delete, `MarkReadyToWatch` POST (idempotent, rejects invalid transition). Event history component (shared within slice).
+
+- Show the venue's country flag beside its name anywhere a venue is displayed, including round lists, round details, and event history.
+- Add victory lists to Participant details (round victories and season wins) and Team details (round victories and season wins).
+- Display dates as `MMMM d, yyyy` and ratings as integer scores on ten (`6 / 10`).
 
 ### Phase 6 – Home `[ ]`
 Single `GetHomeOverview` handler: very-next-up, next-up per sport, rounds to acquire, latest seasons. Event history: full history for very-next-up/selected event, virtualized/paged, grouped by year, collapsible. Sport logos come from `Sport.Image` (the migration seeds current logos); retain `notfound.png` as the no-image fallback. Mobile layout first. Event history comes from one query per selected round (no limit), streamed/paged in the UI; sport accent via logo + thin border.
@@ -327,36 +356,44 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 - Docker: `src/Motorsports.Web/Dockerfile` (build context = repo root: `docker build -f src/Motorsports.Web/Dockerfile -t motorsports-web:latest .`), base `10.0-noble`, installs tzdata + curl, healthcheck on `/health`, listens on 8080. Verified: container starts against the dev DB, `/` 200, `/health` Healthy, second start logs "Database is up to date" (idempotent migrations), `/usr/share/zoneinfo/Europe/Brussels` exists. From a container, reach the host DB via `host.docker.internal`.
 - The legacy csproj still builds (0 warnings, 0 errors) with the new `global.json`, `version.props` and `Directory.*.props`.
 - Phase 2: `User` itself is the Identity user type (no separate `AppUser`). Legacy `PasswordHash/Salt/Iterations/Prf` are never modified; a password set in the new app is stored only in `PasswordHashV3`, so it will not work in the legacy app.
-- Blazor routing ignores the fallback authorize policy: every routable page needs an explicit `[Authorize]` or `[AllowAnonymous]` (Phase 3+ pages must do so). Pages that set cookies (login, error, not-found) are static SSR (`ExcludeFromInteractiveRouting`); login/logout POSTs are minimal-API endpoints so antiforgery/rate-limit apply.
+- Blazor routing ignores the fallback authorize policy: every routable page needs an explicit `[Authorize]` or `[AllowAnonymous]` (Phase 3+ pages must do so). Login, access denied, error, and not-found pages remain static SSR (`ExcludeFromInteractiveRouting`); login/logout/change-password POSTs are minimal-API endpoints so antiforgery and login rate-limiting apply.
 - A minimal-API POST only gets antiforgery validation if it binds a form; `/logout` binds `IFormCollection` for that reason (a test caught it unprotected).
 - BL0008: no initializer on `[SupplyParameterFromForm]` properties; use `= default!` plus `??= new()`.
 - Cookies are `Secure` outside Development. Deploying over plain http (e.g. compose without TLS) requires `Auth__SecureCookies=false`.
 - Login rate limit is per remote IP (fixed window, `Auth:LoginPermitLimit`/`LoginWindowSeconds`). Forwarded headers are accepted only from configured `ForwardedHeaders:KnownProxies` addresses (default framework loopback proxies); set `ForwardedHeaders__KnownProxies__0` to the TLS proxy address in deployment. Account lockout was not implemented (optional in plan).
 - Tooling note: in this environment only PowerShell was available for file edits (no create/edit tools); `R` is an alias of Invoke-History, so do not name helpers `R`.
-- Interactive behaviour of `FuzzySelect`/`FuzzyMultiSelect`/`DateField` is only verified by static prerender (HTTP 200, markup present). Click/typing behaviour needs a browser test (Playwright) or manual check in Phase 3/4.
+- `FuzzySelect`/`FuzzyMultiSelect` use immediate query updates to avoid requiring a second Enter press. Their click/typing behaviour and the theme switch still need a browser test (Playwright) or manual check.
 - Phase 3: this environment has no create/edit tool; all files were written through PowerShell with .NET `WriteAllText` (no BOM). PowerShell 5.1 `Set-Content -Encoding utf8` adds a BOM, avoid it.
 - Phase 3: `FluentValidation` 12 has no `RuleFor().Transform`; trimming is done with `Must(v => v.Trim().Length <= Max)` and the service stores the trimmed value. A routed page and a record cannot share a name in one namespace (`SportDetails` page vs record): records are named `*Info`.
 - Phase 3: `FromSql("... FOR UPDATE")` must be followed only by `AsNoTracking().ToListAsync()`; composing `SingleOrDefault` wraps it in a subquery and the lock is lost.
 - Phase 3: Pomelo's execution strategy can wrap the `MySqlException` in an `InvalidOperationException` ("likely due to a transient failure") even without `EnableRetryOnFailure`; `DbOperations` classifies the whole exception chain. A concurrent-create test caught that (Serializable duplicate-check races deadlock; retried up to 5 times with jitter, then a Busy conflict).
 - Phase 3 follow-up: shared pickers now live in `Motorsports.Ui`; Country/Sport fields use `MudAutocomplete` through `FuzzySelect`, backed by the in-memory `FuzzyIndex`.
-- Phase 3 deviation: lookup cache holds Countries and Sports only. Phase 4/5 pickers for Teams/Participants/Venues must add `LookupKind` entries and call `Invalidate` from the Teams/Participants/Venues write paths (currently only `SportService` invalidates; Team/Venue/Participant writes do not cache anything yet).
+- Phase 4: lookup cache now includes Participants, Teams with all season-entry history, and season-entry names. Team, Participant, Sport, Season, and SeasonEntry writes invalidate the affected cached kinds after commit; Phase 5 still needs to add Venues and Statuses for round pickers.
+- Phase 4: EF could not translate ordering by properties of a constructed `SeasonRow`; the season list now orders its scalar projection before constructing the display record. The characteristics test caught this at the HTTP route.
+- Phase 4 follow-up: Sport details use the latest completed season with winner data; date and rating presentation, season-entry team labels, action icons, centered sport previews, and the interactive ChangePassword layout are clarified in section 4h-3.
+- Phase 4 finishing follow-up: season detail winner labels now include participant/team country flags; participant sports are distinct across round and season wins. The account menu keeps its logout antiforgery form outside MudMenu's popover because closed menu content is absent from prerendered markup.
 - Phase 3: pages are interactive (InteractiveServer) with `EditForm OnSubmit`; search commits on Enter/blur, never per keystroke. No browser verification of MudBlazor interaction, mobile layout or `%2F` in a Sport/Venue name route segment.
 - Reference-data follow-up: `AddSportImages` adds nullable `Sport.Image` idempotently and seeds the six current legacy logos from embedded image resources; the migration tests compare persisted bytes with the embedded files.
+
 ## 10. Handover (rewrite at the end of every phase)
 
-Date: 2026-10-24. Phases 0 to 3 and the reference-data follow-up are done. Changes remain in the working tree; no commit was created.
+Date: 2026-10-24. Phases 0 to 4 and the reference-data follow-up are done. Changes remain in the working tree; no commit was created.
 
 State:
 - Projects: Common, shared UI RCL (`Motorsports.Ui`), Infrastructure (incl. `Auth/`, `Lookups/`, `DbOperations`), feature slices (may reference Common + Infrastructure + shared UI, never Web or another slice), Web host/wiring/nav, and UnitTests, ArchitectureTests, Benchmarks, and Testcontainers CharacteristicsTests.
-- Reference-data slices work as described under Phase 3. Pattern to copy for Phase 4/5: `XService(IDbContextFactory, validator)`, form model + `RowVersion`, `InTransactionAsync` with `FOR UPDATE` re-read and stale check, `Error` kinds (Validation/NotFound/Conflict) shown by `FormErrors`, `*Info`/`*Row` projection records, `NotFoundNotice`, `XFields` component shared by create/edit.
+- Reference-data slices work as described under Phase 3. Pattern to copy for Phase 5: `XService(IDbContextFactory, validator)`, form model + `RowVersion`, `InTransactionAsync` with `FOR UPDATE` re-read and stale check, `Error` kinds (Validation/NotFound/Conflict) shown by `FormErrors`, `*Info`/`*Row` projection records, `NotFoundNotice`, `XFields` component shared by create/edit.
 - Reference-data follow-up adds `AddSportImages` (`Sport.Image` nullable `longblob` plus legacy-logo backfill), utf8mb4 regression coverage, fuzzy pickers, MudDataGrid listings, and sport/venue detail projections.
+- Phase 4 adds `Motorsports.Seasons` for season and season-entry CRUD, winner management, guarded season deletion, team history, and the shared participant/team/season-entry lookup-cache kinds.
+- Phase 4 finishing follow-up verifies country flags on season winner labels, distinct sports on participant details, profile-menu account actions, and the byte-identical static fallback image at `Motorsports.Web/wwwroot/img/notfound.png`.
+- `MapSportImages` redirects missing or invalid stored images to `/img/notfound.png`. The logout button remains a POST with antiforgery; its hidden token form is rendered outside the MudMenu popover and the menu button submits that form.
 - Config: `Cache:MaxAge` (default 30 s) plus the Auth settings from Phase 2.
 
 Known gaps / not done:
-- No browser check of any UI (Phase 2 and Phase 3 pages): MudBlazor interaction, mobile layout, conflict alert flow, Reload/Show differences. Only prerender HTTP/markup and service-level tests exist. Interactive circuit behaviour (e.g. submit) is untested.
-- Sports list has no search/paging (few rows). `notfound.png` remains a static fallback for the Home slice.
+- No browser check of any UI (Phases 2-4): MudBlazor picker interaction, mobile layout, conflict alert flow, Reload/Show differences, and the theme switch. Only prerender HTTP/markup and service-level tests exist. Interactive circuit behaviour (e.g. submit) is untested.
+- The profile menu and its popover actions have not been browser-tested; SSR tests verify the menu trigger and that the old nav link is absent, but do not open the menu.
+- Sports list has no search/paging (few rows). The static `notfound.png` is ready for the Home slice, which is not implemented yet.
 - No pessimistic UI hints beyond conflict handling; no edit of Team sport (by rule).
-- Cache invalidation hooks exist only for Sports; see Issues for what Phase 4/5 must add.
+- Cache invalidation hooks cover Sports, Teams, Participants, Seasons, and SeasonEntries; Phase 5 must add Venues and Statuses.
 - Carry-over from Phase 2: no admin/user UI, no account lockout, Docker image not re-verified with auth.
 
-Second-round fixes (section 4h-2) are done: build -warnaserror, csharpier check, 112 tests and the idempotent migration script (~770 KB, hex-embedded logos) are green. Dev DB ``motorsports_web_dev`` was re-restored from the newest dump with utf8mb4. Still no browser check. Next: continue Phase 4 (Seasons and SeasonEntries) per section 6. New slices reference Common/Infrastructure and shared UI only, use explicit `[Authorize]`, and do not edit `src/Db/*`. Reuse `DbOperations`, `RowVersion`, `FormErrors`, `Paging`, and `LookupCache` (extend kinds as needed).
+Phase 4 finishing changes are complete; Phase 5 remains unstarted. The new season/participant/menu/image regressions are covered by characteristics tests. Validation: CSharpier check passes, the solution builds with `-warnaserror` and 0 warnings, and all 119 tests pass. The idempotent migration script (~770 KB, hex-embedded logos) is unchanged. Dev DB `motorsports_web_dev` was re-restored from the newest dump with utf8mb4. Browser/mobile interaction has not been manually checked. Next: Phase 5 (Rounds), reusing `DbOperations`, `RowVersion`, `FormErrors`, and `LookupCache`; add Venues and Statuses to the cache for round pickers, show venue flags anywhere a venue appears, and add round/season victory lists to Participant and Team details. Keep new slice dependencies limited to Common, Infrastructure, and shared UI; use explicit `[Authorize]`; do not edit `src/Db/*`.

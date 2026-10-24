@@ -1,0 +1,92 @@
+@inject LookupCache Lookups
+
+<FuzzySelect T="SeasonEntryOption" Value="_selectedTeam" ValueChanged="TeamChangedAsync"
+             Items="_entries" Text="EntryText" Label="Winning team"
+             Error="@Errors.Has(nameof(SeasonForm.WinningTeam))"
+             ErrorText="@Errors.Text(nameof(SeasonForm.WinningTeam))" />
+<FuzzyMultiSelect T="ParticipantOption" Values="_selectedWinners" ValuesChanged="WinnersChangedAsync"
+                  Items="_participants" Text="ParticipantText" Keys="ParticipantKeys"
+                  ItemTemplate="ParticipantTemplate" Label="Winning participants"
+                  Error="@Errors.Has(nameof(SeasonForm.Winners))"
+                  ErrorText="@Errors.Text(nameof(SeasonForm.Winners))" />
+
+@code {
+    private IReadOnlyList<SeasonEntryOption> _entries = [];
+    private IReadOnlyList<ParticipantOption> _participants = [];
+    private IReadOnlyList<ParticipantOption> _selectedWinners = [];
+    private SeasonEntryOption? _selectedTeam;
+
+    [Parameter, EditorRequired]
+    public int SeasonId { get; set; }
+
+    [Parameter, EditorRequired]
+    public SeasonForm Form { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public FormErrors Errors { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(
+            Lookups.RevalidateAsync(LookupKind.Participants),
+            Lookups.RevalidateAsync(LookupKind.SeasonEntries)
+        );
+        _participants = await Lookups.GetParticipantsAsync();
+        _entries = (await Lookups.GetSeasonEntriesAsync()).Where(entry => entry.SeasonId == SeasonId).ToArray();
+        SyncSelection();
+    }
+
+    protected override void OnParametersSet() => SyncSelection();
+
+    private void SyncSelection()
+    {
+        _selectedTeam = _entries.FirstOrDefault(entry => entry.TeamId == Form.WinningTeam);
+        var winners = Form.Winners.ToHashSet();
+        _selectedWinners = _participants.Where(participant => winners.Contains(participant.Id)).ToArray();
+    }
+
+    private static string EntryText(SeasonEntryOption entry) => entry.Name;
+
+    private static string ParticipantText(ParticipantOption participant) =>
+        $"{participant.FirstName} {participant.LastName}";
+
+    private static string[] ParticipantKeys(ParticipantOption participant) =>
+        [$"{participant.FirstName} {participant.LastName}", $"{participant.LastName} {participant.FirstName}"];
+
+    private bool HasDuplicateName(ParticipantOption participant) =>
+        _participants.Count(candidate =>
+            candidate.FirstName == participant.FirstName && candidate.LastName == participant.LastName
+        ) > 1;
+
+    private RenderFragment<ParticipantOption> ParticipantTemplate =>
+        participant => builder =>
+        {
+            builder.OpenElement(0, "div");
+            builder.OpenElement(1, "span");
+            builder.AddContent(2, ParticipantText(participant));
+            builder.CloseElement();
+            if (HasDuplicateName(participant))
+            {
+                builder.OpenElement(3, "span");
+                builder.AddAttribute(4, "class", "mud-typography mud-typography-caption mud-text-secondary ml-2");
+                builder.AddContent(5, participant.CountryName);
+                builder.CloseElement();
+            }
+
+            builder.CloseElement();
+        };
+
+    private Task TeamChangedAsync(SeasonEntryOption? team)
+    {
+        _selectedTeam = team;
+        Form.WinningTeam = team?.TeamId;
+        return Task.CompletedTask;
+    }
+
+    private Task WinnersChangedAsync(IReadOnlyList<ParticipantOption> winners)
+    {
+        _selectedWinners = winners;
+        Form.Winners = winners.Select(participant => participant.Id).ToList();
+        return Task.CompletedTask;
+    }
+}

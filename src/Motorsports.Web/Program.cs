@@ -13,6 +13,7 @@ using Motorsports.Infrastructure;
 using Motorsports.Infrastructure.Auth;
 using Motorsports.Infrastructure.Lookups;
 using Motorsports.Participants;
+using Motorsports.Seasons;
 using Motorsports.Sports;
 using Motorsports.Teams;
 using Motorsports.Venues;
@@ -52,7 +53,12 @@ builder.Services.AddAuthServices(builder.Configuration);
 // Reference-data slices and the shared lookup cache they invalidate after commits.
 builder.Services.Configure<LookupCacheOptions>(builder.Configuration.GetSection(LookupCacheOptions.Section));
 builder.Services.AddLookupCache();
-builder.Services.AddSportsServices().AddVenuesServices().AddTeamsServices().AddParticipantsServices();
+builder
+    .Services.AddSportsServices()
+    .AddVenuesServices()
+    .AddTeamsServices()
+    .AddParticipantsServices()
+    .AddSeasonsServices();
 builder.Services.AddMotorsportsIdentity().AddSignInManager();
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme).AddIdentityCookies();
 builder
@@ -140,7 +146,8 @@ app.MapRazorComponents<App>()
         SportsModule.Assembly,
         VenuesModule.Assembly,
         TeamsModule.Assembly,
-        ParticipantsModule.Assembly
+        ParticipantsModule.Assembly,
+        SeasonsModule.Assembly
     );
 
 await app.RunAsync();

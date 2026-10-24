@@ -56,22 +56,29 @@ public sealed class VenueService(IDbContextFactory<MotorsportsDbContext> factory
             return null;
         }
 
-        var rounds = await db
+        var roundRows = await db
             .Rounds.AsNoTracking()
             .Where(round => round.Venue == venue.Name)
             .OrderByDescending(round => round.Date)
             .ThenByDescending(round => round.Number)
-            .Select(round => new VenueRoundInfo(
+            .Select(round => new
+            {
                 round.Id,
                 round.Date,
                 round.Number,
                 round.Name,
-                round.SeasonRef!.Sport,
-                round.SeasonRef.SportRef!.Image != null,
+                Sport = round.SeasonRef!.Sport,
+                HasImage = round.SeasonRef.SportRef!.Image != null,
                 round.Status,
                 round.Rating,
                 round.Rain,
-                round.WinningTeam == null
+                TeamCountry = round.WinningTeam == null
+                    ? null
+                    : db
+                        .Teams.Where(team => team.Id == round.WinningTeam.Value)
+                        .Select(team => team.Country)
+                        .FirstOrDefault(),
+                TeamName = round.WinningTeam == null
                     ? null
                     : db.SeasonEntries.Where(entry =>
                             entry.Season == round.Season && entry.Team == round.WinningTeam.Value
@@ -81,10 +88,23 @@ public sealed class VenueService(IDbContextFactory<MotorsportsDbContext> factory
                         ?? db.Teams.Where(team => team.Id == round.WinningTeam.Value)
                             .Select(team => team.Name)
                             .FirstOrDefault(),
+            })
+            .ToListAsync(cancellationToken);
+        var rounds = roundRows
+            .Select(round => new VenueRoundInfo(
+                round.Id,
+                round.Date,
+                round.Number,
+                round.Name,
+                round.Sport,
+                round.HasImage,
+                round.Status,
+                round.Rating,
+                round.Rain,
+                round.TeamName is null ? null : CountryFlag.WithName(round.TeamCountry, round.TeamName),
                 Array.Empty<string>()
             ))
-            .ToListAsync(cancellationToken);
-
+            .ToList();
         if (rounds.Count == 0)
         {
             return new VenueInfo(venue.Name, venue.Country, venue.CountryName, 0, rounds);
@@ -104,6 +124,7 @@ public sealed class VenueService(IDbContextFactory<MotorsportsDbContext> factory
                         winner.Round,
                         participant.FirstName,
                         participant.LastName,
+                        participant.Country,
                     }
             )
             .OrderBy(winner => winner.LastName)
@@ -113,7 +134,9 @@ public sealed class VenueService(IDbContextFactory<MotorsportsDbContext> factory
             .GroupBy(winner => winner.Round)
             .ToDictionary(
                 group => group.Key,
-                group => (IReadOnlyList<string>)group.Select(w => $"{w.FirstName} {w.LastName}").ToArray()
+                group =>
+                    (IReadOnlyList<string>)
+                        group.Select(w => CountryFlag.WithName(w.Country, $"{w.FirstName} {w.LastName}")).ToArray()
             );
         var roundsWithWinners = rounds
             .Select(round =>

@@ -14,8 +14,17 @@
         <MudText Typo="Typo.h6" Class="ml-2">Motorsports</MudText>
         <MudSpacer />
         <AuthorizeView>
-            <MudText Typo="Typo.body2" Class="mr-2 d-none d-sm-block">@context.User.FindFirst(Motorsports.Infrastructure.Auth.AppClaimTypes.DisplayName)?.Value</MudText>
-            <Motorsports.Auth.LogoutButton />
+            <form method="post" action="/logout" id="logout-form" hidden>
+                <AntiforgeryToken />
+            </form>
+            <MudMenu Label="@(context.User.FindFirst(Motorsports.Infrastructure.Auth.AppClaimTypes.DisplayName)?.Value ?? "Account")"
+                     StartIcon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit"
+                     AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                <MudMenuItem Href="/account/change-password" Icon="@Icons.Material.Filled.LockReset">
+                    Change password
+                </MudMenuItem>
+                <Motorsports.Auth.LogoutButton />
+            </MudMenu>
         </AuthorizeView>
         <MudIconButton Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
                        Color="Color.Inherit" OnClick="ToggleTheme" aria-label="Toggle theme" />

@@ -78,6 +78,7 @@ public static class AuthEndpoints
         {
             endpoints.MapPost(LoginPath, LoginAsync).AllowAnonymous().RequireRateLimiting(LoginRateLimitPolicy);
             endpoints.MapPost(LogoutPath, LogoutAsync).AllowAnonymous();
+            endpoints.MapPost(ChangePasswordPath, ChangePasswordAsync).RequireAuthorization();
             return endpoints;
         }
     }
@@ -128,5 +129,57 @@ public static class AuthEndpoints
     {
         await signInManager.SignOutAsync();
         return Results.Redirect(LoginPath);
+    }
+
+    private static async Task<IResult> ChangePasswordAsync(
+        [FromForm] ChangePasswordModel form,
+        HttpContext context,
+        SignInManager<User> signInManager,
+        IValidator<ChangePasswordModel> validator,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken
+    )
+    {
+        var logger = loggerFactory.CreateLogger("Motorsports.Auth.ChangePassword");
+        var redirectUrl = (string? error) =>
+        {
+            var url = $"{ChangePasswordPath}?returnUrl={Uri.EscapeDataString(LocalUrl.OrDefault(form.ReturnUrl))}";
+            return error is null ? url : $"{url}&error={Uri.EscapeDataString(error)}";
+        };
+
+        if (!(await validator.ValidateAsync(form, cancellationToken)).IsValid)
+        {
+            return Results.Redirect(redirectUrl("invalid"));
+        }
+
+        var userManager = signInManager.UserManager;
+        var user = await userManager.GetUserAsync(context.User);
+        if (user is null)
+        {
+            return Results.Redirect(LoginPath);
+        }
+
+        var result = await userManager.ChangePasswordAsync(user, form.CurrentPassword!, form.NewPassword!);
+        if (!result.Succeeded)
+        {
+            var error = result.Errors.Any(identityError => identityError.Code == "PasswordMismatch")
+                ? "current"
+                : "failed";
+            return Results.Redirect(redirectUrl(error));
+        }
+
+        if (user.ForceChangePassword)
+        {
+            user.ForceChangePassword = false;
+            var update = await userManager.UpdateAsync(user);
+            if (!update.Succeeded)
+            {
+                logger.LogError("Password changed, but the forced password-change flag could not be cleared.");
+                return Results.Problem("The password changed, but the account update failed.");
+            }
+        }
+
+        await signInManager.RefreshSignInAsync(user);
+        return Results.Redirect(LocalUrl.OrDefault(form.ReturnUrl));
     }
 }

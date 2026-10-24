@@ -10,8 +10,8 @@
     <MudButton Href="/teams/create" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">New team</MudButton>
 </MudStack>
 
-<MudTextField T="string" @bind-Value="_search" Label="Search" Immediate="false" Clearable="true"
-              OnKeyDown="OnKeyDown" OnBlur="SearchAsync" Class="mb-2" Style="max-width:24rem" />
+<MudTextField T="string" @bind-Value="_search" @bind-Value:after="SearchAsync" Label="Search" Immediate="true"
+              DebounceInterval="300" Clearable="true" OnKeyDown="OnKeyDown" Class="mb-2" Style="max-width:24rem" />
 
 @if (_result is null)
 {
@@ -26,8 +26,8 @@ else
             <PropertyColumn Property="team => team.CountryName" Title="Country"><CellTemplate>@CountryFlag.WithName(context.Item.Country, context.Item.CountryName)</CellTemplate></PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
-                    <MudButton Href="@($"/teams/details/{context.Item.Id}")" Size="Size.Small">Details</MudButton>
-                    <MudButton Href="@($"/teams/edit/{context.Item.Id}")" Size="Size.Small">Edit</MudButton>
+                    <MudButton Href="@($"/teams/details/{context.Item.Id}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>
+                    <MudButton Href="@($"/teams/edit/{context.Item.Id}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
@@ -50,7 +50,11 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        _search = Query;
+        if (Paging.NormalizeSearch(_search) != Paging.NormalizeSearch(Query))
+        {
+            _search = Query;
+        }
+
         _result = await Service.ListAsync(Query, PageNumber ?? 1);
     }
 
@@ -72,7 +76,7 @@ else
         return Task.CompletedTask;
     }
 
-    private void Search() => Navigation.NavigateTo(Url(Paging.NormalizeSearch(_search), 1));
+    private void Search() => Navigation.NavigateTo(Url(Paging.NormalizeSearch(_search), 1), replace: true);
 
     private void GoToPage(int page) => Navigation.NavigateTo(Url(Paging.NormalizeSearch(Query), page));
 

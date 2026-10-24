@@ -50,8 +50,8 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
             Cache = cache,
             Sports = new SportService(factory, cache, new SportFormValidator()),
             Venues = new VenueService(factory, new VenueFormValidator()),
-            Teams = new TeamService(factory, new TeamFormValidator()),
-            Participants = new ParticipantService(factory, new ParticipantFormValidator()),
+            Teams = new TeamService(factory, new TeamFormValidator(), cache),
+            Participants = new ParticipantService(factory, new ParticipantFormValidator(), cache),
         };
     }
 
@@ -344,19 +344,20 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
             VALUES ('Racing', '2025', 1), ('Racing', '2026', 1);
             INSERT INTO `SeasonEntry` (`Season`, `Team`, `Name`)
             VALUES (1, 1, 'Team 2025'), (2, 1, 'Team 2026');
-            INSERT INTO `SeasonWinner` (`Season`, `Participant`) VALUES (2, 1);
+            INSERT INTO `SeasonWinner` (`Season`, `Participant`) VALUES (1, 1), (2, 1);
             INSERT INTO `Round` (`Date`, `Number`, `Name`, `Season`, `Venue`, `Status`, `Rating`, `Rain`, `WinningTeam`)
             VALUES
-                ('2025-04-01', 1, 'Past round', 1, 'Autódromo Hermanos Rodríguez, Mexico City', 'Finished', 8.5, 2, 1),
+                ('2025-04-01', 1, 'Past round', 1, 'Autódromo Hermanos Rodríguez, Mexico City', 'Finished', 8, 2, 1),
                 ('2026-05-02', 1, 'Next round', 2, 'Autódromo Hermanos Rodríguez, Mexico City', 'Scheduled', NULL, NULL, NULL);
             INSERT INTO `RoundWinner` (`Round`, `Participant`) VALUES (1, 1);
             """
         );
 
         var sport = (await s.Sports.GetAsync("Racing", Ct))!;
-        sport.LatestSeasonLabel.ShouldBe("2026");
-        sport.WinningParticipants.ShouldBe(["Casey Racer"]);
-        sport.WinningTeamName.ShouldBe("Team 2026");
+        sport.LatestSeasonLabel.ShouldBe("2025");
+        sport.WinningParticipants.ShouldHaveSingleItem().ShouldEndWith("Casey Racer");
+        (await s.Participants.GetAsync(1, Ct))?.Sports.ShouldBeSubsetOf(["Racing"]);
+        sport.WinningTeamName!.ShouldEndWith("Team 2025");
         sport.NextRoundDate.ShouldBe(new DateOnly(2026, 5, 2));
         sport.HasImage.ShouldBeTrue();
 
@@ -369,10 +370,12 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
         venue.Rounds[0].WinningParticipants.ShouldBeEmpty();
         venue.Rounds[0].Rating.ShouldBeNull();
         venue.Rounds[0].Rain.ShouldBeNull();
-        venue.Rounds[1].WinningParticipants.ShouldBe(["Casey Racer"]);
-        venue.Rounds[1].WinningTeamName.ShouldBe("Team 2025");
+        venue.Rounds[1].WinningParticipants.ShouldHaveSingleItem().ShouldEndWith("Casey Racer");
+        venue.Rounds[1].WinningParticipants[0].ShouldNotBe("Casey Racer");
+        venue.Rounds[1].WinningTeamName!.ShouldEndWith("Team 2025");
+        venue.Rounds[1].WinningTeamName.ShouldNotBe("Team 2025");
         venue.Rounds[1].Status.ShouldBe("Finished");
-        venue.Rounds[1].Rating.ShouldBe(8.5m);
+        venue.Rounds[1].Rating.ShouldBe(8m);
         venue.Rounds[1].Rain.ShouldBe(2m);
     }
 
@@ -531,6 +534,7 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
         ok.IsSuccess.ShouldBeTrue();
         var info = (await s.Participants.GetAsync(ok.Value, Ct))!;
         (info.Title, info.FirstName, info.LastName, info.Country).ShouldBe(("Sir", "Lewis", "Hamilton", "GB"));
+        info.Sports.ShouldBeEmpty();
 
         var duplicate = await s.Participants.CreateAsync(
             new ParticipantForm
@@ -566,6 +570,34 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
                 Ct
             )
         ).IsSuccess.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Participant_details_list_distinct_sports_from_round_and_season_wins()
+    {
+        var s = await StartAsync();
+        var participantId = (
+            await s.Participants.CreateAsync(
+                new ParticipantForm
+                {
+                    FirstName = "Alex",
+                    LastName = "Driver",
+                    Country = "GB",
+                },
+                Ct
+            )
+        ).Value;
+        await fixture.ExecuteSqlAsync(
+            "INSERT INTO `Sport` (Name) VALUES ('F1'), ('MotoGP');"
+                + "INSERT INTO `Season` (Sport, Label) VALUES ('F1', '2025'), ('MotoGP', '2025');"
+                + $"INSERT INTO `SeasonWinner` (Season, Participant) VALUES (1, {participantId}), (2, {participantId});"
+                + "INSERT INTO `Venue` (Name, Country) VALUES ('Silverstone', 'GB');"
+                + "INSERT INTO `Round` (`Date`, Number, Season, Venue, Status) "
+                + "VALUES ('2025-07-01', 1, 1, 'Silverstone', 'Scheduled');"
+                + $"INSERT INTO `RoundWinner` (Round, Participant) VALUES (1, {participantId});"
+        );
+
+        (await s.Participants.GetAsync(participantId, Ct))!.Sports.ShouldBe(["F1", "MotoGP"]);
     }
 
     [Fact]

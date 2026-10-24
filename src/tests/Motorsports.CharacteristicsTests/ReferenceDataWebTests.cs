@@ -24,6 +24,16 @@ public sealed partial class AuthCharacteristicsTests
         "/participants/create",
         "/participants/details/1",
         "/participants/edit/1",
+        "/seasons",
+        "/seasons/create",
+        "/seasons/details/1",
+        "/seasons/edit/1",
+        "/seasons/delete/1",
+        "/seasons/1/entries",
+        "/seasons/1/entries/create",
+        "/season-entries/details/1/1",
+        "/season-entries/edit/1/1",
+        "/season-entries/delete/1/1",
     ];
 
     [Fact]
@@ -62,9 +72,12 @@ public sealed partial class AuthCharacteristicsTests
         image.StatusCode.ShouldBe(HttpStatusCode.OK);
         image.Content.Headers.ContentType!.MediaType.ShouldBe("image/png");
         (await image.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken)).Length.ShouldBe(9);
-        (await client.GetAsync("/sports/image/Nope", TestContext.Current.CancellationToken)).StatusCode.ShouldBe(
-            HttpStatusCode.NotFound
-        );
+        var missingImage = await client.GetAsync("/sports/image/Nope", TestContext.Current.CancellationToken);
+        missingImage.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+        missingImage.Headers.Location!.OriginalString.ShouldBe("/img/notfound.png");
+        var fallback = await client.GetAsync("/img/notfound.png", TestContext.Current.CancellationToken);
+        fallback.StatusCode.ShouldBe(HttpStatusCode.OK);
+        fallback.Content.Headers.ContentType!.MediaType.ShouldBe("image/png");
 
         var list = await client.GetStringAsync("/sports", TestContext.Current.CancellationToken);
         list.ShouldContain("/sports/image/F1");
@@ -85,7 +98,16 @@ public sealed partial class AuthCharacteristicsTests
         await fixture.ExecuteSqlAsync(
             "INSERT INTO `Country` (ISO, Name, NiceName) VALUES ('GB','UNITED KINGDOM','United Kingdom');"
                 + "INSERT INTO `Sport` (Name, FullName) VALUES ('F1','Formula One');"
-                + "INSERT INTO `Venue` (Name, Country) VALUES ('Autódromo Hermanos Rodríguez, Mexico City', 'GB')"
+                + "INSERT INTO `Venue` (Name, Country) VALUES ('Autódromo Hermanos Rodríguez, Mexico City', 'GB');"
+                + "INSERT INTO `Team` (Name, Sport, Country) VALUES ('Ferrari', 'F1', 'GB');"
+                + "INSERT INTO `Season` (Sport, Label) VALUES ('F1', '2026');"
+                + "INSERT INTO `SeasonEntry` (Season, Team, Name) VALUES (1, 1, 'Scuderia Ferrari');"
+                + "INSERT INTO `Participant` (Title, FirstName, LastName, Country) VALUES ('', 'Alex', 'Driver', 'GB');"
+                + "INSERT INTO `SeasonWinner` (Season, Participant) VALUES (1, 1);"
+                + "INSERT INTO `Status` (Name, Step) VALUES ('Finished', 20), ('Scheduled', 0);"
+                + "INSERT INTO `Round` (`Date`, Number, Name, Season, Venue, Status, Rating) VALUES "
+                + "('2026-03-31', 1, 'Completed round', 1, 'Autódromo Hermanos Rodríguez, Mexico City', 'Finished', 6), "
+                + "('2026-04-01', 2, 'Upcoming round', 1, 'Autódromo Hermanos Rodríguez, Mexico City', 'Scheduled', NULL)"
         );
         await SeedUserAsync("editor");
         var client = app.NewClient();
@@ -101,11 +123,43 @@ public sealed partial class AuthCharacteristicsTests
             TestContext.Current.CancellationToken
         );
         accentedVenue.StatusCode.ShouldBe(HttpStatusCode.OK);
-        System
-            .Net.WebUtility.HtmlDecode(
-                await accentedVenue.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)
-            )
-            .ShouldContain("Autódromo Hermanos Rodríguez, Mexico City");
+        var venueMarkup = System.Net.WebUtility.HtmlDecode(
+            await accentedVenue.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)
+        );
+        venueMarkup.ShouldContain("Autódromo Hermanos Rodríguez, Mexico City");
+        venueMarkup.ShouldContain("March 31, 2026");
+        venueMarkup.ShouldContain("6 / 10");
+        venueMarkup.ShouldNotContain("2026-03-31");
+
+        var sportMarkup = System.Net.WebUtility.HtmlDecode(
+            await (
+                await client.GetAsync("/sports/details/F1", TestContext.Current.CancellationToken)
+            ).Content.ReadAsStringAsync(TestContext.Current.CancellationToken)
+        );
+        sportMarkup.ShouldContain("April 1, 2026");
+
+        var seasonMarkup = System.Net.WebUtility.HtmlDecode(
+            await (
+                await client.GetAsync("/seasons/details/1", TestContext.Current.CancellationToken)
+            ).Content.ReadAsStringAsync(TestContext.Current.CancellationToken)
+        );
+        seasonMarkup.ShouldContain("March 31, 2026");
+
+        var participantMarkup = System.Net.WebUtility.HtmlDecode(
+            await (
+                await client.GetAsync("/participants/details/1", TestContext.Current.CancellationToken)
+            ).Content.ReadAsStringAsync(TestContext.Current.CancellationToken)
+        );
+        participantMarkup.ShouldContain("Sports");
+        participantMarkup.ShouldContain("F1");
+
+        var seasonEntryEdit = System.Net.WebUtility.HtmlDecode(
+            await (
+                await client.GetAsync("/season-entries/edit/1/1", TestContext.Current.CancellationToken)
+            ).Content.ReadAsStringAsync(TestContext.Current.CancellationToken)
+        );
+        seasonEntryEdit.ShouldContain("Ferrari (2026 - Scuderia Ferrari)");
+        seasonEntryEdit.ShouldContain("readonly");
 
         foreach (
             var route in new[]
@@ -114,6 +168,8 @@ public sealed partial class AuthCharacteristicsTests
                 "/venues/details/Nope",
                 "/teams/details/99",
                 "/participants/details/99",
+                "/seasons/details/99",
+                "/season-entries/details/99/99",
             }
         )
         {
@@ -121,12 +177,47 @@ public sealed partial class AuthCharacteristicsTests
             response.StatusCode.ShouldBe(HttpStatusCode.NotFound, route);
         }
 
-        foreach (var route in new[] { "/venues", "/teams", "/participants", "/sports/create", "/teams/create" })
+        foreach (
+            var route in new[]
+            {
+                "/venues",
+                "/teams",
+                "/participants",
+                "/sports/create",
+                "/teams/create",
+                "/seasons",
+                "/seasons/create",
+                "/seasons/details/1",
+                "/seasons/edit/1",
+                "/seasons/delete/1",
+                "/seasons/1/entries",
+                "/seasons/1/entries/create",
+                "/season-entries/details/1/1",
+                "/season-entries/edit/1/1",
+                "/season-entries/delete/1/1",
+            }
+        )
         {
             (await client.GetAsync(route, TestContext.Current.CancellationToken)).StatusCode.ShouldBe(
                 HttpStatusCode.OK,
                 route
             );
         }
+    }
+
+    [Fact]
+    public async Task Signed_in_header_places_account_actions_in_the_profile_menu()
+    {
+        await using var app = await StartAsync();
+        await SeedUserAsync("editor");
+        var client = app.NewClient();
+        (await LoginAsync(client, "editor", Password)).StatusCode.ShouldBe(HttpStatusCode.Redirect);
+
+        var home = await client.GetStringAsync("/", TestContext.Current.CancellationToken);
+
+        home.ShouldContain("mud-menu");
+        home.ShouldContain("id=\"logout-form\"");
+        home.ShouldNotContain("/account/change-password");
+        home.ShouldNotContain("Log out");
     }
 }

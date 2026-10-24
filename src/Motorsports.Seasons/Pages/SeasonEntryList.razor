@@ -1,0 +1,62 @@
+@page "/seasons/{SeasonId:int}/entries"
+@attribute [Authorize]
+@inject SeasonEntryService Service
+
+<PageTitle>Season entries</PageTitle>
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_season is null)
+{
+    <NotFoundNotice Message="Season not found." />
+}
+else
+{
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2">
+        <MudText Typo="Typo.h4" HtmlTag="h1">@($"{_season.Sport} {_season.Label} entries".Trim())</MudText>
+        <MudButton Href="@($"/seasons/{SeasonId}/entries/create")" Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add">New entry</MudButton>
+    </MudStack>
+    @if (_entries is { Count: 0 })
+    {
+        <MudText>No team entries in this season.</MudText>
+    }
+    else if (_entries is not null)
+    {
+        <MudDataGrid T="SeasonEntryRow" Items="_entries" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1">
+            <Columns>
+                <PropertyColumn Property="entry => entry.TeamName" Title="Team" />
+                <PropertyColumn Property="entry => entry.Name" Title="Name during season" />
+                <TemplateColumn Title="Country" Sortable="false">
+                    <CellTemplate>@CountryFlag.WithName(context.Item.Country, context.Item.CountryName)</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Actions" Sortable="false">
+                    <CellTemplate>
+                        <MudButton Href="@($"/season-entries/details/{SeasonId}/{context.Item.TeamId}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>
+                        <MudButton Href="@($"/season-entries/edit/{SeasonId}/{context.Item.TeamId}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
+                        <MudButton Href="@($"/season-entries/delete/{SeasonId}/{context.Item.TeamId}")" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    }
+    <MudButton Href="@($"/seasons/details/{SeasonId}")" Variant="Variant.Text" Class="mt-2">Back to season</MudButton>
+}
+
+@code {
+    private SeasonEntryContext? _season;
+    private IReadOnlyList<SeasonEntryRow>? _entries;
+    private bool _loading = true;
+
+    [Parameter]
+    public int SeasonId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _season = await Service.GetSeasonAsync(SeasonId);
+        _entries = _season is null ? null : await Service.ListAsync(SeasonId);
+        _loading = false;
+    }
+}

@@ -24,6 +24,8 @@ public sealed class ChangePasswordModel
     public string? NewPassword { get; set; }
 
     public string? ConfirmPassword { get; set; }
+
+    public string? ReturnUrl { get; set; }
 }
 
 public sealed class ChangePasswordValidator : AbstractValidator<ChangePasswordModel>

@@ -11,6 +11,7 @@ public class LayerTests
         Motorsports.Venues.VenuesModule.Assembly,
         Motorsports.Teams.TeamsModule.Assembly,
         Motorsports.Participants.ParticipantsModule.Assembly,
+        Motorsports.Seasons.SeasonsModule.Assembly,
     ];
 
     private static readonly string[] SliceNamespaces =
@@ -20,6 +21,7 @@ public class LayerTests
         "Motorsports.Venues",
         "Motorsports.Teams",
         "Motorsports.Participants",
+        "Motorsports.Seasons",
     ];
 
     [Fact]

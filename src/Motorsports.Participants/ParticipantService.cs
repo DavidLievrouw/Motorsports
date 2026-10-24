@@ -4,12 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using Motorsports.Common;
 using Motorsports.Infrastructure;
 using Motorsports.Infrastructure.Entities;
+using Motorsports.Infrastructure.Lookups;
 
 namespace Motorsports.Participants;
 
 public sealed class ParticipantService(
     IDbContextFactory<MotorsportsDbContext> factory,
-    IValidator<ParticipantForm> validator
+    IValidator<ParticipantForm> validator,
+    LookupCache cache
 )
 {
     public const string StaleMessage =
@@ -59,7 +61,7 @@ public sealed class ParticipantService(
     public async Task<ParticipantInfo?> GetAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
-        return await db
+        var row = await db
             .Participants.AsNoTracking()
             .Where(p => p.Id == id)
             .Select(p => new ParticipantInfo(
@@ -68,9 +70,27 @@ public sealed class ParticipantService(
                 p.FirstName,
                 p.LastName,
                 p.Country,
-                p.CountryRef!.NiceName ?? p.CountryRef.Name ?? p.Country
+                p.CountryRef!.NiceName ?? p.CountryRef.Name ?? p.Country,
+                Array.Empty<string>()
             ))
             .FirstOrDefaultAsync(cancellationToken);
+        if (row is null)
+        {
+            return null;
+        }
+
+        var roundSports =
+            from winner in db.RoundWinners.AsNoTracking()
+            where winner.Participant == id
+            join round in db.Rounds.AsNoTracking() on winner.Round equals round.Id
+            select round.SeasonRef!.Sport;
+        var seasonSports =
+            from winner in db.SeasonWinners.AsNoTracking()
+            where winner.Participant == id
+            join season in db.Seasons.AsNoTracking() on winner.Season equals season.Id
+            select season.Sport;
+        var sports = await roundSports.Union(seasonSports).OrderBy(sport => sport).ToArrayAsync(cancellationToken);
+        return row with { Sports = sports };
     }
 
     public async Task<ParticipantForm?> GetFormAsync(int id, CancellationToken cancellationToken = default)
@@ -111,7 +131,7 @@ public sealed class ParticipantService(
         var first = form.FirstName!.Trim();
         var last = form.LastName!.Trim();
         // No unique index backs the identity, so serializable isolation guards the duplicate check against races.
-        return await factory.InTransactionAsync<int>(
+        var result = await factory.InTransactionAsync<int>(
             async (db, ct) =>
             {
                 var country = await CanonicalCountryAsync(db, form.Country!, ct);
@@ -144,6 +164,12 @@ public sealed class ParticipantService(
             IsolationLevel.Serializable,
             cancellationToken
         );
+        if (result.IsSuccess)
+        {
+            cache.Invalidate(LookupKind.Participants);
+        }
+
+        return result;
     }
 
     public async Task<Result<int>> UpdateAsync(
@@ -161,7 +187,7 @@ public sealed class ParticipantService(
         var title = form.Title?.Trim() ?? "";
         var first = form.FirstName!.Trim();
         var last = form.LastName!.Trim();
-        return await factory.InTransactionAsync<int>(
+        var result = await factory.InTransactionAsync<int>(
             async (db, ct) =>
             {
                 var country = await CanonicalCountryAsync(db, form.Country!, ct);
@@ -216,6 +242,12 @@ public sealed class ParticipantService(
             IsolationLevel.Serializable,
             cancellationToken
         );
+        if (result.IsSuccess)
+        {
+            cache.Invalidate(LookupKind.Participants);
+        }
+
+        return result;
     }
 
     private static async Task<string?> CanonicalCountryAsync(

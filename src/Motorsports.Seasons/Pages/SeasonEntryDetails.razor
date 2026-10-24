@@ -1,0 +1,53 @@
+@page "/season-entries/details/{SeasonId:int}/{TeamId:int}"
+@attribute [Authorize]
+@inject SeasonEntryService Service
+
+<PageTitle>Season entry</PageTitle>
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_entry is null)
+{
+    <NotFoundNotice Message="Season entry not found." />
+}
+else
+{
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">@_entry.Name</MudText>
+    <MudPaper Class="pa-4 mb-2" Style="max-width:40rem">
+        <MudSimpleTable Dense="true" Style="overflow-x:auto">
+            <tbody>
+                <tr><th>Season</th><td>@_entry.SeasonLabel</td></tr>
+                <tr><th>Sport</th><td>@_entry.Sport</td></tr>
+                <tr><th>Team</th><td>@_entry.TeamName</td></tr>
+                <tr><th>Name during season</th><td>@_entry.Name</td></tr>
+                <tr><th>Country</th><td>@CountryFlag.WithName(_entry.Country, _entry.CountryName)</td></tr>
+                <tr><th>Season winner</th><td>@(_entry.IsSeasonWinner ? "Yes" : "No")</td></tr>
+                <tr><th>Round winner</th><td>@(_entry.IsRoundWinner ? "Yes" : "No")</td></tr>
+            </tbody>
+        </MudSimpleTable>
+    </MudPaper>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Href="@($"/season-entries/edit/{SeasonId}/{TeamId}")" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
+        <MudButton Href="@($"/season-entries/delete/{SeasonId}/{TeamId}")" Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
+        <MudButton Href="@($"/seasons/{SeasonId}/entries")" Variant="Variant.Text">Back to entries</MudButton>
+    </MudStack>
+}
+
+@code {
+    private SeasonEntryInfo? _entry;
+    private bool _loading = true;
+
+    [Parameter]
+    public int SeasonId { get; set; }
+
+    [Parameter]
+    public int TeamId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _entry = await Service.GetAsync(SeasonId, TeamId);
+        _loading = false;
+    }
+}

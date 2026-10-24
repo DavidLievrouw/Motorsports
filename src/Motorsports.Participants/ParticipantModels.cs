@@ -17,7 +17,8 @@ public sealed record ParticipantInfo(
     string FirstName,
     string LastName,
     string Country,
-    string CountryName
+    string CountryName,
+    string[] Sports
 );
 
 /// <summary>Form model for create and edit. <see cref="RowVersion"/> is the optimistic concurrency token of an edit.</summary>

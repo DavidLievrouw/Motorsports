@@ -1,0 +1,71 @@
+@page "/seasons/{SeasonId:int}/entries/create"
+@attribute [Authorize]
+@inject SeasonEntryService Service
+@inject NavigationManager Navigation
+
+<PageTitle>New season entry</PageTitle>
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_season is null)
+{
+    <NotFoundNotice Message="Season not found." />
+}
+else
+{
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">New season entry — @_season.Sport @_season.Label</MudText>
+    <EditForm Model="_form" OnSubmit="SaveAsync">
+        <MudPaper Class="pa-4" Style="max-width:40rem">
+            <MudStack Spacing="2">
+                @if (_errors.Summary is not null)
+                {
+                    <MudAlert Severity="Severity.Error">@_errors.Summary</MudAlert>
+                }
+                <SeasonEntryFields Season="_season" Form="_form" Errors="_errors" />
+                <MudStack Row="true" Spacing="2">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Disabled="_saving">Create</MudButton>
+                    <MudButton Href="@($"/seasons/{SeasonId}/entries")" Variant="Variant.Text">Cancel</MudButton>
+                </MudStack>
+            </MudStack>
+        </MudPaper>
+    </EditForm>
+}
+
+@code {
+    private SeasonEntryContext? _season;
+    private readonly SeasonEntryForm _form = new();
+    private readonly FormErrors _errors = new();
+    private bool _loading = true;
+    private bool _saving;
+
+    [Parameter]
+    public int SeasonId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _season = await Service.GetSeasonAsync(SeasonId);
+        _loading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_saving || _season is null)
+        {
+            return;
+        }
+
+        _saving = true;
+        _errors.Clear();
+        var result = await Service.CreateAsync(SeasonId, _form);
+        _saving = false;
+        if (result.IsSuccess)
+        {
+            Navigation.NavigateTo($"/season-entries/details/{SeasonId}/{result.Value}");
+            return;
+        }
+
+        _errors.Set(result.Error);
+    }
+}

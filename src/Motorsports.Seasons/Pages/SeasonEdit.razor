@@ -1,0 +1,113 @@
+@page "/seasons/edit/{Id:int}"
+@attribute [Authorize]
+@inject SeasonService Service
+@inject NavigationManager Navigation
+
+<PageTitle>Edit season</PageTitle>
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_form is null)
+{
+    <NotFoundNotice Message="Season not found." />
+}
+else
+{
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">Edit season</MudText>
+    <EditForm Model="_form" OnSubmit="SaveAsync">
+        <MudPaper Class="pa-4" Style="max-width:40rem">
+            <MudStack Spacing="2">
+                @if (_conflict)
+                {
+                    <MudAlert Severity="Severity.Warning">
+                        @_errors.Summary
+                        <MudStack Row="true" Spacing="2" Class="mt-2">
+                            <MudButton Variant="Variant.Outlined" OnClick="ReloadAsync">Reload</MudButton>
+                            <MudButton Variant="Variant.Outlined" OnClick="ShowDifferencesAsync">Show differences</MudButton>
+                        </MudStack>
+                    </MudAlert>
+                    @if (_current is not null)
+                    {
+                        <MudSimpleTable Dense="true" Style="overflow-x:auto">
+                            <tbody>
+                                <tr><th>Label</th><td>@_form.Label</td><td>@_current.Label</td></tr>
+                                <tr><th>Winning team</th><td>@_form.WinningTeam</td><td>@_current.WinningTeam</td></tr>
+                                <tr><th>Winners</th><td>@string.Join(", ", _form.Winners)</td><td>@string.Join(", ", _current.Winners)</td></tr>
+                            </tbody>
+                        </MudSimpleTable>
+                    }
+                }
+                else if (_errors.Summary is not null)
+                {
+                    <MudAlert Severity="Severity.Error">@_errors.Summary</MudAlert>
+                }
+                <SeasonFields Form="_form" Errors="_errors" SportReadOnly="true" />
+                <SeasonWinnersFields SeasonId="Id" Form="_form" Errors="_errors" />
+                <MudStack Row="true" Spacing="2">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Disabled="_saving">Save</MudButton>
+                    <MudButton Href="@($"/seasons/details/{Id}")" Variant="Variant.Text">Cancel</MudButton>
+                </MudStack>
+            </MudStack>
+        </MudPaper>
+    </EditForm>
+}
+
+@code {
+    private SeasonForm? _form;
+    private SeasonForm? _current;
+    private readonly FormErrors _errors = new();
+    private bool _loading = true;
+    private bool _saving;
+    private bool _conflict;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _form = await Service.GetFormAsync(Id);
+        _loading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_saving || _form is null)
+        {
+            return;
+        }
+
+        _saving = true;
+        _errors.Clear();
+        _conflict = false;
+        _current = null;
+        var result = await Service.UpdateAsync(Id, _form);
+        _saving = false;
+        if (result.IsSuccess)
+        {
+            Navigation.NavigateTo($"/seasons/details/{result.Value}");
+            return;
+        }
+
+        _errors.Set(result.Error);
+        if (result.Error.Kind == ErrorKind.NotFound)
+        {
+            _form = null;
+        }
+        else
+        {
+            _conflict = result.Error.Kind == ErrorKind.Conflict;
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        _errors.Clear();
+        _conflict = false;
+        _current = null;
+        _form = await Service.GetFormAsync(Id);
+    }
+
+    private async Task ShowDifferencesAsync() => _current = await Service.GetFormAsync(Id);
+}

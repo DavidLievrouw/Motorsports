@@ -52,12 +52,17 @@ public sealed class SportService(
 
         var latestSeason = await db
             .Seasons.AsNoTracking()
-            .Where(s => s.Sport == name)
+            .Where(s =>
+                s.Sport == name
+                && db.Rounds.Any(round => round.Season == s.Id)
+                && !db.Rounds.Any(round => round.Season == s.Id && round.StatusRef!.Step < 2)
+            )
             .Select(s => new
             {
                 s.Id,
                 s.Label,
                 s.WinningTeam,
+                LastDate = db.Rounds.Where(r => r.Season == s.Id).Select(r => (DateOnly?)r.Date).Max(),
                 StartDate = db.Rounds.Where(r => r.Season == s.Id).Select(r => (DateOnly?)r.Date).Min(),
             })
             .OrderBy(s => s.StartDate.HasValue ? 1 : 0)
@@ -71,7 +76,12 @@ public sealed class SportService(
         {
             if (latestSeason.WinningTeam is { } teamId)
             {
-                winningTeamName =
+                var teamCountry = await db
+                    .Teams.AsNoTracking()
+                    .Where(team => team.Id == teamId)
+                    .Select(team => team.Country)
+                    .FirstOrDefaultAsync(cancellationToken);
+                var plainName =
                     await db
                         .SeasonEntries.AsNoTracking()
                         .Where(entry => entry.Season == latestSeason.Id && entry.Team == teamId)
@@ -82,6 +92,7 @@ public sealed class SportService(
                         .Where(team => team.Id == teamId)
                         .Select(team => team.Name)
                         .FirstOrDefaultAsync(cancellationToken);
+                winningTeamName = plainName is null ? null : CountryFlag.WithName(teamCountry, plainName);
             }
 
             winningParticipants = await db
@@ -91,12 +102,23 @@ public sealed class SportService(
                     db.Participants.AsNoTracking(),
                     winner => winner.Participant,
                     participant => participant.Id,
-                    (_, participant) => new { participant.FirstName, participant.LastName }
+                    (_, participant) =>
+                        new
+                        {
+                            participant.FirstName,
+                            participant.LastName,
+                            participant.Country,
+                        }
                 )
                 .OrderBy(participant => participant.LastName)
                 .ThenBy(participant => participant.FirstName)
-                .Select(participant => participant.FirstName + " " + participant.LastName)
-                .ToArrayAsync(cancellationToken);
+                .ToListAsync(cancellationToken)
+                .ContinueWith(
+                    task =>
+                        task.Result.Select(p => CountryFlag.WithName(p.Country, p.FirstName + " " + p.LastName))
+                            .ToArray(),
+                    cancellationToken
+                );
         }
 
         var nextRoundDate = await db
@@ -108,7 +130,11 @@ public sealed class SportService(
 
         return sport with
         {
-            LatestSeasonLabel = latestSeason?.Label,
+            LatestSeasonLabel =
+                latestSeason is null ? null
+                : !string.IsNullOrWhiteSpace(latestSeason.Label) ? latestSeason.Label
+                : latestSeason.LastDate?.Year.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    ?? $"#{latestSeason.Id}",
             WinningTeamName = winningTeamName,
             WinningParticipants = winningParticipants,
             NextRoundDate = nextRoundDate,
@@ -296,6 +322,8 @@ public sealed class SportService(
         if (result.IsSuccess)
         {
             cache.Invalidate(LookupKind.Sports);
+            cache.Invalidate(LookupKind.Teams);
+            cache.Invalidate(LookupKind.SeasonEntries);
         }
 
         return result;

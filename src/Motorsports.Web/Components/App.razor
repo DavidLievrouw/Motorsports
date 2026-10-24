@@ -28,7 +28,7 @@
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
 
-    // Login, access denied and change-password are static SSR (they set cookies on a real HTTP response).
+    // Anonymous auth pages stay static; password changes use a form POST endpoint to update the auth cookie.
     private IComponentRenderMode? PageRenderMode => HttpContext?.AcceptsInteractiveRouting() == false ? null : InteractiveServer;
 
     // Dark unless the user picked light (cookie written by app.js).

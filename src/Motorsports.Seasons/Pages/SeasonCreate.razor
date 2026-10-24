@@ -1,0 +1,48 @@
+@page "/seasons/create"
+@attribute [Authorize]
+@inject SeasonService Service
+@inject NavigationManager Navigation
+
+<PageTitle>New season</PageTitle>
+<MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">New season</MudText>
+<EditForm Model="_form" OnSubmit="SaveAsync">
+    <MudPaper Class="pa-4" Style="max-width:40rem">
+        <MudStack Spacing="2">
+            @if (_errors.Summary is not null)
+            {
+                <MudAlert Severity="Severity.Error">@_errors.Summary</MudAlert>
+            }
+            <SeasonFields Form="_form" Errors="_errors" />
+            <MudStack Row="true" Spacing="2">
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Disabled="_saving">Create</MudButton>
+                <MudButton Href="/seasons" Variant="Variant.Text">Cancel</MudButton>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+</EditForm>
+
+@code {
+    private readonly SeasonForm _form = new();
+    private readonly FormErrors _errors = new();
+    private bool _saving;
+
+    private async Task SaveAsync()
+    {
+        if (_saving)
+        {
+            return;
+        }
+
+        _saving = true;
+        _errors.Clear();
+        var result = await Service.CreateAsync(_form);
+        _saving = false;
+        if (result.IsSuccess)
+        {
+            Navigation.NavigateTo($"/seasons/details/{result.Value}");
+            return;
+        }
+
+        _errors.Set(result.Error);
+    }
+}

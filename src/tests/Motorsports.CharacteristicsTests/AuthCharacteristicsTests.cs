@@ -144,8 +144,7 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         var markup = await home.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         home.StatusCode.ShouldBe(HttpStatusCode.OK);
-        markup.ShouldContain("href=\"/account/change-password\"");
-        markup.ShouldContain("Change password");
+        markup.ShouldNotContain("href=\"/account/change-password\"");
     }
 
     [Theory]
@@ -334,8 +333,8 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
             "brand new password",
             "brand new password"
         );
-        wrong.StatusCode.ShouldBe(HttpStatusCode.OK);
-        (await wrong.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldContain(
+        wrong.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+        (await client.GetStringAsync(LocationPathOf(wrong), TestContext.Current.CancellationToken)).ShouldContain(
             "The current password is incorrect."
         );
         (await client.GetAsync("/", TestContext.Current.CancellationToken)).StatusCode.ShouldBe(
@@ -344,7 +343,10 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
 
         token = await TokenAsync(client, "/account/change-password");
         var weak = await PostChangeAsync(client, token, Password, "short", "short");
-        (await weak.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldContain("at least 8");
+        weak.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+        (await client.GetStringAsync(LocationPathOf(weak), TestContext.Current.CancellationToken)).ShouldContain(
+            "Review the password requirements"
+        );
 
         token = await TokenAsync(client, "/account/change-password");
         var ok = await PostChangeAsync(client, token, Password, "brand new password", "brand new password");
@@ -375,11 +377,10 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
             new FormUrlEncodedContent(
                 new Dictionary<string, string>
                 {
-                    ["_handler"] = "change-password",
                     ["__RequestVerificationToken"] = token,
-                    ["Model.CurrentPassword"] = current,
-                    ["Model.NewPassword"] = next,
-                    ["Model.ConfirmPassword"] = confirm,
+                    ["CurrentPassword"] = current,
+                    ["NewPassword"] = next,
+                    ["ConfirmPassword"] = confirm,
                 }
             ),
             TestContext.Current.CancellationToken

@@ -22,11 +22,12 @@ else
                 <tr><th>First name</th><td>@_participant.FirstName</td></tr>
                 <tr><th>Last name</th><td>@_participant.LastName</td></tr>
                 <tr><th>Country</th><td>@CountryFlag.WithName(_participant.Country, _participant.CountryName)</td></tr>
+                <tr><th>Sports</th><td>@(_participant.Sports.Length == 0 ? "—" : string.Join(", ", _participant.Sports))</td></tr>
             </tbody>
         </MudSimpleTable>
     </MudPaper>
     <MudStack Row="true" Spacing="2">
-        <MudButton Href="@($"/participants/edit/{_participant.Id}")" Variant="Variant.Filled" Color="Color.Primary">Edit</MudButton>
+        <MudButton Href="@($"/participants/edit/{_participant.Id}")" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
         <MudButton Href="/participants" Variant="Variant.Text">Back to participants</MudButton>
     </MudStack>
 }

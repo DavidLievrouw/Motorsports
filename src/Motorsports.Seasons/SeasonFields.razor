@@ -1,0 +1,42 @@
+@inject LookupCache Lookups
+
+<MudTextField @bind-Value="Form.Label" Label="Label" Required="true" Immediate="true" AutoFocus="true"
+              MaxLength="@SeasonFormValidator.MaxLabelLength"
+              Error="@Errors.Has(nameof(SeasonForm.Label))" ErrorText="@Errors.Text(nameof(SeasonForm.Label))" />
+<FuzzySelect T="SportOption" Value="_selectedSport" ValueChanged="SportChangedAsync" Items="_sports"
+             Text="SportText" Label="Sport" Required="true" RequiredError="Select a sport."
+             Disabled="SportReadOnly" Error="@Errors.Has(nameof(SeasonForm.Sport))"
+             ErrorText="@Errors.Text(nameof(SeasonForm.Sport))" />
+
+@code {
+    private IReadOnlyList<SportOption> _sports = [];
+    private SportOption? _selectedSport;
+
+    [Parameter, EditorRequired]
+    public SeasonForm Form { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public FormErrors Errors { get; set; } = default!;
+
+    [Parameter]
+    public bool SportReadOnly { get; set; }
+
+    protected override void OnParametersSet() =>
+        _selectedSport = _sports.FirstOrDefault(sport => sport.Name == Form.Sport);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Lookups.RevalidateAsync(LookupKind.Sports);
+        _sports = await Lookups.GetSportsAsync();
+        OnParametersSet();
+    }
+
+    private static string SportText(SportOption sport) => sport.Name;
+
+    private Task SportChangedAsync(SportOption? sport)
+    {
+        _selectedSport = sport;
+        Form.Sport = sport?.Name;
+        return Task.CompletedTask;
+    }
+}

@@ -28,6 +28,7 @@
   <Project Path="Motorsports.Infrastructure/Motorsports.Infrastructure.csproj" />
   <Project Path="Motorsports.Participants/Motorsports.Participants.csproj" />
   <Project Path="Motorsports.Sports/Motorsports.Sports.csproj" />
+  <Project Path="Motorsports.Seasons/Motorsports.Seasons.csproj" />
   <Project Path="Motorsports.Teams/Motorsports.Teams.csproj" />
   <Project Path="Motorsports.Ui/Motorsports.Ui.csproj" />
   <Project Path="Motorsports.Venues/Motorsports.Venues.csproj" />

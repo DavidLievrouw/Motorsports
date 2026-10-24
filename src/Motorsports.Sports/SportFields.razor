@@ -14,7 +14,9 @@
     }
     else if (Form.StoredImageName is not null && Form.Image is not null)
     {
-        <MudImage Src="@SportImage.Url(Form.StoredImageName)" Alt="@($"{Form.StoredImageName} logo")" Width="160" Height="100" ObjectFit="ObjectFit.Contain" />
+        <MudStack AlignItems="AlignItems.Center">
+            <MudImage Src="@SportImage.Url(Form.StoredImageName)" Alt="@($"{Form.StoredImageName} logo")" Width="160" Height="100" ObjectFit="ObjectFit.Contain" />
+        </MudStack>
     }
 
     @if (Form.Image is not null)

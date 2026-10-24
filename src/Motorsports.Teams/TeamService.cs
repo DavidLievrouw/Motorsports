@@ -4,10 +4,15 @@ using Microsoft.EntityFrameworkCore;
 using Motorsports.Common;
 using Motorsports.Infrastructure;
 using Motorsports.Infrastructure.Entities;
+using Motorsports.Infrastructure.Lookups;
 
 namespace Motorsports.Teams;
 
-public sealed class TeamService(IDbContextFactory<MotorsportsDbContext> factory, IValidator<TeamForm> validator)
+public sealed class TeamService(
+    IDbContextFactory<MotorsportsDbContext> factory,
+    IValidator<TeamForm> validator,
+    LookupCache cache
+)
 {
     public const string StaleMessage =
         "This team was changed by someone else since you opened it. Your entries are kept; reload to see the current values.";
@@ -102,7 +107,7 @@ public sealed class TeamService(IDbContextFactory<MotorsportsDbContext> factory,
 
         var name = form.Name!.Trim();
         // No unique index backs (Name, Sport), so serializable isolation guards the duplicate check against races.
-        return await factory.InTransactionAsync<int>(
+        var result = await factory.InTransactionAsync<int>(
             async (db, ct) =>
             {
                 var lookups = await ResolveAsync(db, form.Sport!, form.Country!, ct);
@@ -132,6 +137,13 @@ public sealed class TeamService(IDbContextFactory<MotorsportsDbContext> factory,
             IsolationLevel.Serializable,
             cancellationToken
         );
+        if (result.IsSuccess)
+        {
+            cache.Invalidate(LookupKind.Teams);
+            cache.Invalidate(LookupKind.SeasonEntries);
+        }
+
+        return result;
     }
 
     public async Task<Result<int>> UpdateAsync(int id, TeamForm form, CancellationToken cancellationToken = default)
@@ -143,7 +155,7 @@ public sealed class TeamService(IDbContextFactory<MotorsportsDbContext> factory,
         }
 
         var name = form.Name!.Trim();
-        return await factory.InTransactionAsync<int>(
+        var result = await factory.InTransactionAsync<int>(
             async (db, ct) =>
             {
                 var lookups = await ResolveAsync(db, form.Sport!, form.Country!, ct);
@@ -194,10 +206,18 @@ public sealed class TeamService(IDbContextFactory<MotorsportsDbContext> factory,
             IsolationLevel.Serializable,
             cancellationToken
         );
+        if (result.IsSuccess)
+        {
+            cache.Invalidate(LookupKind.Teams);
+            cache.Invalidate(LookupKind.SeasonEntries);
+        }
+
+        return result;
     }
 
-    public async Task<Result<Unit>> DeleteAsync(int id, CancellationToken cancellationToken = default) =>
-        await factory.InTransactionAsync<Unit>(
+    public async Task<Result<Unit>> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var result = await factory.InTransactionAsync<Unit>(
             async (db, ct) =>
             {
                 var rows = await db
@@ -220,6 +240,14 @@ public sealed class TeamService(IDbContextFactory<MotorsportsDbContext> factory,
             IsolationLevel.Serializable,
             cancellationToken
         );
+        if (result.IsSuccess)
+        {
+            cache.Invalidate(LookupKind.Teams);
+            cache.Invalidate(LookupKind.SeasonEntries);
+        }
+
+        return result;
+    }
 
     private static async Task<(string? Sport, string? Country, Error? Failure)> ResolveAsync(
         MotorsportsDbContext db,

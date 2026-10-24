@@ -44,7 +44,7 @@ public static class SportsModule
                         .FirstOrDefaultAsync(http.RequestAborted);
                     if (image is null || SportImage.ContentType(image) is not { } contentType)
                     {
-                        return Results.NotFound();
+                        return Results.Redirect("/img/notfound.png");
                     }
 
                     var etag =
