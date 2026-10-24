@@ -67,7 +67,7 @@ public sealed class VenueService(IDbContextFactory<MotorsportsDbContext> factory
                 round.Date,
                 round.Number,
                 round.Name,
-                Sport = round.SeasonRef!.Sport,
+                round.SeasonRef!.Sport,
                 HasImage = round.SeasonRef.SportRef!.Image != null,
                 round.Status,
                 round.Rating,

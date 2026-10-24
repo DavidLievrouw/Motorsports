@@ -26,8 +26,8 @@ namespace Motorsports.Scaffolding.Core.Services {
         .WithParameters(
           new {
             Id = sportName,
-            Name = newState.Name,
-            FullName = newState.FullName
+            newState.Name,
+            newState.FullName
           })
           .ExecuteAsync();
 

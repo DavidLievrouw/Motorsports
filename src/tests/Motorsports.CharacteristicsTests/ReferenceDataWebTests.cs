@@ -127,7 +127,7 @@ public sealed partial class AuthCharacteristicsTests
             await accentedVenue.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)
         );
         venueMarkup.ShouldContain("Autódromo Hermanos Rodríguez, Mexico City");
-        venueMarkup.ShouldContain("March 31, 2026");
+        venueMarkup.ShouldContain("Tu, March 31, 2026");
         venueMarkup.ShouldContain("6 / 10");
         venueMarkup.ShouldContain("1 - Completed round");
         venueMarkup.ShouldContain("2 - Upcoming round");
@@ -139,14 +139,14 @@ public sealed partial class AuthCharacteristicsTests
                 await client.GetAsync("/sports/details/F1", TestContext.Current.CancellationToken)
             ).Content.ReadAsStringAsync(TestContext.Current.CancellationToken)
         );
-        sportMarkup.ShouldContain("April 1, 2026");
+        sportMarkup.ShouldContain("We, April 1, 2026");
 
         var seasonMarkup = System.Net.WebUtility.HtmlDecode(
             await (
                 await client.GetAsync("/seasons/details/1", TestContext.Current.CancellationToken)
             ).Content.ReadAsStringAsync(TestContext.Current.CancellationToken)
         );
-        seasonMarkup.ShouldContain("March 31, 2026");
+        seasonMarkup.ShouldContain("Tu, March 31, 2026");
 
         var participantMarkup = System.Net.WebUtility.HtmlDecode(
             await (

@@ -176,3 +176,9 @@ Check AGENTS.md and PLAN.md. You are an excellent coding agent. We are finishing
 Then update the PLAN.md handover for the next agent.
 
 -------------------
+
+- Rain is not an integer. The legacy application renders strings for those values. Do the same.
+- In the Venue details page, "Round" column is always empty. Show the round number. If the round has a label/name filled in, show it too. E.g. "12 - Indianapolis 500", instead of just "12".
+- Wherever a date is shown in format "September 2, 2024", prefix it with the day of the week, abbreviated. e.g. Sa or Su. so "Sa, September 2, 2024".
+
+-------------------

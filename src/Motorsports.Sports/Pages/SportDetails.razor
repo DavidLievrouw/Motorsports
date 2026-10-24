@@ -1,7 +1,6 @@
 @page "/sports/details/{Name}"
 @attribute [Authorize]
 @inject SportService Service
-@using System.Globalization
 @using Motorsports.Common.Images
 
 <PageTitle>Sport</PageTitle>
@@ -33,7 +32,7 @@ else
                 <tr><th>Latest completed season</th><td>@(_sport.LatestSeasonLabel ?? "—")</td></tr>
                 <tr><th>Winning participants</th><td>@(_sport.WinningParticipants.Count == 0 ? "—" : string.Join(", ", _sport.WinningParticipants))</td></tr>
                 <tr><th>Winning team</th><td>@(_sport.WinningTeamName ?? "—")</td></tr>
-                <tr><th>Next round</th><td>@(_sport.NextRoundDate?.ToString("MMMM d, yyyy", CultureInfo.InvariantCulture) ?? "—")</td></tr>
+                <tr><th>Next round</th><td>@DateDisplay.Format(_sport.NextRoundDate)</td></tr>
             </tbody>
         </MudSimpleTable>
     </MudPaper>

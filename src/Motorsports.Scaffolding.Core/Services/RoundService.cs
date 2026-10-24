@@ -182,7 +182,7 @@ namespace Motorsports.Scaffolding.Core.Services {
                          (@Round
                          ,@Participant)")
               .WithCommandType(CommandType.Text)
-              .WithParameters(new { Round = winner.Round, Participant = winner.Participant })
+              .WithParameters(new { winner.Round, winner.Participant })
               .ExecuteAsync();
           }
 
@@ -251,9 +251,9 @@ namespace Motorsports.Scaffolding.Core.Services {
         .WithCommandType(CommandType.Text)
         .WithParameters(
           new {
-            Venue = round.Venue,
-            Sport = round.RelatedSeason.Sport,
-            Date = round.Date.Date,
+              round.Venue,
+              round.RelatedSeason.Sport,
+              round.Date.Date,
             IsNonChampionship = round.Number < 1
           })
         .ExecuteAsync<EventHistoryItem>();

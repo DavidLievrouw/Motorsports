@@ -26,8 +26,8 @@ namespace Motorsports.Scaffolding.Core.Services {
         .WithParameters(
           new {
             Id = venueName,
-            Name = newState.Name,
-            Country = newState.Country
+            newState.Name,
+            newState.Country
           })
         .ExecuteAsync();
 

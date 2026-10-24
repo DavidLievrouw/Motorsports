@@ -113,9 +113,9 @@ namespace Motorsports.Scaffolding.Core.Services {
         .NewQuery("UPDATE SeasonEntry SET Name=@Name WHERE Season=@Season AND Team=@Team")
         .WithCommandType(CommandType.Text)
         .WithParameters(new {
-          Season = seasonEntry.Season,
-          Team = seasonEntry.Team,
-          Name = seasonEntry.Name
+            seasonEntry.Season,
+            seasonEntry.Team,
+            seasonEntry.Name
         })
         .ExecuteAsync();
     }

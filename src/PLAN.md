@@ -276,6 +276,7 @@ Delivered (checklist):
 - [x] Shared infra: `Infrastructure/DbOperations.InTransactionAsync` (one context per operation, rollback on failed result, deadlock retry, DB error -> result mapping), `Infrastructure/Lookups/LookupCache` (Countries, Sports; `Invalidate` after commits, `MaxAge` 30 s via `Cache:MaxAge`, entries served stale then refreshed once in the background, `RevalidateAsync` when a form opens re-reads if older than 5 s), `Common/{RowVersion, FormErrors, Paging}`.
 - [x] Tests: unit (validators, limits vs EF model, RowVersion, FormErrors), architecture (slice isolation, `[Authorize]` on routed pages), characteristics on Testcontainers MariaDB with synthetic rows (21 reference-data service tests incl. renames with/without dependents and case-only, duplicates, FK/length validation, stale conflict, not found, team delete allowed/blocked, concurrent duplicate creates, cache) and 2 web tests (anonymous redirect for all routes; signed-in render + 404).
 - [x] Venue details Rain column uses the legacy `RainLevel` display names (stored `decimal(1,0)`); the Round column shows `number` or `number - name`.
+- [x] Long dates (`MMMM d, yyyy`) are prefixed with a two-letter weekday (`Sa, September 7, 2024`) via `Common/DateDisplay`.
 
 ### Phase 4 – Seasons & SeasonEntries `[x]` (done 2026-10-24)
 - [x] Added the isolated `Motorsports.Seasons` slice and wired its services, routes, authorization, navigation, and architecture checks.
@@ -374,6 +375,7 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 - Phase 4 follow-up: Sport details use the latest completed season with winner data; date and rating presentation, season-entry team labels, action icons, centered sport previews, and the interactive ChangePassword layout are clarified in section 4h-3.
 - Phase 4 finishing follow-up: season detail winner labels now include participant/team country flags; participant sports are distinct across round and season wins. The account menu keeps its logout antiforgery form outside MudMenu's popover because closed menu content is absent from prerendered markup.
 - Venue details: `Round.Rain` is the legacy `RainLevel` enum (0–7), not a count; display names live in `Common/RainLevel.cs`. Round labels are `12` or `12 - Indianapolis 500` because `Round.Name` is often null.
+- Long dates use `DateDisplay` (`Su`/`Mo`/`Tu`/`We`/`Th`/`Fr`/`Sa` plus `MMMM d, yyyy`); .NET `ddd` would be three letters (`Sun`).
 - Phase 3: pages are interactive (InteractiveServer) with `EditForm OnSubmit`; search commits on Enter/blur, never per keystroke. No browser verification of MudBlazor interaction, mobile layout or `%2F` in a Sport/Venue name route segment.
 - Reference-data follow-up: `AddSportImages` adds nullable `Sport.Image` idempotently and seeds the six current legacy logos from embedded image resources; the migration tests compare persisted bytes with the embedded files.
 
@@ -388,6 +390,7 @@ State:
 - Phase 4 adds `Motorsports.Seasons` for season and season-entry CRUD, winner management, guarded season deletion, team history, and the shared participant/team/season-entry lookup-cache kinds.
 - Phase 4 finishing follow-up verifies country flags on season winner labels, distinct sports on participant details, profile-menu account actions, and the byte-identical static fallback image at `Motorsports.Web/wwwroot/img/notfound.png`.
 - Venue details format rain with `RainLevelDisplay` and rounds with `RoundLabel` (`number` or `number - name`).
+- Display dates on venue, season, and sport pages go through `DateDisplay` (`Sa, September 7, 2024`).
 - `MapSportImages` redirects missing or invalid stored images to `/img/notfound.png`. The logout button remains a POST with antiforgery; its hidden token form is rendered outside the MudMenu popover and the menu button submits that form.
 - Config: `Cache:MaxAge` (default 30 s) plus the Auth settings from Phase 2.
 
@@ -399,4 +402,4 @@ Known gaps / not done:
 - Cache invalidation hooks cover Sports, Teams, Participants, Seasons, and SeasonEntries; Phase 5 must add Venues and Statuses.
 - Carry-over from Phase 2: no admin/user UI, no account lockout, Docker image not re-verified with auth.
 
-Phase 4 finishing changes are complete; Phase 5 remains unstarted. Venue details now show rain as the legacy display name and rounds as number plus optional name. Next: Phase 5 (Rounds), reusing `DbOperations`, `RowVersion`, `FormErrors`, and `LookupCache`; add Venues and Statuses to the cache for round pickers, show venue flags anywhere a venue appears, and add round/season victory lists to Participant and Team details. Keep new slice dependencies limited to Common, Infrastructure, and shared UI; use explicit `[Authorize]`; do not edit `src/Db/*`.
+Phase 4 finishing changes are complete; Phase 5 remains unstarted. Venue details now show rain as the legacy display name and rounds as number plus optional name. Long dates are prefixed with a two-letter weekday. Next: Phase 5 (Rounds), reusing `DbOperations`, `RowVersion`, `FormErrors`, and `LookupCache`; add Venues and Statuses to the cache for round pickers, show venue flags anywhere a venue appears, and add round/season victory lists to Participant and Team details. Keep new slice dependencies limited to Common, Infrastructure, and shared UI; use explicit `[Authorize]`; do not edit `src/Db/*`.

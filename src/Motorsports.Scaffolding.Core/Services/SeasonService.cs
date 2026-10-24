@@ -134,7 +134,7 @@ namespace Motorsports.Scaffolding.Core.Services {
                          (@Season
                          ,@Participant)")
               .WithCommandType(CommandType.Text)
-              .WithParameters(new {Season = winner.Season, Participant = winner.Participant})
+              .WithParameters(new { winner.Season, winner.Participant})
               .ExecuteAsync();
           }
 

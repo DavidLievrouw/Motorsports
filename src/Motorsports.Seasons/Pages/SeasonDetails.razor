@@ -1,7 +1,6 @@
 @page "/seasons/details/{Id:int}"
 @attribute [Authorize]
 @inject SeasonService Service
-@using System.Globalization
 
 <PageTitle>Season</PageTitle>
 @if (_loading)
@@ -20,8 +19,8 @@ else
             <tbody>
                 <tr><th>Sport</th><td>@_season.SportFullName (@_season.Sport)</td></tr>
                 <tr><th>Label</th><td>@(_season.Label ?? "—")</td></tr>
-                <tr><th>Start date</th><td>@FormatDate(_season.StartDate)</td></tr>
-                <tr><th>End date</th><td>@FormatDate(_season.EndDate)</td></tr>
+                <tr><th>Start date</th><td>@DateDisplay.Format(_season.StartDate)</td></tr>
+                <tr><th>End date</th><td>@DateDisplay.Format(_season.EndDate)</td></tr>
                 <tr><th>Season entries</th><td>@_season.SeasonEntryCount</td></tr>
                 <tr><th>Rounds</th><td>@_season.RoundCount</td></tr>
                 <tr><th>Winning team</th><td>@(_season.WinningTeamName ?? "—")</td></tr>
@@ -50,6 +49,4 @@ else
         _season = await Service.GetAsync(Id);
         _loading = false;
     }
-
-    private static string FormatDate(DateOnly? date) => date?.ToString("MMMM d, yyyy", CultureInfo.InvariantCulture) ?? "—";
 }

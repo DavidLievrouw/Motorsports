@@ -2,7 +2,6 @@
 @attribute [Authorize]
 @inject SeasonService Service
 @inject NavigationManager Navigation
-@using System.Globalization
 @using Motorsports.Common.Images
 
 <PageTitle>Seasons</PageTitle>
@@ -34,8 +33,8 @@ else
         <MudDataGrid T="SeasonRow" Items="group.ToList()" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1">
             <Columns>
                 <PropertyColumn Property="season => season.Label" Title="Label" />
-                <TemplateColumn Title="Start" Sortable="false"><CellTemplate>@FormatDate(context.Item.StartDate)</CellTemplate></TemplateColumn>
-                <TemplateColumn Title="End" Sortable="false"><CellTemplate>@FormatDate(context.Item.EndDate)</CellTemplate></TemplateColumn>
+                <TemplateColumn Title="Start" Sortable="false"><CellTemplate>@DateDisplay.Format(context.Item.StartDate)</CellTemplate></TemplateColumn>
+                <TemplateColumn Title="End" Sortable="false"><CellTemplate>@DateDisplay.Format(context.Item.EndDate)</CellTemplate></TemplateColumn>
                 <PropertyColumn Property="season => season.SeasonEntryCount" Title="Teams" />
                 <PropertyColumn Property="season => season.RoundCount" Title="Rounds" />
                 <TemplateColumn Title="Actions" Sortable="false">
@@ -58,6 +57,4 @@ else
     public string? Sport { get; set; }
 
     protected override async Task OnParametersSetAsync() => _items = await Service.ListAsync(Sport);
-
-    private static string FormatDate(DateOnly? date) => date?.ToString("MMMM d, yyyy", CultureInfo.InvariantCulture) ?? "—";
 }

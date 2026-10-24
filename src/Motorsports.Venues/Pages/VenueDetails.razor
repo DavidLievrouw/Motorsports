@@ -37,7 +37,7 @@ else
                      Bordered="true" Elevation="1" Class="mb-4">
             <Columns>
                 <TemplateColumn Title="Date" Sortable="false">
-                    <CellTemplate>@context.Item.Date.ToString("MMMM d, yyyy", CultureInfo.InvariantCulture)</CellTemplate>
+                    <CellTemplate>@DateDisplay.Format(context.Item.Date)</CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Sport" Sortable="false">
                     <CellTemplate>
