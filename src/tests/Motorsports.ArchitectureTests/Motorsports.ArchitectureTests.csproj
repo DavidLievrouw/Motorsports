@@ -12,6 +12,7 @@
     <PackageReference Include="Shouldly" />
     <PackageReference Include="NetArchTest.Rules" />
     <ProjectReference Include="..\..\Motorsports.Common\Motorsports.Common.csproj" />
+    <ProjectReference Include="..\..\Motorsports.Auth\Motorsports.Auth.csproj" />
     <ProjectReference Include="..\..\Motorsports.Infrastructure\Motorsports.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Motorsports.Web\Motorsports.Web.csproj" />
   </ItemGroup>

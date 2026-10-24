@@ -22,6 +22,7 @@
     <File Path="../AGENTS.md" />
     <File Path="PLAN.md" />
   </Folder>
+  <Project Path="Motorsports.Auth/Motorsports.Auth.csproj" />
   <Project Path="Motorsports.Common/Motorsports.Common.csproj" />
   <Project Path="Motorsports.Infrastructure/Motorsports.Infrastructure.csproj" />
   <Project Path="Motorsports.Web/Motorsports.Web.csproj" />

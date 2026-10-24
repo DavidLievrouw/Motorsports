@@ -1,8 +1,16 @@
+using System.Net;
 using System.Reflection;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Options;
+using Motorsports.Auth;
 using Motorsports.Common;
 using Motorsports.Infrastructure;
+using Motorsports.Infrastructure.Auth;
 using Motorsports.Web;
 using Motorsports.Web.Components;
 using MudBlazor.Services;
@@ -33,6 +41,53 @@ builder.Services.AddSingleton(
     )
 );
 
+// Auth: Identity over the legacy User table, cookie sign-in, everything requires login unless [AllowAnonymous].
+builder.Services.AddAuthServices(builder.Configuration);
+builder.Services.AddMotorsportsIdentity().AddSignInManager();
+builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme).AddIdentityCookies();
+builder
+    .Services.AddOptions<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme)
+    .Configure<IOptions<AuthOptions>>(
+        (cookie, auth) =>
+        {
+            cookie.Cookie.Name = "ms.auth";
+            cookie.Cookie.HttpOnly = true;
+            cookie.Cookie.SameSite = SameSiteMode.Lax;
+            cookie.Cookie.SecurePolicy = auth.Value.SecureCookies
+                ? CookieSecurePolicy.Always
+                : CookieSecurePolicy.SameAsRequest;
+            cookie.LoginPath = AuthEndpoints.LoginPath;
+            cookie.AccessDeniedPath = AuthEndpoints.AccessDeniedPath;
+            cookie.ReturnUrlParameter = "returnUrl";
+            cookie.ExpireTimeSpan = TimeSpan.FromDays(7);
+            cookie.SlidingExpiration = true;
+        }
+    );
+builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(5));
+builder
+    .Services.AddAuthorizationBuilder()
+    .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingAuthStateProvider>();
+
+// Configure trusted proxies explicitly so clients cannot spoof X-Forwarded-For to bypass login rate limits.
+var knownProxyAddresses = builder.Configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>() ?? [];
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    foreach (var proxyAddress in knownProxyAddresses)
+    {
+        if (!IPAddress.TryParse(proxyAddress, out var address))
+        {
+            throw new InvalidOperationException(
+                $"ForwardedHeaders:KnownProxies contains an invalid IP address: {proxyAddress}"
+            );
+        }
+
+        o.KnownProxies.Add(address);
+    }
+});
+
 builder.Services.AddMudServices();
 builder
     .Services.AddRazorComponents()
@@ -50,6 +105,7 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
 app.UseResponseCompression();
 if (!app.Environment.IsDevelopment())
 {
@@ -57,11 +113,16 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseForcePasswordChange();
 app.UseAntiforgery();
 
 app.MapHealthChecks("/health").AllowAnonymous();
-app.MapStaticAssets();
-app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+app.MapStaticAssets().AllowAnonymous();
+app.MapAuthEndpoints();
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode().AddAdditionalAssemblies(typeof(AuthOptions).Assembly);
 
 await app.RunAsync();
 

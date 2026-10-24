@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="MudBlazor" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+    <ProjectReference Include="..\Motorsports.Auth\Motorsports.Auth.csproj" />
     <ProjectReference Include="..\Motorsports.Common\Motorsports.Common.csproj" />
     <ProjectReference Include="..\Motorsports.Infrastructure\Motorsports.Infrastructure.csproj" />
   </ItemGroup>

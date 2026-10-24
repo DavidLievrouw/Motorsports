@@ -25,3 +25,16 @@ h1:focus {
     right: 0.75rem;
     top: 0.5rem;
 }
+
+/* Footer sits at the viewport bottom on short pages and follows the content on long ones. */
+.mud-main-content.ms-main {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+}
+
+.ms-main > .ms-footer {
+    margin-top: auto;
+}

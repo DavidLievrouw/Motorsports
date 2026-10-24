@@ -1,0 +1,36 @@
+@page "/login"
+@layout AuthLayout
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+
+<PageTitle>Log in</PageTitle>
+
+<h1>Motorsports</h1>
+
+@if (Error == "throttled")
+{
+    <p class="auth-error" role="alert">Too many attempts. Try again in a minute.</p>
+}
+else if (!string.IsNullOrEmpty(Error))
+{
+    <p class="auth-error" role="alert">Invalid username or password.</p>
+}
+
+@* Plain post to the rate limited /login endpoint: the cookie can only be issued on a real HTTP response. *@
+<form method="post" action="@AuthEndpoints.LoginPath">
+    <AntiforgeryToken />
+    <input type="hidden" name="ReturnUrl" value="@(LocalUrl.IsLocal(ReturnUrl) ? ReturnUrl : "")" />
+    <label for="username">Username</label>
+    <input id="username" name="Username" type="text" autocomplete="username" autofocus required maxlength="255" />
+    <label for="password">Password</label>
+    <input id="password" name="Password" type="password" autocomplete="current-password" required maxlength="256" />
+    <button type="submit">Log in</button>
+</form>
+
+@code {
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? Error { get; set; }
+}

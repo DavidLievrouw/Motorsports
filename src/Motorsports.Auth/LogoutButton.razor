@@ -1,0 +1,6 @@
+@* A real form post: logout is a state change, so POST + antiforgery, never a GET link. *@
+<form method="post" action="@AuthEndpoints.LogoutPath">
+    <AntiforgeryToken />
+    <MudButton ButtonType="ButtonType.Submit" Color="Color.Inherit" Variant="Variant.Text"
+               StartIcon="@Icons.Material.Filled.Logout">Log out</MudButton>
+</form>

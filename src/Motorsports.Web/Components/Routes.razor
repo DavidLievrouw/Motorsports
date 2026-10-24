@@ -1,7 +1,11 @@
-<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+<Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="[typeof(Motorsports.Auth.AuthOptions).Assembly]" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
         <CascadingValue Value="DarkMode" Name="InitialDarkMode">
-            <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+                <NotAuthorized>
+                    <RedirectToLogin />
+                </NotAuthorized>
+            </AuthorizeRouteView>
         </CascadingValue>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>

@@ -32,7 +32,7 @@ Enums in legacy: `RoundStatus` (Scheduled 0, ReadyToWatch 1, Postponed 10, Finis
 
 | Slice | Pages / features | Legacy source | Done |
 |---|---|---|---|
-| Auth | Login (+returnUrl), logout (POST), access denied, error page | `LoginController`, `Security/*` | [ ] |
+| Auth | Login (+returnUrl), logout (POST), access denied, error page | `LoginController`, `Security/*` | [x] (Phase 2; automated tests, no browser check) |
 | Home | Very-next-up round (across sports), next-up per sport, rounds to acquire, latest 2 seasons per sport, sport logos with fallback, **full** event history (see 4) | `HomeController`, `HomeService`, `Views/Home/*` | [ ] |
 | Sports | list, details, create, edit | `SportsController`, `SportService` | [ ] |
 | Venues | list, details, create, edit | `VenuesController`, `VenueService` | [ ] |
@@ -224,8 +224,10 @@ Approach:
 - Characteristics tests for the legacy rules in section 3 written against the **new** handlers as slices land (red first).
 - Exit: DbContext matches DB; fixture works.
 
-### Phase 2 – Auth `[ ]`
+### Phase 2 – Auth `[x]` (done 2026-10-24; browser check of UI outstanding, see Handover)
 Section 5. Login page (MudBlazor, mobile friendly), logout (POST), access denied, default authorize policy, local-return-url check, change-password page for `ForceChangePassword`.
+
+Delivered: `Motorsports.Auth` slice (RCL: login/logout/access denied/change password, endpoints, validators, force-change middleware, rate limit); `Infrastructure/Auth` (`UserStore`, `LegacyPasswordHasher` PBKDF2 HMACSHA1/256/512 verify + rehash to Identity v3 in `PasswordHashV3`, claims factory); Web wiring (cookie `ms.auth` HttpOnly, SameSite=Lax, Secure unless `Auth:SecureCookies=false`; fallback authorize policy; revalidating auth state). Deleted users cannot sign in. Footer layout fixed (`ms-main` flex column, footer `margin-top:auto`). Tests: unit (hasher, LocalUrl, validators), architecture (Auth not dependent on Web), 22 characteristics tests incl. end-to-end WebApplicationFactory login flows.
 
 ### Phase 3 – Reference data slices `[ ]`
 Sports, Venues, Participants (list with search/filter, details, create, edit; no delete). Teams: same plus delete only when the team has no season entries (sport read-only on edit). Shared UI building blocks in Web or Common (e.g. responsive list, form layout, country select, confirm dialog, conflict alert). Country, Status lookups cached.
@@ -293,24 +295,30 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 - MudBlazor 9: the `PickerActions` context is `MudPicker<DateTime?>`, not `MudDatePicker`.
 - Docker: `src/Motorsports.Web/Dockerfile` (build context = repo root: `docker build -f src/Motorsports.Web/Dockerfile -t motorsports-web:latest .`), base `10.0-noble`, installs tzdata + curl, healthcheck on `/health`, listens on 8080. Verified: container starts against the dev DB, `/` 200, `/health` Healthy, second start logs "Database is up to date" (idempotent migrations), `/usr/share/zoneinfo/Europe/Brussels` exists. From a container, reach the host DB via `host.docker.internal`.
 - The legacy csproj still builds (0 warnings, 0 errors) with the new `global.json`, `version.props` and `Directory.*.props`.
+- Phase 2: `User` itself is the Identity user type (no separate `AppUser`). Legacy `PasswordHash/Salt/Iterations/Prf` are never modified; a password set in the new app is stored only in `PasswordHashV3`, so it will not work in the legacy app.
+- Blazor routing ignores the fallback authorize policy: every routable page needs an explicit `[Authorize]` or `[AllowAnonymous]` (Phase 3+ pages must do so). Pages that set cookies (login, error, not-found) are static SSR (`ExcludeFromInteractiveRouting`); login/logout POSTs are minimal-API endpoints so antiforgery/rate-limit apply.
+- A minimal-API POST only gets antiforgery validation if it binds a form; `/logout` binds `IFormCollection` for that reason (a test caught it unprotected).
+- BL0008: no initializer on `[SupplyParameterFromForm]` properties; use `= default!` plus `??= new()`.
+- Cookies are `Secure` outside Development. Deploying over plain http (e.g. compose without TLS) requires `Auth__SecureCookies=false`.
+- Login rate limit is per remote IP (fixed window, `Auth:LoginPermitLimit`/`LoginWindowSeconds`). Forwarded headers are accepted only from configured `ForwardedHeaders:KnownProxies` addresses (default framework loopback proxies); set `ForwardedHeaders__KnownProxies__0` to the TLS proxy address in deployment. Account lockout was not implemented (optional in plan).
+- Tooling note: in this environment only PowerShell was available for file edits (no create/edit tools); `R` is an alias of Invoke-History, so do not name helpers `R`.
 - Interactive behaviour of `FuzzySelect`/`FuzzyMultiSelect`/`DateField` is only verified by static prerender (HTTP 200, markup present). Click/typing behaviour needs a browser test (Playwright) or manual check in Phase 3/4.
 
 ## 10. Handover (rewrite at the end of every phase)
 
-Date: 2026-10-24. Phases 0 and 1 are done. Changes remain in the working tree; no commit was created.
+Date: 2026-10-24. Phases 0, 1 and 2 are done. Changes remain in the working tree; no commit was created.
 
 State:
-- `Motorsports.CharacteristicsTests` now runs on Testcontainers MariaDB 11.7.2 using `Fixtures/LegacySchema.sql` (DDL only) and synthetic data; it covers typed reads and migration idempotency, concurrent startup, and pre-existing auth columns.
-- EF Core's migration snapshot matches the model; the baseline remains empty and the auth migration is self-guarding.
-- Projects: Common, Infrastructure, Web, `tests/Motorsports.UnitTests` (FuzzyMatcher, UserClock), `tests/Motorsports.ArchitectureTests` (layering), `tests/Motorsports.Benchmarks` (BenchmarkDotNet, run with `dotnet run -c Release --project src/tests/Motorsports.Benchmarks`), and `tests/Motorsports.CharacteristicsTests`.
-- Shared UI in `Motorsports.Web/Components/Shared`: `FuzzySelect<T>`, `FuzzyMultiSelect<T>` (chips, selected items hidden from suggestions), `DateField` (editable, `yyyy-MM-dd` mask, Today button, MinDate/MaxDate), `SportAccent` (colour by sport name, subtle left border).
-- Docker image, `.dockerignore` and `docker-compose/motorsports-web/docker-compose.yml` exist and are verified (see section 9).
-- Dev DB `motorsports_web_dev` in the `mariadb` container; connection string in user-secrets of `Motorsports.Web`. Dev URL http://localhost:4100.
+- Projects: Common, Infrastructure (incl. `Auth/`), `Motorsports.Auth` (first slice, RCL), Web, and tests: UnitTests (FuzzyMatcher, UserClock, LegacyPasswordHasher, LocalUrl, validators), ArchitectureTests (layering incl. Auth), Benchmarks, CharacteristicsTests (Testcontainers MariaDB 11.7.2; DB characteristics plus `AuthCharacteristicsTests` using `WebApplicationFactory<Program>`).
+- Auth works end to end in tests: legacy SHA1/256/512 login + rehash, deleted users rejected, generic failure message, local-only returnUrl, antiforgery (login, logout), rate limit 429, forced password change flow, cookie flags. Validation: `dotnet build src/Motorsports.slnx -warnaserror` clean, CSharpier clean, 67 tests pass.
+- Footer fix: `MainLayout` uses `ms-main`; `app.css` makes it a min-viewport-height flex column with the footer pushed down by `margin-top:auto`.
+- Config: `Auth:SecureCookies` (default true, false in Development), `Auth:LoginPermitLimit` (5), `Auth:LoginWindowSeconds` (60).
+- Shared UI in `Motorsports.Web/Components/Shared` as in Phase 1. Dev DB `motorsports_web_dev` in the `mariadb` container; dev URL http://localhost:4100.
 
 Known gaps / not done:
-- No `docker-run.sh` (the compose file replaces it; add only if the user asks).
-- Slice features and auth are still pending; characteristics coverage for business rules will be added as their handlers land.
-- The nav menu only has Home; `Home` is a placeholder; no auth yet, so all pages are currently anonymous.
-- Component interaction is not browser-tested (see section 9).
+- No browser check: footer placement (short vs long pages), login/logout look and mobile layout, interactive logout button were verified only by markup/HTTP tests. Do a manual pass.
+- No user creation/admin UI (out of scope; users come from the legacy table). No account lockout, only per-IP rate limiting.
+- The compose file/Docker image was not re-verified with auth; over http set `Auth__SecureCookies=false`.
+- No `docker-run.sh`. Component interaction not browser-tested.
 
-Next: Phase 2 (Auth), then Phase 3 (reference data slices), per section 6. No CI/CD work, and never touch `src/Db/*` dumps.
+Next: Phase 3 (reference data slices) per section 6: new slices must reference only Common/Infrastructure, mark pages `[Authorize]`, and never touch `src/Db/*` dumps.
