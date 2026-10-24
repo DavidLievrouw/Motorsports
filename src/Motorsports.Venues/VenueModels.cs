@@ -9,11 +9,12 @@ public sealed record VenueRoundInfo(
     DateOnly Date,
     short Number,
     string? Name,
+    string Label,
     string Sport,
     bool SportHasImage,
     string Status,
     decimal? Rating,
-    decimal? Rain,
+    string? Rain,
     string? WinningTeamName,
     IReadOnlyList<string> WinningParticipants
 );

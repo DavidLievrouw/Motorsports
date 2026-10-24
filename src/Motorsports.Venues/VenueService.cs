@@ -96,11 +96,12 @@ public sealed class VenueService(IDbContextFactory<MotorsportsDbContext> factory
                 round.Date,
                 round.Number,
                 round.Name,
+                RoundLabel.Format(round.Number, round.Name),
                 round.Sport,
                 round.HasImage,
                 round.Status,
                 round.Rating,
-                round.Rain,
+                RainLevelDisplay.Format(round.Rain),
                 round.TeamName is null ? null : CountryFlag.WithName(round.TeamCountry, round.TeamName),
                 Array.Empty<string>()
             ))

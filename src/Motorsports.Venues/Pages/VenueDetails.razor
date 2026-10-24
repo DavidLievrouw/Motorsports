@@ -50,7 +50,7 @@ else
                         </MudStack>
                     </CellTemplate>
                 </TemplateColumn>
-                <PropertyColumn Property="round => round.Name" Title="Round" />
+                <PropertyColumn Property="round => round.Label" Title="Round" />
                 <TemplateColumn Title="Winners" Sortable="false">
                     <CellTemplate>@(context.Item.WinningParticipants.Count == 0 ? "—" : string.Join(", ", context.Item.WinningParticipants))</CellTemplate>
                 </TemplateColumn>
@@ -62,7 +62,7 @@ else
                     <CellTemplate>@(context.Item.Rating is { } rating ? $"{rating.ToString("0", CultureInfo.InvariantCulture)} / 10" : "—")</CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Rain" Sortable="false">
-                    <CellTemplate>@(context.Item.Rain?.ToString("0") ?? "—")</CellTemplate>
+                    <CellTemplate>@(context.Item.Rain ?? "—")</CellTemplate>
                 </TemplateColumn>
             </Columns>
         </MudDataGrid>

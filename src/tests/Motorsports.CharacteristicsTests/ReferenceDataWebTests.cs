@@ -105,9 +105,9 @@ public sealed partial class AuthCharacteristicsTests
                 + "INSERT INTO `Participant` (Title, FirstName, LastName, Country) VALUES ('', 'Alex', 'Driver', 'GB');"
                 + "INSERT INTO `SeasonWinner` (Season, Participant) VALUES (1, 1);"
                 + "INSERT INTO `Status` (Name, Step) VALUES ('Finished', 20), ('Scheduled', 0);"
-                + "INSERT INTO `Round` (`Date`, Number, Name, Season, Venue, Status, Rating) VALUES "
-                + "('2026-03-31', 1, 'Completed round', 1, 'Autódromo Hermanos Rodríguez, Mexico City', 'Finished', 6), "
-                + "('2026-04-01', 2, 'Upcoming round', 1, 'Autódromo Hermanos Rodríguez, Mexico City', 'Scheduled', NULL)"
+                + "INSERT INTO `Round` (`Date`, Number, Name, Season, Venue, Status, Rating, Rain) VALUES "
+                + "('2026-03-31', 1, 'Completed round', 1, 'Autódromo Hermanos Rodríguez, Mexico City', 'Finished', 6, 2), "
+                + "('2026-04-01', 2, 'Upcoming round', 1, 'Autódromo Hermanos Rodríguez, Mexico City', 'Scheduled', NULL, NULL)"
         );
         await SeedUserAsync("editor");
         var client = app.NewClient();
@@ -129,6 +129,9 @@ public sealed partial class AuthCharacteristicsTests
         venueMarkup.ShouldContain("Autódromo Hermanos Rodríguez, Mexico City");
         venueMarkup.ShouldContain("March 31, 2026");
         venueMarkup.ShouldContain("6 / 10");
+        venueMarkup.ShouldContain("1 - Completed round");
+        venueMarkup.ShouldContain("2 - Upcoming round");
+        venueMarkup.ShouldContain("Rain without impact");
         venueMarkup.ShouldNotContain("2026-03-31");
 
         var sportMarkup = System.Net.WebUtility.HtmlDecode(
