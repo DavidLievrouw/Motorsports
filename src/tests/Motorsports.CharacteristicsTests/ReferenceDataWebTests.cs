@@ -108,11 +108,15 @@ public sealed partial class AuthCharacteristicsTests
                 + "INSERT INTO `Season` (Sport, Label) VALUES ('F1', '2026');"
                 + "INSERT INTO `SeasonEntry` (Season, Team, Name) VALUES (1, 1, 'Scuderia Ferrari');"
                 + "INSERT INTO `Participant` (Title, FirstName, LastName, Country) VALUES ('', 'Alex', 'Driver', 'GB');"
+                + "UPDATE `Season` SET WinningTeam = 1 WHERE Id = 1;"
                 + "INSERT INTO `SeasonWinner` (Season, Participant) VALUES (1, 1);"
+                + "INSERT INTO `Season` (Sport, Label) VALUES ('F1', '2025');"
+                + "INSERT INTO `SeasonWinner` (Season, Participant) VALUES (2, 1);"
                 + "INSERT INTO `Status` (Name, Step) VALUES ('Finished', 20), ('Scheduled', 0);"
-                + "INSERT INTO `Round` (`Date`, Number, Name, Season, Venue, Status, Rating, Rain) VALUES "
-                + "('2026-03-31', 1, 'Completed round', 1, 'Autódromo Hermanos Rodríguez, Mexico City', 'Finished', 6, 2), "
-                + "('2026-04-01', 2, 'Upcoming round', 1, 'Autódromo Hermanos Rodríguez, Mexico City', 'Scheduled', NULL, NULL)"
+                + "INSERT INTO `Round` (`Date`, Number, Name, Season, Venue, Status, Rating, Rain, WinningTeam) VALUES "
+                + "('2026-03-31', 1, 'Completed round', 1, 'Autódromo Hermanos Rodríguez, Mexico City', 'Finished', 6, 2, 1), "
+                + "('2026-04-01', 2, 'Upcoming round', 1, 'Autódromo Hermanos Rodríguez, Mexico City', 'Scheduled', NULL, NULL, NULL);"
+                + "INSERT INTO `RoundWinner` (Round, Participant) VALUES (1, 1)"
         );
         await SeedUserAsync("editor");
         var client = app.NewClient();
@@ -136,6 +140,8 @@ public sealed partial class AuthCharacteristicsTests
         venueMarkup.ShouldContain("6 / 10");
         venueMarkup.ShouldContain("1 - Completed round");
         venueMarkup.ShouldContain("2 - Upcoming round");
+        venueMarkup.ShouldContain("href=\"/rounds/details/1\"");
+        venueMarkup.ShouldContain("href=\"/rounds/details/2\"");
         venueMarkup.ShouldContain("Rain without impact");
         venueMarkup.ShouldNotContain("2026-03-31");
 
@@ -160,6 +166,35 @@ public sealed partial class AuthCharacteristicsTests
         );
         participantMarkup.ShouldContain("Sports");
         participantMarkup.ShouldContain("F1");
+        participantMarkup.ShouldContain("Round wins");
+        participantMarkup.ShouldContain("href=\"/rounds/details/1\"");
+        participantMarkup.ShouldContain("Season wins");
+        participantMarkup.ShouldContain("href=\"/seasons/details/1\"");
+        participantMarkup.ShouldContain("href=\"/seasons/details/2\"");
+        participantMarkup.ShouldContain("Autódromo Hermanos Rodríguez, Mexico City");
+        participantMarkup.ShouldContain("6 / 10");
+        participantMarkup.ShouldContain("Tu, March 31, 2026");
+        participantMarkup.ShouldContain("We, April 1, 2026");
+
+        var teamMarkup = System.Net.WebUtility.HtmlDecode(
+            await (
+                await client.GetAsync("/teams/details/1", TestContext.Current.CancellationToken)
+            ).Content.ReadAsStringAsync(TestContext.Current.CancellationToken)
+        );
+        teamMarkup.ShouldContain("Season wins");
+        teamMarkup.ShouldContain("href=\"/seasons/details/1\"");
+        teamMarkup.ShouldContain("Tu, March 31, 2026");
+        teamMarkup.ShouldContain("We, April 1, 2026");
+
+        foreach (var route in new[] { "/rounds/details/2", "/rounds/edit/2" })
+        {
+            var historyMarkup = System.Net.WebUtility.HtmlDecode(
+                await (await client.GetAsync(route, TestContext.Current.CancellationToken)).Content.ReadAsStringAsync(
+                    TestContext.Current.CancellationToken
+                )
+            );
+            historyMarkup.ShouldContain("href=\"/rounds/details/1\"");
+        }
 
         var seasonEntryEdit = System.Net.WebUtility.HtmlDecode(
             await (

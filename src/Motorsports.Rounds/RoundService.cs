@@ -201,6 +201,7 @@ internal sealed class RoundService(IDbContextFactory<MotorsportsDbContext> facto
             )
             .OrderByDescending(round => round.Date)
             .ThenByDescending(round => round.Id)
+            .Take(50)
             .Select(round => new
             {
                 round.Id,

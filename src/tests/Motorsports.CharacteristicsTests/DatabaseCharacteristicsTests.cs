@@ -17,7 +17,7 @@ public sealed class MariaDbCollection : ICollectionFixture<MariaDbFixture>
 public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
 {
     [Fact]
-    public async Task Migrator_applies_the_auth_migration_once_and_is_idempotent()
+    public async Task Migrator_applies_all_migrations_once_and_is_idempotent()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         await fixture.ResetSchemaAsync();
@@ -33,8 +33,62 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
             "20261024151208_Baseline",
             "20261024151224_AddUserAuthColumns",
             "20261024163411_AddSportImages",
+            "20261025083000_ParticipantUniqueIdentity",
         ]);
         (await context.Users.CountAsync(cancellationToken)).ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Participant_identity_migration_only_adds_unique_index()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await fixture.ResetSchemaAsync();
+        await fixture.ExecuteSqlAsync(
+            """
+            INSERT INTO `Country` (`ISO`, `Name`, `NiceName`) VALUES ('GB', 'UNITED KINGDOM', 'United Kingdom');
+            INSERT INTO `Sport` (`Name`) VALUES ('F1');
+            INSERT INTO `Status` (`Name`, `Step`) VALUES ('Finished', 20);
+            INSERT INTO `Venue` (`Name`, `Country`) VALUES ('Test Circuit', 'GB');
+            INSERT INTO `Season` (`Sport`, `Label`) VALUES ('F1', '2025'), ('F1', '2024');
+            INSERT INTO `Participant` (`Title`, `FirstName`, `LastName`, `Country`)
+            VALUES ('', ' Alex ', 'Driver', 'GB'), ('', 'Sam', 'Driver', 'GB');
+            INSERT INTO `Round` (`Date`, `Number`, `Season`, `Venue`, `Status`)
+            VALUES ('2025-01-01', 1, 1, 'Test Circuit', 'Finished'),
+                   ('2024-01-01', 1, 2, 'Test Circuit', 'Finished');
+            INSERT INTO `RoundWinner` (`Round`, `Participant`) VALUES (1, 1), (2, 2);
+            INSERT INTO `SeasonWinner` (`Season`, `Participant`) VALUES (1, 1), (2, 2);
+            """
+        );
+
+        var factory = fixture.CreateContextFactory();
+        await CreateMigrator(factory).MigrateAsync(cancellationToken);
+
+        await using var context = await factory.CreateDbContextAsync(cancellationToken);
+        var participants = await context.Participants.AsNoTracking().ToArrayAsync(cancellationToken);
+        participants
+            .Select(participant => (participant.Id, participant.FirstName))
+            .ShouldBe([(1, " Alex "), (2, "Sam")]);
+        var roundWinners = await context
+            .RoundWinners.AsNoTracking()
+            .OrderBy(winner => winner.Round)
+            .Select(winner => new { winner.Round, winner.Participant })
+            .ToArrayAsync(cancellationToken);
+        roundWinners.Select(winner => (winner.Round, winner.Participant)).ShouldBe([(1, 1), (2, 2)]);
+        var seasonWinners = await context
+            .SeasonWinners.AsNoTracking()
+            .OrderBy(winner => winner.Season)
+            .Select(winner => new { winner.Season, winner.Participant })
+            .ToArrayAsync(cancellationToken);
+        seasonWinners.Select(winner => (winner.Season, winner.Participant)).ShouldBe([(1, 1), (2, 2)]);
+        (
+            await context
+                .Database.SqlQueryRaw<long>(
+                    "SELECT COUNT(DISTINCT index_name) AS `Value` FROM information_schema.statistics "
+                        + "WHERE table_schema = DATABASE() AND table_name = 'Participant' "
+                        + "AND index_name = 'IX_Participant_Title_FirstName_LastName_Country' AND non_unique = 0"
+                )
+                .SingleAsync(cancellationToken)
+        ).ShouldBe(1);
     }
 
     [Fact]
@@ -123,7 +177,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
         await Task.WhenAll(first, second);
 
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
-        (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).Count().ShouldBe(3);
+        (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).Count().ShouldBe(4);
     }
 
     [Fact]

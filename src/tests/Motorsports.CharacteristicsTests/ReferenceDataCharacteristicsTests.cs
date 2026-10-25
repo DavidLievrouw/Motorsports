@@ -591,15 +591,24 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
         ).Value;
         await fixture.ExecuteSqlAsync(
             "INSERT INTO `Sport` (Name) VALUES ('F1'), ('MotoGP');"
-                + "INSERT INTO `Season` (Sport, Label) VALUES ('F1', '2025'), ('MotoGP', '2025');"
-                + $"INSERT INTO `SeasonWinner` (Season, Participant) VALUES (1, {participantId}), (2, {participantId});"
+                + "INSERT INTO `Season` (Sport, Label) VALUES ('F1', '2025'), ('MotoGP', '2025'), ('F1', '2024');"
+                + $"INSERT INTO `SeasonWinner` (Season, Participant) VALUES (1, {participantId}), (2, {participantId}), (3, {participantId}), (1, {participantId});"
                 + "INSERT INTO `Venue` (Name, Country) VALUES ('Silverstone', 'GB');"
                 + "INSERT INTO `Round` (`Date`, Number, Season, Venue, Status) "
                 + "VALUES ('2025-07-01', 1, 1, 'Silverstone', 'Scheduled');"
                 + $"INSERT INTO `RoundWinner` (Round, Participant) VALUES (1, {participantId});"
         );
 
-        (await s.Participants.GetAsync(participantId, Ct))!.Sports.ShouldBe(["F1", "MotoGP"]);
+        var info = (await s.Participants.GetAsync(participantId, Ct))!;
+        info.Sports.ShouldBe(["F1", "MotoGP"]);
+        info.RoundWins.Select(win => win.RoundId).ShouldBe([1]);
+        info.RoundWins[0].Venue.ShouldBe("Silverstone");
+        info.RoundWins[0].VenueCountry.ShouldBe("GB");
+        info.RoundWins[0].Rating.ShouldBeNull();
+        info.SeasonWins.Select(win => win.SeasonId).ShouldBe([2, 1, 3]);
+        info.SeasonWins.Single(win => win.SeasonId == 1).StartDate.ShouldBe(new DateOnly(2025, 7, 1));
+        info.SeasonWins.Single(win => win.SeasonId == 1).EndDate.ShouldBe(new DateOnly(2025, 7, 1));
+        info.SeasonWins.Single(win => win.SeasonId == 2).StartDate.ShouldBeNull();
     }
 
     [Fact]

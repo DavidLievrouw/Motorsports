@@ -219,6 +219,23 @@ Bugs discovered:
 
 -------------------
 
+The event history rows, in all places they occur, should have a link to the round details page.
+The participant details page should have a list of round wins. Also with a link to the round details page.
+It would be nice if the participant details page also shows the number of season wins per sport.
+The teams details page should also have a list of season wins. Also with a link to the season details page.
+
+-------------------
+
+Now remove the data changes again in the ParticipantUniqueIndex migration. I confirmed that the production data has no duplicates, so the index can just be applied, without data fixes.
+A season wins row is just the name of the sport. That should also include the start and end date of the season.
+Venue round history does not hold a link to the round details page.
+"No season wins" is right up to the "Edit" button. In both locations. Give it a bit of margin below.
+
+-------------------
+
+In the Participant Details, the round wins should also display the venue, and the rating. The season wins should not be a count, but a list of the seasons that the participant has won. In the same way as on the Teams Details page.
+
+-------------------
 
 
 

@@ -26,6 +26,56 @@ else
             </tbody>
         </MudSimpleTable>
     </MudPaper>
+    <MudText Typo="Typo.h5" HtmlTag="h2" Class="mt-4 mb-2">Round wins</MudText>
+    @if (_participant.RoundWins.Length == 0)
+    {
+        <MudText>No round wins.</MudText>
+    }
+    else
+    {
+        <MudDataGrid T="ParticipantRoundWin" Items="_participant.RoundWins" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1" Class="mb-2">
+            <Columns>
+                <TemplateColumn Title="Date">
+                    <CellTemplate>@DateDisplay.Format(context.Item.Date)</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Sport / season">
+                    <CellTemplate>@($"{context.Item.Sport} {context.Item.SeasonLabel}".Trim())</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Round">
+                    <CellTemplate>
+                        <MudLink Href="@($"/rounds/details/{context.Item.RoundId}")">
+                            @RoundLabel.Format(context.Item.Number, context.Item.Name)
+                        </MudLink>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Venue">
+                    <CellTemplate>@CountryFlag.WithName(context.Item.VenueCountry, context.Item.Venue)</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Rating">
+                    <CellTemplate>@RatingDisplay.Format(context.Item.Rating)</CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    }
+    <MudText Typo="Typo.h5" HtmlTag="h2" Class="mt-4 mb-2">Season wins</MudText>
+    @if (_participant.SeasonWins.Length == 0)
+    {
+        <MudText Class="mb-4">No season wins.</MudText>
+    }
+    else
+    {
+        <MudDataGrid T="ParticipantSeasonWin" Items="_participant.SeasonWins" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1" Class="mb-2">
+            <Columns>
+                <TemplateColumn Title="Season">
+                    <CellTemplate>
+                        <MudLink Href="@($"/seasons/details/{context.Item.SeasonId}")">
+                            @($"{context.Item.Sport} {context.Item.Label} ({DateDisplay.Format(context.Item.StartDate)} – {DateDisplay.Format(context.Item.EndDate)})".Trim())
+                        </MudLink>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    }
     <MudStack Row="true" Spacing="2">
         <MudButton Href="@($"/participants/edit/{_participant.Id}")" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
         <MudButton Href="/participants" Variant="Variant.Text">Back to participants</MudButton>

@@ -65,7 +65,7 @@ Read the validators in `Models/Validators/{Create,Update,Delete}` and copy every
 - Status `Step`: next-up uses `Step < 2` (Scheduled or ReadyToWatch). Rounds to acquire: `Step = 0` and `Date <= today`. History uses `Step > 1` (finished-ish).
 - Next-up per sport: among rounds with status Step < 2, the earliest by date per sport (window `ROW_NUMBER() PARTITION BY Sport ORDER BY Date`). "Very next up" = the earliest next-up round whose date is today or in the past (due), i.e. what you should watch now (`NextUpDisplayModel.IsVeryNextUp`). Only rounds dated today or earlier get an Edit link on the Home card; future ones show "(n day(s) to go)".
 - Latest seasons: per sport, top 2 by `StartDate` desc (null start = latest). `StartDate`/`EndDate` = min/max `Round.Date` of the season (computed, not stored). Compute in SQL, not by loading rounds.
-- Event history for a round: same venue, same sport, only rounds with `Number = 0` when the round is non-championship else `Number > 0`, finished-ish status (`Step > 1`), date <= round date, excluding the round itself, newest first, shows winning team (season entry name, else team name), winners (sorted last name, first name), rating, rain. Legacy cap `LIMIT 15` is removed (new feature).
+- Event history for a round: same venue, same sport, only rounds with `Number = 0` when the round is non-championship else `Number > 0`, finished-ish status (`Step > 1`), date <= round date, excluding the round itself, newest first, capped at 50 records; shows winning team (season entry name, else team name), winners (sorted last name, first name), rating, rain. The legacy cap was 15.
 - Round edit: Rating is a whole number 0..10 (stored decimal(3,1)); if status <= ReadyToWatch and rating <= 0, rating is cleared (null). Rain is `RainLevel` (stored as 0..7, nullable). Note max 1024 chars. Name optional (blank -> null). Number 0..99, `0` = non-championship (row greyed out; number unique per season unless 0). Create defaults: date = last round's date in the season (else today), number = last number + 1, status `Scheduled`.
 - Round list per season shows rows ordered by date asc; page scrolls to the bottom (latest) on load.
 - Round delete blocked when it has winners or a winning team. SeasonEntry delete blocked when the team won a round or the season in that season.
@@ -86,7 +86,7 @@ Known legacy defects. Do not port them:
 5. `MarkReadyToWatch` is a GET. **Fix:** POST with antiforgery. Same for logout.
 6. `returnUrl` open redirect. **Fix:** accept only a relative local path (starts with a single `/`, not `//` or `/\`, no scheme/host); otherwise ignore and go Home. Test with `//evil.com`, `/\evil.com`, `https://evil.com`, `javascript:`.
 7. `Console.WriteLine` EF logging + sensitive data logging; `CurrentEnvironment` used before assignment in `Startup`. **Fix:** `ILogger`, Development only.
-8. History limited to 15 (legacy). **Fix (new feature):** show the full history of an event on the Home page (and round details). Query without `LIMIT`; UI virtualized/paged ("show more") so phones stay fast; group by year.
+8. History limited to 15 (legacy). **Fix (new feature):** show up to 50 history records for an event on the Home page (and round details); the bounded result does not need paging.
 9. Mass-assignment risk via `Bind` lists and edit models. **Fix:** dedicated command/form models per slice, no entity binding.
 
 ## 4a. Pickers (parity with legacy select2)
@@ -104,7 +104,9 @@ Allowed now: non-unique indexes via idempotent migrations (`CREATE INDEX IF NOT 
 
 Candidates to evaluate in Phase 6: `Round(Venue, Number, Date)` (event history), `Round(Status, Date)` (home), `Participant(LastName, FirstName)`, `Team(Sport, Name)`.
 
-Deferred until the legacy app is retired (list, do not apply): unique constraints for (Season, Number), Team (Sport, Name), Participant names; proper `DateOnly`/`bool` types; dropping legacy `User` hash columns.
+Approved exception: the user approved a unique index on `Participant(Title, FirstName, LastName, Country)` on 2026-10-25. Migration `20261025083000_ParticipantUniqueIdentity` creates only this index; production has no duplicates, so it does not modify participant or winner data.
+
+Deferred until the legacy app is retired (list, do not apply): unique constraints for (Season, Number) and Team (Sport, Name); proper `DateOnly`/`bool` types; dropping legacy `User` hash columns.
 
 ## 4c. Team history on season-entry create (new)
 
@@ -116,7 +118,7 @@ See AGENTS.md "Caching". Write paths invalidate in-process; legacy writes are pi
 
 ## 4e. New functionality vs legacy
 
-Full event history (paged, grouped by year, no 15 cap); team history on season-entry; fuzzy search over all team names (season-entry create only) and last-name-first participants; dark theme + per-sport accent; responsive/phone layout; POST for MarkReadyToWatch and logout; atomic winner updates and validate-before-mutate; password rehash on login + change-password page for `ForceChangePassword`; health endpoint (`/health`); migrate-on-start; aggregated one-query home.
+Event history (up to 50 records per event); team history on season-entry; fuzzy search over all team names (season-entry create only) and last-name-first participants; dark theme + per-sport accent; responsive/phone layout; POST for MarkReadyToWatch and logout; atomic winner updates and validate-before-mutate; password rehash on login + change-password page for `ForceChangePassword`; health endpoint (`/health`); migrate-on-start; aggregated one-query home.
 
 ## 4h. Reference-data presentation and image follow-up `[x]`
 
@@ -188,7 +190,7 @@ Found by reading controllers, services, validators, models, views and the DB dum
 - Rounds to acquire: Step = 0 and date <= user's today. Next-up: first round per sport by date with Step < 2 (earliest round not yet in an end state: Finished/Stopped/Cancelled/Postponed are Step >= 2... use the `Status.Step` table), including non-championship rounds. **Legacy behaviour is intentional and kept**: the block shows rounds still to watch, not the real-time next round; an unwatched old round stays "Scheduled" and stays first. No overdue badge. Ordering of the home blocks as legacy (very next up, then next-up by date then sport; rounds to acquire by date then sport).
 - **"Today" and time zone**: "today" is used only for (1) Home: rounds to acquire (`Date <= today`), very-next-up/`IsInPast` (edit link enabled) and "n day(s) to go", (2) Round create default date when the season has no rounds, (3) the date picker's today button. It is **never** used in validation (min date is the fixed 2026-01-01) or DB writes. Because it is per user, "today" = the date in the **user's browser time zone**: read `Intl.DateTimeFormat().resolvedOptions().timeZone` through JS interop once per circuit into a scoped `UserClock` (with `TimeProvider.GetUtcNow()` converted via `TimeZoneInfo.FindSystemTimeZoneById`; install `tzdata` in the Docker image), fallback `App:TimeZone` (default `Europe/Brussels`) when unavailable. The Home handler takes `today` as a **parameter** (so queries and cached results are never keyed to server time); never cache day-dependent results across users/days without `today` in the key. Tests: handler tests with fixed `today`; midnight-boundary tests in two time zones.
 - Latest seasons: all seasons loaded with all rounds in legacy (heavy): compute start/end dates in SQL (`MIN/MAX(Round.Date)` group by season).
-- Event history in legacy is N+1 per next-up card, capped at 15, no pagination: new = one query per selected round, uncapped, paged/virtualized.
+- Event history in legacy is N+1 per next-up card, capped at 15, no pagination: new = one query per selected round, capped at 50, no paging.
 
 ### Auth/UX behaviour to keep or fix
 - All pages require login except `/login`, `/accessdenied`, `/error`. Failed login shows a generic message (no user enumeration). MUST: `returnUrl` only a relative local path (never absolute, never `//`), logout is POST with antiforgery, login rate limiting, cookie `HttpOnly`/`Secure`/`SameSite=Lax`.
@@ -297,14 +299,16 @@ Delivered (checklist):
 - [x] Isolated `Motorsports.Rounds` slice: list at `/seasons/{id}/rounds` (date asc, scroll to latest), details/edit/delete at `/rounds/{id}`, create at `/seasons/{id}/rounds/create`.
 - [x] Create binds season, date, number, name, venue, status, note; edit also rain, rating 0..10 whole, winning team (`FuzzySelect` of season entries), winners (`FuzzyMultiSelect` max 4).
 - [x] `MarkReadyToWatch` is idempotent (Step < 1 → ReadyToWatch; otherwise no-op). Delete blocked when winners or winning team exist.
-- [x] Event history in-slice, uncapped, grouped by year; same venue/sport, championship vs non-championship number rule, Step > 1, date ≤ round date.
+- [x] Event history in-slice, capped at 50 and date-desc; same venue/sport, championship vs non-championship number rule, Step > 1, date ≤ round date.
 - [x] Venue country flags on round list, details, event history, and venue picker. Dates via `DateDisplay`; ratings via `RatingDisplay` (`6 / 10`).
 - [x] Lookup cache: Venues + Statuses; venue writes invalidate Venues.
 - [x] Round/season victories stay on the edit round / edit season pages (user decision); not added to Participant/Team details.
 - [x] Characteristics tests for uniqueness, min date, ready-to-watch, winners/concurrency/delete, event history, list order; web tests for authorize + 404.
+- [x] Event-history round names link to round details on the round details and edit pages.
+- [x] Participant details list round wins with round links, venue flags and ratings. Participant/team details list won seasons with season links and computed start/end dates.
 
 ### Phase 6 – Home `[ ]`
-Single `GetHomeOverview` handler: very-next-up, next-up per sport, rounds to acquire, latest seasons. Event history: full history for very-next-up/selected event, virtualized/paged, grouped by year, collapsible. Sport logos come from `Sport.Image` (the migration seeds current logos); retain `notfound.png` as the no-image fallback. Mobile layout first. Event history comes from one query per selected round (no limit), streamed/paged in the UI; sport accent via logo + thin border.
+Single `GetHomeOverview` handler: very-next-up, next-up per sport, rounds to acquire, latest seasons. Event history: up to 50 records for very-next-up/selected event; bounded result does not require paging. Sport logos come from `Sport.Image` (the migration seeds current logos); retain `notfound.png` as the no-image fallback. Mobile layout first; sport accent via logo + thin border.
 
 ### Phase 7 – Hardening & parity `[ ]`
 - Walk the section 2 table, tick every row after a manual phone-width + desktop check.
@@ -381,6 +385,7 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 - Long dates use `DateDisplay` (`Su`/`Mo`/`Tu`/`We`/`Th`/`Fr`/`Sa` plus `MMMM d, yyyy`); .NET `ddd` would be three letters (`Sun`).
 - Phase 3: pages are interactive (InteractiveServer) with `EditForm OnSubmit`; search commits on Enter/blur, never per keystroke. No browser verification of MudBlazor interaction, mobile layout or `%2F` in a Sport/Venue name route segment.
 - Reference-data follow-up: `AddSportImages` adds nullable `Sport.Image` idempotently and seeds the six current legacy logos from embedded image resources; the migration tests compare persisted bytes with the embedded files.
+- Phase 5 migration follow-up: the participant identity migration was not discoverable because it lacked EF's generated context metadata. EF migration metadata is now present. Per the user's production-data confirmation, the migration only creates the approved unique index and makes no participant or winner data changes.
 
 ## 10. Handover (rewrite at the end of every phase)
 
@@ -390,13 +395,15 @@ State:
 - Projects: Common, shared UI RCL (`Motorsports.Ui`), Infrastructure (incl. `Auth/`, `Lookups/`, `DbOperations`), feature slices (may reference Common + Infrastructure + shared UI, never Web or another slice), Web host/wiring/nav, and UnitTests, ArchitectureTests, Benchmarks, and Testcontainers CharacteristicsTests.
 - Slice C# types are internal except `*Module` / host endpoints; tests use InternalsVisibleTo.
 - Round event history is one date-desc list (details + edit). Create has no Note. Edit has rating slider 0–10, Note at the bottom, links to season entries and participants, and the same history.
+- Event-history entries link to round details. Participant round wins include venue flags and ratings; participant/team season wins link to seasons and display their computed start/end dates.
 - DateField displays `DateDisplay` and still parses `yyyy-MM-dd`.
-- Participant uniqueness: trim Title/First/Last/Country, unique index, keep oldest Id when cleaning extras. List sort: LastName, FirstName, Title, Country.
+- Participant uniqueness: create/edit trims Title/First/Last/Country; a unique index enforces the tuple. Migration adds the index only; List sort: LastName, FirstName, Title, Country.
 
 Known gaps / not done:
 - No browser check of any UI (Phases 2-5): MudBlazor picker interaction, mobile layout, conflict alert flow, Reload/Show differences, theme switch, round-list scroll-to-bottom.
 - Sports list has no search/paging (few rows). Home (Phase 6) is not implemented yet.
 - Carry-over from Phase 2: no admin/user UI, no account lockout, Docker image not re-verified with auth.
 - Not every Rider `ide`/`csharpsquid` inspection is guaranteed clean (ask before touching captured-disposed warnings).
+- Phase 5 review: event history is not grouped by year. Results are bounded to 50 records per the user's decision, so paging is not recommended at this size. The participant migration gap is fixed; the user confirmed production has no duplicates, so the migration only creates the unique index.
 
 Next: Phase 6 (Home). Keep new slice dependencies limited to Common, Infrastructure, and shared UI; use explicit `[Authorize]`; do not edit `src/Db/*`.

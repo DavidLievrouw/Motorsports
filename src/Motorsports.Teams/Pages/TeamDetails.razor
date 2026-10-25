@@ -25,6 +25,25 @@ else
             </tbody>
         </MudSimpleTable>
     </MudPaper>
+    <MudText Typo="Typo.h5" HtmlTag="h2" Class="mt-4 mb-2">Season wins</MudText>
+    @if (_team.SeasonWins.Length == 0)
+    {
+        <MudText Class="mb-4">No season wins.</MudText>
+    }
+    else
+    {
+        <MudDataGrid T="TeamSeasonWin" Items="_team.SeasonWins" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1" Class="mb-2">
+            <Columns>
+                <TemplateColumn Title="Season">
+                    <CellTemplate>
+                        <MudLink Href="@($"/seasons/details/{context.Item.SeasonId}")">
+                            @($"{context.Item.Sport} {context.Item.Label} ({DateDisplay.Format(context.Item.StartDate)} – {DateDisplay.Format(context.Item.EndDate)})".Trim())
+                        </MudLink>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    }
     <MudStack Row="true" Spacing="2">
         <MudButton Href="@($"/teams/edit/{_team.Id}")" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
         @if (_team.SeasonEntryCount == 0)

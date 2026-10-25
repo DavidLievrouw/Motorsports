@@ -187,7 +187,19 @@ public sealed class RoundCharacteristicsTests(MariaDbFixture fixture)
         laterForm.Status = "Finished";
         (await services.Rounds.UpdateAsync(later.Value, laterForm, Ct)).IsSuccess.ShouldBeTrue();
 
+        var historicalRows = string.Join(
+            ", ",
+            Enumerable
+                .Range(0, 55)
+                .Select(index =>
+                    $"('{new DateOnly(2026, 1, 1).AddDays(index):yyyy-MM-dd}', 3, {seasonId}, 'Spa', 'Finished')"
+                )
+        );
+        await fixture.ExecuteSqlAsync(
+            $"INSERT INTO `Round` (`Date`, `Number`, `Season`, `Venue`, `Status`) VALUES {historicalRows}"
+        );
         var history = await services.Rounds.GetEventHistoryAsync(later.Value, Ct);
+        history.Count.ShouldBe(50);
         history.Select(item => item.Id).ShouldContain(roundId);
 
         var cleared = (await services.Rounds.GetFormAsync(roundId, Ct))!;

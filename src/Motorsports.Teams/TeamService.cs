@@ -59,7 +59,7 @@ internal sealed class TeamService(
     public async Task<TeamInfo?> GetAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
-        return await db
+        var team = await db
             .Teams.AsNoTracking()
             .Where(t => t.Id == id)
             .Select(t => new TeamInfo(
@@ -68,9 +68,29 @@ internal sealed class TeamService(
                 t.Sport,
                 t.Country,
                 t.CountryRef!.NiceName ?? t.CountryRef.Name ?? t.Country,
-                db.SeasonEntries.Count(e => e.Team == t.Id)
+                db.SeasonEntries.Count(e => e.Team == t.Id),
+                Array.Empty<TeamSeasonWin>()
             ))
             .FirstOrDefaultAsync(cancellationToken);
+        if (team is null)
+        {
+            return null;
+        }
+
+        var seasonWins = await db
+            .Seasons.AsNoTracking()
+            .Where(season => season.WinningTeam == id)
+            .OrderByDescending(season => season.Label)
+            .ThenByDescending(season => season.Id)
+            .Select(season => new TeamSeasonWin(
+                season.Id,
+                season.Sport,
+                season.Label,
+                db.Rounds.Where(round => round.Season == season.Id).Select(round => (DateOnly?)round.Date).Min(),
+                db.Rounds.Where(round => round.Season == season.Id).Select(round => (DateOnly?)round.Date).Max()
+            ))
+            .ToArrayAsync(cancellationToken);
+        return team with { SeasonWins = seasonWins };
     }
 
     public async Task<TeamForm?> GetFormAsync(int id, CancellationToken cancellationToken = default)

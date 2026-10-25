@@ -10,8 +10,11 @@ internal sealed record TeamInfo(
     string Sport,
     string Country,
     string CountryName,
-    int SeasonEntryCount
+    int SeasonEntryCount,
+    TeamSeasonWin[] SeasonWins
 );
+
+internal sealed record TeamSeasonWin(int SeasonId, string Sport, string? Label, DateOnly? StartDate, DateOnly? EndDate);
 
 /// <summary>Form model for create and edit. <see cref="RowVersion"/> is the optimistic concurrency token of an edit.</summary>
 public sealed class TeamForm

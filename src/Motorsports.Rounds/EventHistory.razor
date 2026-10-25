@@ -15,7 +15,11 @@ else
                     <CellTemplate>@DateDisplay.Format(context.Item.Date)</CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Round">
-                    <CellTemplate>@RoundLabel.Format(context.Item.Number, context.Item.Name)</CellTemplate>
+                    <CellTemplate>
+                        <MudLink Href="@($"/rounds/details/{context.Item.Id}")">
+                            @RoundLabel.Format(context.Item.Number, context.Item.Name)
+                        </MudLink>
+                    </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Rating">
                     <CellTemplate>@RatingDisplay.Format(context.Item.Rating)</CellTemplate>

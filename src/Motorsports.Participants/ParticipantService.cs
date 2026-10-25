@@ -72,7 +72,9 @@ internal sealed class ParticipantService(
                 p.LastName,
                 p.Country,
                 p.CountryRef!.NiceName ?? p.CountryRef.Name ?? p.Country,
-                Array.Empty<string>()
+                Array.Empty<string>(),
+                Array.Empty<ParticipantRoundWin>(),
+                Array.Empty<ParticipantSeasonWin>()
             ))
             .FirstOrDefaultAsync(cancellationToken);
         if (row is null)
@@ -91,7 +93,64 @@ internal sealed class ParticipantService(
             join season in db.Seasons.AsNoTracking() on winner.Season equals season.Id
             select season.Sport;
         var sports = await roundSports.Union(seasonSports).OrderBy(sport => sport).ToArrayAsync(cancellationToken);
-        return row with { Sports = sports };
+
+        var roundWins = await (
+            from winner in db.RoundWinners.AsNoTracking()
+            where winner.Participant == id
+            join round in db.Rounds.AsNoTracking() on winner.Round equals round.Id
+            join season in db.Seasons.AsNoTracking() on round.Season equals season.Id
+            select new
+            {
+                RoundId = round.Id,
+                round.Date,
+                season.Sport,
+                SeasonLabel = season.Label,
+                round.Number,
+                round.Name,
+                round.Venue,
+                VenueCountry = db
+                    .Venues.Where(venue => venue.Name == round.Venue)
+                    .Select(venue => venue.Country)
+                    .FirstOrDefault(),
+                round.Rating,
+            }
+        )
+            .Distinct()
+            .OrderByDescending(round => round.Date)
+            .ThenByDescending(round => round.RoundId)
+            .Select(round => new ParticipantRoundWin(
+                round.RoundId,
+                round.Date,
+                round.Sport,
+                round.SeasonLabel,
+                round.Number,
+                round.Name,
+                round.Venue,
+                round.VenueCountry ?? "",
+                round.Rating
+            ))
+            .ToArrayAsync(cancellationToken);
+
+        var seasonWins = await db
+            .Seasons.AsNoTracking()
+            .Where(season => db.SeasonWinners.Any(winner => winner.Season == season.Id && winner.Participant == id))
+            .OrderByDescending(season => season.Label)
+            .ThenByDescending(season => season.Id)
+            .Select(season => new ParticipantSeasonWin(
+                season.Id,
+                season.Sport,
+                season.Label,
+                db.Rounds.Where(round => round.Season == season.Id).Select(round => (DateOnly?)round.Date).Min(),
+                db.Rounds.Where(round => round.Season == season.Id).Select(round => (DateOnly?)round.Date).Max()
+            ))
+            .ToArrayAsync(cancellationToken);
+
+        return row with
+        {
+            Sports = sports,
+            RoundWins = roundWins,
+            SeasonWins = seasonWins,
+        };
     }
 
     public async Task<ParticipantForm?> GetFormAsync(int id, CancellationToken cancellationToken = default)

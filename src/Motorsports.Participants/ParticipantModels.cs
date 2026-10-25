@@ -18,7 +18,29 @@ internal sealed record ParticipantInfo(
     string LastName,
     string Country,
     string CountryName,
-    string[] Sports
+    string[] Sports,
+    ParticipantRoundWin[] RoundWins,
+    ParticipantSeasonWin[] SeasonWins
+);
+
+internal sealed record ParticipantRoundWin(
+    int RoundId,
+    DateOnly Date,
+    string Sport,
+    string? SeasonLabel,
+    short Number,
+    string? Name,
+    string Venue,
+    string VenueCountry,
+    decimal? Rating
+);
+
+internal sealed record ParticipantSeasonWin(
+    int SeasonId,
+    string Sport,
+    string? Label,
+    DateOnly? StartDate,
+    DateOnly? EndDate
 );
 
 /// <summary>Form model for create and edit. <see cref="RowVersion"/> is the optimistic concurrency token of an edit.</summary>
