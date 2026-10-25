@@ -1,6 +1,6 @@
-# Motorsports.Web – rewrite plan
+# Motorsports – project plan
 
-Rewrite of `Motorsports.Scaffolding.Core` (net8 MVC, legacy) as `Motorsports.Web` (net10, Blazor + MudBlazor). Feature parity, new UI. Read `../AGENTS.md` first; it holds the binding rules. This file holds scope, inventory, and phases.
+Project scope, implementation history, and upcoming phases for the production-ready .NET 10 Blazor + MudBlazor application. Read `../AGENTS.md` first; it holds the binding rules.
 
 Status legend: `[ ]` todo, `[x]` done. Update as you go.
 
@@ -8,15 +8,15 @@ Status legend: `[ ]` todo, `[x]` done. Update as you go.
 
 | Topic | Decision |
 |---|---|
-| Target | `net10.0`, C# 14, new `src/Motorsports.slnx` (legacy project stays in it until cut-over) |
+| Target | `net10.0`, C# 14, `src/Motorsports.slnx` |
 | UI | Blazor Web App, interactive server render mode, MudBlazor, responsive (phone + desktop) |
 | Architecture | Vertical slices as Razor class libraries + dependency-free `Motorsports.Common` + shared `Motorsports.Ui` + `Motorsports.Infrastructure`; host `Motorsports.Web`. Slice APIs are `internal` except module/DI entry points the host needs; tests use InternalsVisibleTo. |
 | Data | EF Core only. MariaDB via `Pomelo.EntityFrameworkCore.MySql` 9.0.0 + EF Core 9.x on net10.0 (Pomelo has no EF 10 stable; Oracle `MySql.EntityFrameworkCore` 10.x is the fallback if the Phase 0 spike fails). Dapper/`IQueryExecutor` dropped |
-| DB | Existing MariaDB schema kept legacy-compatible. Additive nullable `User` auth columns and `Sport.Image longblob` are approved; current sport logos are backfilled. Legacy app keeps running against the same DB for the first weeks |
+| DB | MariaDB schema managed by idempotent EF migrations. Existing rows are preserved; the legacy password-hash columns remain in place. |
 | Theme | Dark default, light optional. Per-sport branding = logo + subtle accent only |
 | Performance | Hard requirement, see AGENTS.md "Performance" |
 | Versioning | `version.txt` -> tracked `src/version.props` -> all projects (AGENTS.md "Versioning") |
-| Auth | ASP.NET Identity, custom user store over `User`, legacy hash verified, rehash on login, migration on startup |
+| Auth | ASP.NET Identity, custom user store over `User`, existing password hashes verified and upgraded on login, migration on startup |
 | Validation | FluentValidation, before mutation, inside transaction |
 | Tooling | Roslynator, CSharpier, central package mgmt, `Directory.Build.props`, `.editorconfig` |
 | Deploy | Docker on Ubuntu only, manual. No CI/CD in scope, no IIS |
@@ -100,13 +100,13 @@ Legacy uses select2 in `Views/Shared/EditorTemplates/*.cshtml`: `Team.cshtml` (s
 
 ## 4b. Schema suggestions (apply only if additive and legacy-safe)
 
-Allowed now: non-unique indexes via idempotent migrations (`CREATE INDEX IF NOT EXISTS`, `Down` = `DROP INDEX IF EXISTS`), one migration per index. Nothing that can break the legacy app (no unique constraints, renames, type changes, new NOT NULL without default, dropping). Apply only after EXPLAIN/measurement proves a gain; log each here: table, columns, query, measured gain, migration name.
+Performance indexes require idempotent migrations (`CREATE INDEX IF NOT EXISTS`, `Down` = `DROP INDEX IF EXISTS`), one migration per index. Apply only after EXPLAIN/measurement proves a gain; log each here: table, columns, query, measured gain, migration name.
 
-Candidates to evaluate in Phase 6: `Round(Venue, Number, Date)` (event history), `Round(Status, Date)` (home), `Participant(LastName, FirstName)`, `Team(Sport, Name)`.
+Candidates to evaluate in Phase 8: `Round(Venue, Number, Date)` (event history), `Round(Status, Date)` (home), `Participant(LastName, FirstName)`, `Team(Sport, Name)`.
 
 Approved exception: the user approved a unique index on `Participant(Title, FirstName, LastName, Country)` on 2026-10-25. Migration `20261025083000_ParticipantUniqueIdentity` creates only this index; production has no duplicates, so it does not modify participant or winner data.
 
-Deferred until the legacy app is retired (list, do not apply): unique constraints for (Season, Number) and Team (Sport, Name); proper `DateOnly`/`bool` types; dropping legacy `User` hash columns.
+Deferred for Phase 8 review: database-enforced uniqueness for Team (Sport, Name), and for positive Round.Number values per Season while allowing multiple zero-number non-championship rounds; schema type alignment where the current model/schema comparison identifies a real mismatch; redundant or unused indexes after workload measurement. Do not drop `User.PasswordHash`, `Salt`, `Iterations`, or `Prf` in this phase.
 
 ## 4c. Team history on season-entry create (new)
 
@@ -326,18 +326,36 @@ Delivered (checklist):
 - [x] Manual phone-width + desktop browser pass for the section 2 parity table and interactive controls (user-verified 2026-10-25).
 - [x] Docker smoke follow-ups resolved; user confirmed the corrected container/footer. Consolidated build-stage copies into two COPY instructions and restore/publish into one RUN, preserving the published-script guard and the non-root runtime stage.
 - [x] Release version 2.0.0; final warning-free solution build, CSharpier format/check, 143 tests, and optimized Docker image build passed.
-- Cut-over (manual, by user): deploy, verify, then remove the legacy project, `Build` (Cake/IIS), `Db` sqlproj/Azure backups from the solution. Do not do this without asking.
+
+### Phase 8 – Production performance, Vogen IDs, database cleanup & security hardening `[ ]`
+
+The 2.0.0 application is release-ready. This phase is a measured post-release quality pass; retain behavior and persisted data unless a planned migration explicitly changes them.
+
+- [ ] **Performance baseline and audit:** record reproducible baselines for Home and other representative hot paths, SQL command counts, query plans, and allocations/memory. Profile production-shaped synthetic data rather than real backup contents. Inspect EF queries, picker/cache paths, Blazor circuit state, and hot allocations; fix only demonstrated bottlenecks.
+- [ ] **Container image size:** measure the current optimized image as a baseline, then reduce final image size without weakening runtime reliability or security. Evaluate a .NET 10 chiseled runtime base first, including `aspnet:10.0-noble-chiseled-extra` if IANA time-zone data is required; account for the current `tzdata` and `curl` health-check dependencies, non-root execution, invariant globalization, and native/runtime assets. Replace shell-based health checks with an image-compatible approach where needed. Record image-size and startup/health-check results before and after; retain the current base if chiseled variants introduce unacceptable trade-offs.
+- [ ] **Indexes:** evaluate the candidates in section 4b with representative data and `EXPLAIN`/`EXPLAIN ANALYZE`; add indexes only when they measurably improve a workload. Check existing indexes for redundancy before proposing removal. Record query plan, measurement, migration, and before/after result.
+- [ ] **Vogen IDs:** define Vogen value objects for persisted entity IDs and natural string IDs, then use them consistently in EF entities/relations, slice commands and queries, and relevant lookup contracts. Add EF value converters and update test fixtures. Keep the database column types/values, routes, and user-visible behavior unchanged; convert at boundaries where the framework requires primitives. Remove the Vogen deferral in `AGENTS.md` when complete.
+- [ ] **Schema inventory and cleanup plan:** compare the live schema, EF model, migration history, and actual query usage. Review the deferred items in section 4b, including Team `(Sport, Name)` uniqueness, Round-number uniqueness for positive numbers only (multiple `Number = 0` rounds remain valid), column type alignment, and redundant indexes. Confirm existing data satisfies each proposed constraint before migration; do not force a uniqueness rule that conflicts with domain behavior.
+- [ ] **Data-preserving migrations:** implement only evidenced constraint, index, and schema-type cleanup as separate idempotent migrations with matching `Down` methods. Preserve `User.PasswordHash`, `Salt`, `Iterations`, and `Prf`; dropping these password-hash columns is explicitly out of scope. Removing unused tables or other columns is also out of scope for this phase.
+- [ ] **Production ingress and host validation:** document the production network topology and ensure the app is reachable only through the trusted reverse proxy/private network. If a host port is required, bind it to the appropriate interface; configure an explicit allowed-host list for the production hostname and verify forwarded headers are trusted only from the proxy. Test rejection of unexpected Host and spoofed forwarding headers.
+- [ ] **Data Protection key security:** persist keys in durable storage with restrictive access and encryption at rest. Keep the application discriminator stable, document backup/restore and key-rotation procedures, and verify cookies/tokens survive container replacement while unauthorized principals cannot access the key store.
+- [ ] **Content Security Policy:** expand the current frame-ancestors-only policy through report-only deployment first. Inventory Blazor/MudBlazor script, style, connection, and image requirements; define the narrowest compatible policy, avoid broad source allowances where feasible, then enforce it. Add HTTP tests for the policy and verify core authenticated/interactive flows in a browser.
+- [ ] **Regression coverage:** add/adjust MariaDB characteristics tests for every schema change, including duplicate/edge data and upgrade/re-run behavior. Keep contract and behavior tests green; compare benchmark and memory results to the baseline and document any trade-off.
+- [ ] **Exit:** warning-free build, CSharpier format/check, full solution tests, migration SQL reviewed, and measurable performance/schema/security outcomes recorded in this plan. If the audit finds no justified optimization or schema change, record that result rather than adding speculative changes.
 
 ## 7. Resolved decisions and remaining open points
 
 Resolved:
 - Provider: Pomelo 9.0.0 + EF Core 9 (see section 1), spike in Phase 0.
 - `src/Db/*.sql` backups stay in the repo; the user updates them manually. Agents ignore them except as read-only schema reference.
-- Legacy app keeps running against the same DB for the first weeks; additive-only schema changes, legacy password columns untouched.
 - Theme: dark default, subtle per-sport branding (logo + accent).
+- Legacy application has been retired; preserve its database only as historical source/reference where useful.
 
-Open (ask the user when reached):
-- Resolved: first release is `2.0.0`; minimum round date 2026-01-01 for new/changed dates only. Round/participant uniqueness rules are in section 3.
+Open:
+- None. Phase 8 database cleanup is limited to constraints, indexes, and schema type alignment; unused tables/columns and `User.PasswordHash`, `Salt`, `Iterations`, and `Prf` will be retained.
+
+Resolved:
+- First release is `2.0.0`; minimum round date 2026-01-01 for new/changed dates only. Round/participant uniqueness rules are in section 3.
 
 ## 8. Definition of done (per slice)
 
@@ -365,7 +383,7 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 - Phase 1 MariaDB reads confirmed `DateOnly`, decimal, `char(2)`, and binary values. The schema fixture exposed that legacy password bytes need `varbinary(50)` mapping and Status.Step is signed `tinyint`; both are aligned in the entity model. Country's two smallint columns are now represented as well.
 - Analyzers: `AnalysisLevel=latest` (not `latest-recommended`, too noisy). Disabled with reasons in `.editorconfig`: CA1716, CA1000 (public `Result<T>` API), RCS1181, RCS1161, RCS1043 (extension classes must be `partial`), RCS1201 (EF fluent config).
 - `InvariantGlobalization=true` cannot rely on `string.Normalize`; `FuzzyMatcher.Normalize` uses its own Latin-1/Latin Extended-A fold tables. Verify on Linux in the Docker image.
-- Vogen is deferred (plain int/string keys). Decision recorded in AGENTS.md.
+- Phase 8 will replace primitive IDs with Vogen value objects; database and route representations are planned to remain unchanged.
 - Template cleanup: bootstrap, Counter, Weather, NavMenu css removed; the Web project uses MudBlazor only.
 - FIXED: `GET /` returned 500 because `TimeZoneInfo.FindSystemTimeZoneById("Europe/Brussels")` throws on Windows. `UserClock.ResolveZone` falls back to the local zone. Linux/Docker (tzdata) resolves IANA ids directly (verified in the container).
 - CSharpier does **not** support an `excludes:` key in `.csharpierrc.yaml`. Exclusions live in `.csharpierignore` (legacy app, `src/Build`, Migrations, bin, obj). Before this was fixed, `csharpier format .` reformatted the legacy projects; they were restored with `git checkout`. Always check `git status src/Motorsports.Scaffolding.Core src/Build` is clean after formatting.
@@ -405,7 +423,7 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 
 ## 10. Handover (rewrite at the end of every phase)
 
-Date: 2026-10-25. Phases 0–7 are complete. Version 2.0.0 is ready for release.
+Date: 2026-10-25. Phases 0–7 are complete. Version 2.0.0 is release-ready; Phase 8 is planned.
 
 State:
 - The new app is organized into Common, shared UI, Infrastructure, feature slices, and the Web host. Unit, architecture, benchmark, and MariaDB characteristics projects are in the solution.
@@ -425,4 +443,4 @@ Known gaps / not done:
 - Event history is not grouped by year and includes any event with `Status.Step > 1`, including postponed/cancelled events, by documented design.
 - The Home benchmark is a local Windows developer baseline, not representative production capacity data.
 
-Next: publish and deploy version 2.0.0, apply the prepared credential rotations, and configure durable Data Protection key storage for production.
+Next: complete production deployment prerequisites, then start Phase 8 with performance baselines, Vogen IDs, evidence-based database cleanup, ingress/key-storage hardening, and CSP enforcement.
