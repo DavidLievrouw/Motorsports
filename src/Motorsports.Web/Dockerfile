@@ -15,7 +15,6 @@ COPY src/Motorsports.Teams/*.csproj src/Motorsports.Teams/
 COPY src/Motorsports.Ui/*.csproj src/Motorsports.Ui/
 COPY src/Motorsports.Venues/*.csproj src/Motorsports.Venues/
 COPY src/Motorsports.Web/*.csproj src/Motorsports.Web/
-RUN dotnet restore src/Motorsports.Web/Motorsports.Web.csproj
 COPY .editorconfig ./
 COPY src/Motorsports.Common src/Motorsports.Common
 COPY src/Motorsports.Infrastructure src/Motorsports.Infrastructure
@@ -29,9 +28,12 @@ COPY src/Motorsports.Teams src/Motorsports.Teams
 COPY src/Motorsports.Ui src/Motorsports.Ui
 COPY src/Motorsports.Venues src/Motorsports.Venues
 COPY src/Motorsports.Web src/Motorsports.Web
+# Razor files must be present during restore so the framework static assets package is included.
+RUN dotnet restore src/Motorsports.Web/Motorsports.Web.csproj
 ARG SOURCE_REVISION_ID=
 RUN dotnet publish src/Motorsports.Web/Motorsports.Web.csproj -c Release --no-restore -o /out \
-    -p:SourceRevisionId=${SOURCE_REVISION_ID} -p:UseAppHost=false
+    -p:SourceRevisionId=${SOURCE_REVISION_ID} -p:UseAppHost=false \
+    && test -s /out/wwwroot/_framework/blazor.web.js
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble
 # tzdata is required: user time zones are IANA ids and the image runs with InvariantGlobalization.

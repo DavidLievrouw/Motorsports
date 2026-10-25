@@ -4,6 +4,7 @@
     <Version>$(MotorsportsVersion)</Version>
     <AssemblyVersion>$(MotorsportsVersion).0</AssemblyVersion>
     <FileVersion>$(MotorsportsVersion).0</FileVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <InformationalVersion Condition="'$(SourceRevisionId)' == ''">$(MotorsportsVersion)</InformationalVersion>
     <InformationalVersion Condition="'$(SourceRevisionId)' != ''"
       >$(MotorsportsVersion)+$(SourceRevisionId)</InformationalVersion>

@@ -400,6 +400,7 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 - Phase 7: the Home benchmark initially did not run because BenchmarkDotNet rejects sealed benchmark classes; `HomeOverviewBenchmarks` is now unsealed and the local baseline is recorded above. The Home handler's fixed four-read assertion remains in the characteristics suite.
 - Phase 7: source-controlled Compose files contained credential literals. They now require deployment/local environment variables instead; rotate any credentials previously used from those files. Compose configuration validation passes with the required variables supplied.
 - Phase 7 Docker smoke check: the fallback authorization policy redirected `/_framework/blazor.web.js` to login, returning HTML where JavaScript was required. The bootstrap endpoint now explicitly allows anonymous access; page authorization remains unchanged and an HTTP characteristics test covers the script response.
+- Phase 7 Docker publish follow-up: restoring before copying Razor source omitted the framework static-assets package, so authenticated script requests still returned 404. Docker now restores with all Razor source present and fails the build if the published `blazor.web.js` is missing. Verified the corrected production container returns 200 `text/javascript` for Blazor/MudBlazor scripts, 200 for health, and a login redirect for anonymous Home requests. Authenticated browser interactions still need rechecking with the rebuilt image.
 
 ## 10. Handover (rewrite at the end of every phase)
 
