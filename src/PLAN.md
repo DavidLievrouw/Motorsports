@@ -405,7 +405,7 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 
 ## 10. Handover (rewrite at the end of every phase)
 
-Date: 2026-10-25. Phases 0–7 are complete. Version is 2.0.0. No user-only cut-over has been started.
+Date: 2026-10-25. Phases 0–7 are complete. Version 2.0.0 is ready for release.
 
 State:
 - The new app is organized into Common, shared UI, Infrastructure, feature slices, and the Web host. Unit, architecture, benchmark, and MariaDB characteristics projects are in the solution.
@@ -425,4 +425,4 @@ Known gaps / not done:
 - Event history is not grouped by year and includes any event with `Status.Step > 1`, including postponed/cancelled events, by documented design.
 - The Home benchmark is a local Windows developer baseline, not representative production capacity data.
 
-Next: user-managed production deployment, prepared credential rotations, and durable Data Protection key storage. Keep the legacy app available during the transition; do not remove legacy projects or database assets without explicit approval.
+Next: publish and deploy version 2.0.0, apply the prepared credential rotations, and configure durable Data Protection key storage for production.
