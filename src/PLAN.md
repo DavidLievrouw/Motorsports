@@ -317,14 +317,15 @@ Delivered (checklist):
 - [x] Characteristics coverage verifies the selected round, acquisition set, ten-year history bounds/results, anonymous route protection, and a constant four SQL reads for the populated overview.
 - [x] Added a BenchmarkDotNet Home overview benchmark requiring `ConnectionStrings__Motorsports`.
 
-### Phase 7 – Hardening & parity `[ ]`
-- Walk the section 2 table, tick every row after a manual phone-width + desktop check.
+### Phase 7 – Hardening & parity `[x]` (done 2026-10-25)
 - [x] Data-integrity pass: reviewed transaction/error mapping and existing uniqueness, FK, nullability and optimistic-concurrency characteristics coverage.
 - [x] Security pass: verified existing antiforgery and login-rate-limit coverage; added response security headers and secure-cookie coverage. Production HSTS is enabled. Replaced Compose credential literals with required environment variables.
 - [x] Home MariaDB benchmark: 11.156 ms mean and 272.17 KB managed allocation per call on the local Windows 11 / .NET 10.0.4 host. This is a developer-machine baseline, not a production SLA.
 - [x] Local circuit-memory estimate (user-measured 2026-10-25): after full GCs induced by `dotnet-gcdump`, heap size minus fragmentation was 14,053,784 bytes with zero tabs and 30,605,360 bytes with five authenticated tabs. Delta / 5 = 3,310,315 bytes (~3.16 MiB) per added tab/circuit. Includes any shared-cache/runtime growth; not an isolated retained-circuit measurement or a production capacity guarantee.
 - [x] Docs: README covers local run/configuration, Docker, and migration notes.
 - [x] Manual phone-width + desktop browser pass for the section 2 parity table and interactive controls (user-verified 2026-10-25).
+- [x] Docker smoke follow-ups resolved; user confirmed the corrected container/footer. Consolidated build-stage copies into two COPY instructions and restore/publish into one RUN, preserving the published-script guard and the non-root runtime stage.
+- [x] Release version 2.0.0; final warning-free solution build, CSharpier format/check, 143 tests, and optimized Docker image build passed.
 - Cut-over (manual, by user): deploy, verify, then remove the legacy project, `Build` (Cake/IIS), `Db` sqlproj/Azure backups from the solution. Do not do this without asking.
 
 ## 7. Resolved decisions and remaining open points
@@ -404,7 +405,7 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 
 ## 10. Handover (rewrite at the end of every phase)
 
-Date: 2026-10-25. Phases 0–6 are complete; Phase 7 hardening is in progress. No user-only cut-over has been started.
+Date: 2026-10-25. Phases 0–7 are complete. Version is 2.0.0. No user-only cut-over has been started.
 
 State:
 - The new app is organized into Common, shared UI, Infrastructure, feature slices, and the Web host. Unit, architecture, benchmark, and MariaDB characteristics projects are in the solution.
@@ -413,13 +414,15 @@ State:
 - Phase 7 added security response headers and production HSTS; auth characteristics cover antiforgery, login throttling, cookie flags, and security headers.
 - Compose files no longer embed database/admin credentials. Supply their required variables from the deployment environment and rotate any previously used values.
 - `README.md` documents local setup, configuration, container deployment, and startup migrations.
+- Docker restores with Razor source present, verifies the published bootstrap script, and uses two build-stage COPY instructions plus one restore/publish RUN. The user confirmed the corrected container/footer; SHA metadata is no longer duplicated.
+- Final checks passed: warning-free solution build, CSharpier format/check, all 143 tests, and optimized Docker image build.
 
 Known gaps / not done:
 - Production password rotation has been prepared by the user but not yet applied.
-- Docker image has not been re-verified with authenticated browser flows. No admin/user UI or account lockout.
-- Docker smoke follow-up: rebuild the image with the public Blazor bootstrap fix. Use a private browser window to avoid localhost cookies from the development host (cookies are not isolated by port). Production Data Protection keys need durable, access-controlled storage to preserve auth/antiforgery tokens across container replacement; current container defaults are ephemeral.
+- No admin/user UI or account lockout (outside the agreed phase scope).
+- Production Data Protection keys need durable, access-controlled storage to preserve auth/antiforgery tokens across container replacement; current container defaults are ephemeral. Use a private browser window for side-by-side localhost testing because cookies are not isolated by port.
 - Not every Rider `ide`/`csharpsquid` inspection is guaranteed clean (ask before touching captured-disposed warnings).
 - Event history is not grouped by year and includes any event with `Status.Step > 1`, including postponed/cancelled events, by documented design.
 - The Home benchmark is a local Windows developer baseline, not representative production capacity data.
 
-Next: finish release verification, including the Docker authenticated-flow check, then repeat the full build, format check, and tests before closing Phase 7 and setting version 2.0.0. The user will apply prepared production credential rotations during release. Keep schema changes legacy-compatible, do not edit `src/Db/*`, and ask before the user-only cut-over.
+Next: user-managed production deployment, prepared credential rotations, and durable Data Protection key storage. Keep the legacy app available during the transition; do not remove legacy projects or database assets without explicit approval.
