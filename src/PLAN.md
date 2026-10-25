@@ -322,9 +322,9 @@ Delivered (checklist):
 - [x] Data-integrity pass: reviewed transaction/error mapping and existing uniqueness, FK, nullability and optimistic-concurrency characteristics coverage.
 - [x] Security pass: verified existing antiforgery and login-rate-limit coverage; added response security headers and secure-cookie coverage. Production HSTS is enabled. Replaced Compose credential literals with required environment variables.
 - [x] Home MariaDB benchmark: 11.156 ms mean and 272.17 KB managed allocation per call on the local Windows 11 / .NET 10.0.4 host. This is a developer-machine baseline, not a production SLA.
-- [ ] Circuit-memory measurement; requires an active representative browser circuit.
+- [x] Local circuit-memory estimate (user-measured 2026-10-25): after full GCs induced by `dotnet-gcdump`, heap size minus fragmentation was 14,053,784 bytes with zero tabs and 30,605,360 bytes with five authenticated tabs. Delta / 5 = 3,310,315 bytes (~3.16 MiB) per added tab/circuit. Includes any shared-cache/runtime growth; not an isolated retained-circuit measurement or a production capacity guarantee.
 - [x] Docs: README covers local run/configuration, Docker, and migration notes.
-- [ ] Manual phone-width + desktop browser pass for the section 2 parity table and interactive controls.
+- [x] Manual phone-width + desktop browser pass for the section 2 parity table and interactive controls (user-verified 2026-10-25).
 - Cut-over (manual, by user): deploy, verify, then remove the legacy project, `Build` (Cake/IIS), `Db` sqlproj/Azure backups from the solution. Do not do this without asking.
 
 ## 7. Resolved decisions and remaining open points
@@ -407,16 +407,16 @@ Date: 2026-10-25. Phases 0–6 are complete; Phase 7 hardening is in progress. N
 State:
 - The new app is organized into Common, shared UI, Infrastructure, feature slices, and the Web host. Unit, architecture, benchmark, and MariaDB characteristics projects are in the solution.
 - `Motorsports.Home` owns `/`; its populated query path performs four reads, covered by a characteristics test. The local benchmark baseline is 11.156 ms mean / 272.17 KB managed allocation per call.
+- The user completed the mobile/desktop checks and supplied full-GC heap snapshots: the five-tab incremental live-heap estimate is ~3.16 MiB per circuit, including shared/runtime growth.
 - Phase 7 added security response headers and production HSTS; auth characteristics cover antiforgery, login throttling, cookie flags, and security headers.
 - Compose files no longer embed database/admin credentials. Supply their required variables from the deployment environment and rotate any previously used values.
 - `README.md` documents local setup, configuration, container deployment, and startup migrations.
 
 Known gaps / not done:
-- Manual 360px/desktop browser checks remain, including fuzzy-picker keyboard/touch interaction, conflict/reload UI, theme switching, and round-list scroll-to-bottom.
-- Circuit memory has not been measured; the Home benchmark's managed allocation is not a per-circuit measurement. This environment has no installed browser or `dotnet-counters` tool for that live-circuit pass.
+- Production password rotation has been prepared by the user but not yet applied.
 - Docker image has not been re-verified with authenticated browser flows. No admin/user UI or account lockout.
 - Not every Rider `ide`/`csharpsquid` inspection is guaranteed clean (ask before touching captured-disposed warnings).
 - Event history is not grouped by year and includes any event with `Status.Step > 1`, including postponed/cancelled events, by documented design.
 - The Home benchmark is a local Windows developer baseline, not representative production capacity data.
 
-Next: finish the manual responsive/interaction pass and obtain a circuit-memory measurement, then repeat the full build, format check, and tests. Keep schema changes legacy-compatible, do not edit `src/Db/*`, and ask before the user-only cut-over.
+Next: finish release verification, including the Docker authenticated-flow check, then repeat the full build, format check, and tests before closing Phase 7 and setting version 2.0.0. The user will apply prepared production credential rotations during release. Keep schema changes legacy-compatible, do not edit `src/Db/*`, and ask before the user-only cut-over.
