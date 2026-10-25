@@ -22,7 +22,7 @@ else
         }
         <MudText Typo="Typo.h4" HtmlTag="h1">@_sport.Name</MudText>
     </MudStack>
-    <MudPaper Class="pa-4 mb-2" Style="max-width:40rem">
+    <MudPaper Class="pa-4 mb-2" Style="@($"max-width:40rem; {SportAccent.Style(_sport.Name)}")">
         <MudSimpleTable Dense="true" Style="overflow-x:auto">
             <tbody>
                 <tr><th>Name</th><td>@_sport.Name</td></tr>

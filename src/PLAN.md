@@ -32,15 +32,15 @@ Enums in legacy: `RoundStatus` (Scheduled 0, ReadyToWatch 1, Postponed 10, Finis
 
 | Slice | Pages / features | Legacy source | Done |
 |---|---|---|---|
-| Auth | Login (+returnUrl), logout (POST), access denied, error page | `LoginController`, `Security/*` | [x] (Phase 2; automated tests, no browser check) |
-| Home | Very-next-up round (across sports), next-up per sport, rounds to acquire, latest 2 seasons per sport, sport logos with fallback, **full** event history (see 4) | `HomeController`, `HomeService`, `Views/Home/*` | [ ] |
+| Auth | Login (+returnUrl), logout (POST), access denied, error page | `LoginController`, `Security/*` | [x] (Phase 2; automated tests and user visual browser check) |
+| Home | Very-next-up round (across sports), next-up per sport, rounds to acquire, latest 2 seasons per sport, sport logos with fallback, **full** event history (see 4) | `HomeController`, `HomeService`, `Views/Home/*` | [x] (Phase 6) |
 | Sports | list, details, create, edit | `SportsController`, `SportService` | [x] (Phase 3) |
 | Venues | list, details, create, edit | `VenuesController`, `VenueService` | [x] (Phase 3) |
 | Teams | list, details, create, edit | `TeamsController` | [x] (Phase 3; plus delete when no season entries) |
 | Participants | list, details, create, edit | `ParticipantsController` | [x] (Phase 3) |
 | Seasons | list, details, create, edit, delete; winners (participants) and winning team | `SeasonsController`, `SeasonService` | [x] |
 | SeasonEntries | list per season, details, create, edit, delete (team name during season) | `SeasonEntriesController`, `SeasonEntryService` | [x] |
-| Rounds | list per season, details (+event history), create, edit (name, date, number, venue, rain, rating, status, note, winning team, winning participants), delete, **MarkReadyToWatch (POST)** | `RoundsController`, `RoundService` | [x] (Phase 5; automated tests, no browser check) |
+| Rounds | list per season, details (+event history), create, edit (name, date, number, venue, rain, rating, status, note, winning team, winning participants), delete, **MarkReadyToWatch (POST)** | `RoundsController`, `RoundService` | [x] (Phase 5; automated tests and user visual browser check) |
 
 Master data (Countries, Statuses) is read-only lookups.
 
@@ -258,12 +258,12 @@ Approach:
 - Characteristics tests for the legacy rules in section 3 written against the **new** handlers as slices land (red first).
 - Exit: DbContext matches DB; fixture works.
 
-### Phase 2 – Auth `[x]` (done 2026-10-24; browser check of UI outstanding, see Handover)
+### Phase 2 – Auth `[x]` (done 2026-10-24; user visual browser check completed)
 Section 5. Login page (MudBlazor, mobile friendly), logout (POST), access denied, default authorize policy, local-return-url check, change-password page for `ForceChangePassword`.
 
 Delivered: `Motorsports.Auth` slice (RCL: login/logout/access denied/change password, endpoints, validators, force-change middleware, rate limit); `Infrastructure/Auth` (`UserStore`, `LegacyPasswordHasher` PBKDF2 HMACSHA1/256/512 verify + rehash to Identity v3 in `PasswordHashV3`, claims factory); Web wiring (cookie `ms.auth` HttpOnly, SameSite=Lax, Secure unless `Auth:SecureCookies=false`; fallback authorize policy; revalidating auth state). Deleted users cannot sign in. Footer layout fixed (`ms-main` flex column, footer `margin-top:auto`). Tests: unit (hasher, LocalUrl, validators), architecture (Auth not dependent on Web), 22 characteristics tests incl. end-to-end WebApplicationFactory login flows.
 
-### Phase 3 – Reference data slices `[x]` (done 2026-10-24; no browser check, see Handover)
+### Phase 3 – Reference data slices `[x]` (done 2026-10-24; user visual browser check completed)
 Sports, Venues, Participants (list with search/filter, details, create, edit; no delete). Teams: same plus delete only when the team has no season entries (sport read-only on edit). Shared UI building blocks in `Motorsports.Ui` (e.g. fuzzy pickers and date field); Country and Sport lookups are cached.
 
 Delivered (checklist):
@@ -302,19 +302,26 @@ Delivered (checklist):
 - [x] Event history in-slice, capped at 50 and date-desc; same venue/sport, championship vs non-championship number rule, Step > 1, date ≤ round date.
 - [x] Venue country flags on round list, details, event history, and venue picker. Dates via `DateDisplay`; ratings via `RatingDisplay` (`6 / 10`).
 - [x] Lookup cache: Venues + Statuses; venue writes invalidate Venues.
-- [x] Round/season victories stay on the edit round / edit season pages (user decision); not added to Participant/Team details.
+- [x] Round and season victories are visible on Participant/Team details as history; edit forms remain the write surface.
 - [x] Characteristics tests for uniqueness, min date, ready-to-watch, winners/concurrency/delete, event history, list order; web tests for authorize + 404.
 - [x] Event-history round names link to round details on the round details and edit pages.
 - [x] Participant details list round wins with round links, venue flags and ratings. Participant/team details list won seasons with season links and computed start/end dates.
 
-### Phase 6 – Home `[ ]`
-Single `GetHomeOverview` handler: very-next-up, next-up per sport, rounds to acquire, latest seasons. Event history: up to 50 records for very-next-up/selected event; bounded result does not require paging. Sport logos come from `Sport.Image` (the migration seeds current logos); retain `notfound.png` as the no-image fallback. Mobile layout first; sport accent via logo + thin border.
+### Phase 6 – Home `[x]` (done 2026-10-25)
+- [x] Added isolated `Motorsports.Home` slice at `/`, registered in the host and protected with explicit `[Authorize]`.
+- [x] `GetHomeOverviewAsync` projects very-next-up, next-up per sport, and due Scheduled rounds to acquire; Latest Seasons was removed after user review.
+- [x] Very-next-up is the earliest per-sport next-up round dated today or earlier using the passed `UserClock.Today`; the page refreshes if browser-zone detection changes the current date. Future rounds show days remaining and no Edit link.
+- [x] Event history for each next-up-by-sport card is limited to the prior ten years, filtered by venue/sport/championship number/Step/date, capped at 50 per event, and loaded with batched queries.
+- [x] Rounds to acquire can be marked Ready to watch through an authorized, antiforgery-protected POST endpoint owned by the Rounds slice; Home edit actions have icons.
+- [x] Sport logos use the authorized `/sports/image/{name}` endpoint and its `notfound.png` fallback; Home and sport/team/season views use the shared `SportAccent` helper and responsive/virtualized layout.
+- [x] Characteristics coverage verifies the selected round, acquisition set, ten-year history bounds/results, anonymous route protection, and a constant four SQL reads for the populated overview.
+- [x] Added a BenchmarkDotNet Home overview benchmark requiring `ConnectionStrings__Motorsports`.
 
 ### Phase 7 – Hardening & parity `[ ]`
 - Walk the section 2 table, tick every row after a manual phone-width + desktop check.
 - Data-integrity pass: concurrency, FK/unique conflict handling, nullability vs. DB.
 - Security pass: antiforgery, cookies, headers, rate limiting on login, no secrets in repo.
-- Performance pass: log SQL for Home, assert query count in a test.
+- Performance pass: run the Home MariaDB benchmark, record latency and circuit-memory measurements; the fixed query-count test is in Phase 6.
 - Docs: README (run, config, docker, migration note).
 - Cut-over (manual, by user): deploy, verify, then remove the legacy project, `Build` (Cake/IIS), `Db` sqlproj/Azure backups from the solution. Do not do this without asking.
 
@@ -342,6 +349,7 @@ Open (ask the user when reached):
 ## 9. Issues encountered and corrections (keep updated every phase)
 
 Corrections to earlier assumptions (verified against the real MariaDB dump and the running app):
+- `Virtualize` on statically rendered Home rendered only its first few items (Home history showed 5 events); short Home lists use `@foreach`.
 - Real column widths differ from the legacy EF model: `Venue.Name` and `Round.Venue` are `varchar(100)` (legacy model said 50); `Round.Note` is `text`; `Round.Number` is `smallint`; `Status.Step` is `tinyint`. Validation max lengths must follow the **DB**: Participant Title 10, First/Last 100, Team Name 50, Sport Name 50 / FullName 100, Season Label 100, SeasonEntry Name 50, Round Name 100, Venue Name 100.
 - Real FK constraint names are `<Table>_<Col>_FK` (e.g. `Round_Season_FK`), not the legacy model's `FK_Season_Round`. Nothing depends on them; do not hardcode either.
 - DB collation is `utf8mb4_uca1400_ai_ci` (case- and accent-insensitive). So plain `==` in LINQ on string columns is already case/accent-insensitive in SQL, which matches the uniqueness rules. Do not use `ToLower()` in queries (defeats indexes).
@@ -386,24 +394,30 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 - Phase 3: pages are interactive (InteractiveServer) with `EditForm OnSubmit`; search commits on Enter/blur, never per keystroke. No browser verification of MudBlazor interaction, mobile layout or `%2F` in a Sport/Venue name route segment.
 - Reference-data follow-up: `AddSportImages` adds nullable `Sport.Image` idempotently and seeds the six current legacy logos from embedded image resources; the migration tests compare persisted bytes with the embedded files.
 - Phase 5 migration follow-up: the participant identity migration was not discoverable because it lacked EF's generated context metadata. EF migration metadata is now present. Per the user's production-data confirmation, the migration only creates the approved unique index and makes no participant or winner data changes.
+- Phase 6: EF could not translate a per-sport season rank over a constructed record or a custom comparer in SQL ordering. Latest Seasons was removed in follow-up after user review, eliminating that query and reducing the populated Home query count to four.
 
 ## 10. Handover (rewrite at the end of every phase)
 
-Date: 2026-10-25. Phases 0 to 5 are done, plus Phase 5 follow-up (visibility, round UI, participant uniqueness). Changes remain in the working tree; no commit was created.
+Date: 2026-10-25. Phases 0 to 6 are done. Phases 0 to 5, including the Phase 5 follow-up (visibility, round UI, participant uniqueness), were committed and pushed before Phase 6. Phase 6 and its presentation/parity follow-up are uncommitted.
 
 State:
 - Projects: Common, shared UI RCL (`Motorsports.Ui`), Infrastructure (incl. `Auth/`, `Lookups/`, `DbOperations`), feature slices (may reference Common + Infrastructure + shared UI, never Web or another slice), Web host/wiring/nav, and UnitTests, ArchitectureTests, Benchmarks, and Testcontainers CharacteristicsTests.
 - Slice C# types are internal except `*Module` / host endpoints; tests use InternalsVisibleTo.
-- Round event history is one date-desc list (details + edit). Create has no Note. Edit has rating slider 0–10, Note at the bottom, links to season entries and participants, and the same history.
+- Round event history is one date-desc list (details + edit), with linked rounds prefixed by “Round”. Create has no Note. Edit has rating slider 0–10, Note at the bottom, links to season entries and participants, and the same history.
 - Event-history entries link to round details. Participant round wins include venue flags and ratings; participant/team season wins link to seasons and display their computed start/end dates.
+- `Motorsports.Home` owns `/` and uses `HomeService.GetHomeOverviewAsync`; its populated path uses four database reads, with event winners fetched in one batch. The characteristic test asserts the query count and selection rules.
+- Home shows next-up, rounds to acquire, and up to 50 event-history results from the previous ten years on each next-up-by-sport card; Latest Seasons was removed. Ready-to-watch uses a Rounds-owned POST endpoint with antiforgery validation. Sport/team/season pages and win grids show sport logos and subtle accents; grids colour the row's left edge (`RowClass="sport-accent-row"` + `SportAccent.RowStyle`), including venue round history. Round details/edit/delete titles read "Round 9 - Name".
+- Participant and team season-win lists sort by season end date descending; participant round-win and event-history links identify their target as “Round N”.
+- `HomeOverviewBenchmarks` measures the query path against a MariaDB database supplied through `ConnectionStrings__Motorsports`; the baseline is pending Phase 7.
 - DateField displays `DateDisplay` and still parses `yyyy-MM-dd`.
 - Participant uniqueness: create/edit trims Title/First/Last/Country; a unique index enforces the tuple. Migration adds the index only; List sort: LastName, FirstName, Title, Country.
 
 Known gaps / not done:
-- No browser check of any UI (Phases 2-5): MudBlazor picker interaction, mobile layout, conflict alert flow, Reload/Show differences, theme switch, round-list scroll-to-bottom.
-- Sports list has no search/paging (few rows). Home (Phase 6) is not implemented yet.
+- User manually checked the visual UI through Phase 5; Home still needs a phone-width and desktop browser check in Phase 7. Picker interaction, conflict alerts, Reload/Show differences, theme switching, and round-list scroll-to-bottom still need that pass.
+- Sports list has no search/paging (few rows). Home is implemented; the MariaDB benchmark and circuit-memory measurement remain to run/record in Phase 7.
 - Carry-over from Phase 2: no admin/user UI, no account lockout, Docker image not re-verified with auth.
 - Not every Rider `ide`/`csharpsquid` inspection is guaranteed clean (ask before touching captured-disposed warnings).
 - Phase 5 review: event history is not grouped by year. Results are bounded to 50 records per the user's decision, so paging is not recommended at this size. The participant migration gap is fixed; the user confirmed production has no duplicates, so the migration only creates the unique index.
+- Home event history follows the documented `Status.Step > 1` rule, so postponed/cancelled rounds can appear alongside finished rounds.
 
-Next: Phase 6 (Home). Keep new slice dependencies limited to Common, Infrastructure, and shared UI; use explicit `[Authorize]`; do not edit `src/Db/*`.
+Next: Phase 7 (hardening and parity). Keep schema changes legacy-compatible, do not edit `src/Db/*`, and ask before the user-only cut-over.

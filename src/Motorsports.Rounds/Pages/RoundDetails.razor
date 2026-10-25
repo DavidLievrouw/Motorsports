@@ -2,7 +2,7 @@
 @attribute [Authorize]
 @inject RoundService Service
 
-<PageTitle>Round</PageTitle>
+<PageTitle>@(_round is null ? "Round" : $"Round {RoundLabel.Format(_round.Number, _round.Name)}")</PageTitle>
 @if (_loading)
 {
     <MudProgressLinear Indeterminate="true" />
@@ -13,7 +13,7 @@ else if (_round is null)
 }
 else
 {
-    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">@RoundLabel.Format(_round.Number, _round.Name)</MudText>
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">Round @RoundLabel.Format(_round.Number, _round.Name)</MudText>
     <MudPaper Class="pa-4 mb-2" Style="max-width:48rem">
         <MudSimpleTable Dense="true" Style="overflow-x:auto">
             <tbody>

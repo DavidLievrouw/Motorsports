@@ -23,7 +23,7 @@ else
 {
     @foreach (var group in _items.GroupBy(season => season.Sport))
     {
-        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-4 mb-1">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-4 mb-1 pl-2" Style="@SportAccent.Style(group.Key)">
             @if (group.First().SportHasImage)
             {
                 <MudImage Src="@SportImage.Url(group.Key)" Alt="@($"{group.Key} logo")" Width="40" Height="30" ObjectFit="ObjectFit.Contain" />

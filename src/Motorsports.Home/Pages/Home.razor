@@ -1,0 +1,146 @@
+@page "/"
+@attribute [Authorize]
+@inject HomeService Service
+@inject UserClock Clock
+@inject IJSRuntime Js
+
+<PageTitle>Home</PageTitle>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_overview is not null)
+{
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-3">Next up</MudText>
+    @if (_overview.VeryNextUp is { } veryNext)
+    {
+        <MudPaper Class="pa-4 mb-3 home-round" Style="@SportAccent.Style(veryNext.Sport)">
+            <div class="home-round-heading">
+                <img src="@SportImageUrl(veryNext.Sport)" alt="@veryNext.Sport" />
+                <MudText Typo="Typo.h5">@veryNext.Sport</MudText>
+            </div>
+            <MudText Typo="Typo.h6">@RoundLabel.Format(veryNext.Number, veryNext.Name)</MudText>
+            <MudText>@DateDisplay.Format(veryNext.Date) · @CountryFlag.WithName(veryNext.VenueCountry, veryNext.Venue)</MudText>
+            <MudButton Href="@($"/rounds/edit/{veryNext.Id}")" Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Edit" Class="mt-2">
+                Edit round
+            </MudButton>
+        </MudPaper>
+    }
+    @if (_overview.NextUp.Length > 0)
+    {
+        <MudText Typo="Typo.h5" HtmlTag="h2" Class="mb-2">Next up by sport</MudText>
+        <MudGrid Class="mb-4">
+            @foreach (var round in _overview.NextUp)
+            {
+                <MudItem xs="12" sm="6" md="4" @key="round.Id">
+                    <MudPaper Class="pa-3 home-round" Style="@SportAccent.Style(round.Sport)">
+                        <div class="home-round-heading">
+                            <img src="@SportImageUrl(round.Sport)" alt="@round.Sport" />
+                            <MudText Typo="Typo.h6">@round.Sport</MudText>
+                        </div>
+                        <MudText>@RoundLabel.Format(round.Number, round.Name)</MudText>
+                        <MudText>@DateDisplay.Format(round.Date) · @CountryFlag.WithName(round.VenueCountry, round.Venue)</MudText>
+                        @if (round.Date <= _today)
+                        {
+                            <MudButton Href="@($"/rounds/edit/{round.Id}")" Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.Edit" Class="mt-2">Edit round</MudButton>
+                        }
+                        else
+                        {
+                            <MudText Color="Color.Secondary" Class="mt-2">(@DaysInFuture(round.Date) day(s) to go)</MudText>
+                        }
+                        <MudText Typo="Typo.subtitle2" Class="mt-3">Event history (last 10 years)</MudText>
+                        @if (round.EventHistory.Length == 0)
+                        {
+                            <MudText Typo="Typo.body2">No previous events at this venue.</MudText>
+                        }
+                        else
+                        {
+                            <div class="home-round-list">
+                                @foreach (var item in round.EventHistory)
+                                {
+                                    <MudPaper Class="pa-2 mb-2 home-history-item" Elevation="0">
+                                        <MudStack Row="true" Wrap="Wrap.Wrap" Justify="Justify.SpaceBetween">
+                                            <MudText Typo="Typo.body2">@DateDisplay.Format(item.Date)</MudText>
+                                            <MudLink Href="@($"/rounds/details/{item.Id}")">
+                                                Round @RoundLabel.Format(item.Number, item.Name)
+                                            </MudLink>
+                                        </MudStack>
+                                        <MudText Typo="Typo.body2">Rating: @RatingDisplay.Format(item.Rating) · Rain: @(RainLevelDisplay.Format(item.Rain) ?? "—")</MudText>
+                                        <MudText Typo="Typo.body2">Winning team: @(item.WinningTeamName ?? "—")</MudText>
+                                        <MudText Typo="Typo.body2">Winning participants: @(item.Winners.Length == 0 ? "—" : string.Join(", ", item.Winners))</MudText>
+                                    </MudPaper>
+                                }
+                            </div>
+                        }
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+    @if (_overview.VeryNextUp is null && _overview.NextUp.Length == 0)
+    {
+        <MudText Class="mb-4">No rounds next up.</MudText>
+    }
+
+    @if (_overview.RoundsToAcquire.Length > 0)
+    {
+        <MudText Typo="Typo.h5" HtmlTag="h2" Class="mb-2">Rounds to acquire</MudText>
+        <div class="home-round-list">
+            @foreach (var round in _overview.RoundsToAcquire)
+            {
+                <MudPaper Class="pa-3 mb-2 home-round" Style="@SportAccent.Style(round.Sport)">
+                    <div class="home-round-heading">
+                        <img src="@SportImageUrl(round.Sport)" alt="@round.Sport" />
+                        <MudLink Href="@($"/rounds/details/{round.Id}")">@round.Sport</MudLink>
+                    </div>
+                    <MudText>Round @RoundLabel.Format(round.Number, round.Name) · @DateDisplay.Format(round.Date) · @CountryFlag.WithName(round.VenueCountry, round.Venue)</MudText>
+                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-1">
+                        <MudButton Href="@($"/rounds/edit/{round.Id}")" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.Edit">Edit round</MudButton>
+                        <form method="post" action="@ReadyToWatchUrl(round.Id)">
+                            <AntiforgeryToken />
+                            <MudButton ButtonType="ButtonType.Submit" Size="Size.Small" Color="Color.Tertiary"
+                                       StartIcon="@Icons.Material.Filled.PlayArrow">Ready to watch</MudButton>
+                        </form>
+                    </MudStack>
+                </MudPaper>
+            }
+        </div>
+    }
+}
+
+@code {
+    private HomeOverview? _overview;
+    private bool _loading = true;
+    private DateOnly _today;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _today = Clock.Today;
+        _overview = await Service.GetHomeOverviewAsync(_today);
+        _loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Clock.TrySetZone(await Js.InvokeAsync<string?>("msTimeZone")))
+        {
+            var today = Clock.Today;
+            if (today != _today)
+            {
+                _today = today;
+                _overview = await Service.GetHomeOverviewAsync(_today);
+                StateHasChanged();
+            }
+        }
+    }
+
+    private int DaysInFuture(DateOnly date) => date.DayNumber - _today.DayNumber;
+
+    private static string SportImageUrl(string sport) => $"/sports/image/{Uri.EscapeDataString(sport)}";
+
+    private static string ReadyToWatchUrl(int roundId) => $"/rounds/{roundId}/ready-to-watch";
+}

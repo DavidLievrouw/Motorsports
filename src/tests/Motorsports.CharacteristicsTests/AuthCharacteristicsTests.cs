@@ -144,6 +144,7 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         var markup = await home.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         home.StatusCode.ShouldBe(HttpStatusCode.OK);
+        markup.ShouldContain("Next up");
         markup.ShouldNotContain("href=\"/account/change-password\"");
     }
 

@@ -100,7 +100,7 @@ internal sealed class VenueService(
             round.Date,
             round.Number,
             round.Name,
-            RoundLabel.Format(round.Number, round.Name),
+            $"Round {RoundLabel.Format(round.Number, round.Name)}",
             round.Sport,
             round.HasImage,
             round.Status,

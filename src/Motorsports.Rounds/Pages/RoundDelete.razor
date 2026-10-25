@@ -3,7 +3,7 @@
 @inject RoundService Service
 @inject NavigationManager Navigation
 
-<PageTitle>Delete round</PageTitle>
+<PageTitle>@(_round is null ? "Delete round" : $"Delete Round {_round.Label}")</PageTitle>
 @if (_loading)
 {
     <MudProgressLinear Indeterminate="true" />
@@ -14,14 +14,14 @@ else if (_round is null)
 }
 else
 {
-    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">Delete round</MudText>
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">Delete Round @_round.Label</MudText>
     <MudPaper Class="pa-4" Style="max-width:40rem">
         <MudStack Spacing="2">
             @if (_error is not null)
             {
                 <MudAlert Severity="Severity.Error">@_error</MudAlert>
             }
-            <MudText>Delete @_round.Label?</MudText>
+            <MudText>Delete Round @_round.Label?</MudText>
             @if (_round.HasWinners || _round.HasWinningTeam)
             {
                 <MudAlert Severity="Severity.Warning">This round has winners or a winning team and cannot be deleted.</MudAlert>

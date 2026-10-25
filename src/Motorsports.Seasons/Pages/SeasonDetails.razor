@@ -13,7 +13,10 @@ else if (_season is null)
 }
 else
 {
-    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">@($"{_season.Sport} {_season.Label}".Trim())</MudText>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2 pl-2" Style="@SportAccent.Style(_season.Sport)">
+        <MudImage Src="@SportImage.Url(_season.Sport)" Alt="@($"{_season.Sport} logo")" Width="48" Height="36" ObjectFit="ObjectFit.Contain" />
+        <MudText Typo="Typo.h4" HtmlTag="h1">@($"{_season.Sport} {_season.Label}".Trim())</MudText>
+    </MudStack>
     <MudPaper Class="pa-4 mb-2" Style="max-width:48rem">
         <MudSimpleTable Dense="true" Style="overflow-x:auto">
             <tbody>

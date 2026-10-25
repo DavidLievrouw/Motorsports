@@ -365,7 +365,7 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
         venue.Name.ShouldBe(venueName);
         venue.RoundCount.ShouldBe(2);
         venue.Rounds[0].Name.ShouldBe("Next round");
-        venue.Rounds[0].Label.ShouldBe("1 - Next round");
+        venue.Rounds[0].Label.ShouldBe("Round 1 - Next round");
         venue.Rounds[0].SportHasImage.ShouldBeTrue();
         venue.Rounds[0].WinningTeamName.ShouldBeNull();
         venue.Rounds[0].WinningParticipants.ShouldBeEmpty();
@@ -377,7 +377,8 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
         venue.Rounds[1].WinningTeamName.ShouldNotBe("Team 2025");
         venue.Rounds[1].Status.ShouldBe("Finished");
         venue.Rounds[1].Rating.ShouldBe(8m);
-        venue.Rounds[1].Label.ShouldBe("1 - Past round");
+        venue.Rounds[1].Label.ShouldBe("Round 1 - Past round");
+        (await s.Teams.GetAsync(1, Ct))!.SeasonWins.Select(win => win.SeasonId).ShouldBe([2, 1]);
         venue.Rounds[1].Rain.ShouldBe("Rain without impact");
     }
 
@@ -605,7 +606,7 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
         info.RoundWins[0].Venue.ShouldBe("Silverstone");
         info.RoundWins[0].VenueCountry.ShouldBe("GB");
         info.RoundWins[0].Rating.ShouldBeNull();
-        info.SeasonWins.Select(win => win.SeasonId).ShouldBe([2, 1, 3]);
+        info.SeasonWins.Select(win => win.SeasonId).ShouldBe([1, 3, 2]);
         info.SeasonWins.Single(win => win.SeasonId == 1).StartDate.ShouldBe(new DateOnly(2025, 7, 1));
         info.SeasonWins.Single(win => win.SeasonId == 1).EndDate.ShouldBe(new DateOnly(2025, 7, 1));
         info.SeasonWins.Single(win => win.SeasonId == 2).StartDate.ShouldBeNull();

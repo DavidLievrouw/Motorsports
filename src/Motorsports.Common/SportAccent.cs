@@ -1,4 +1,4 @@
-namespace Motorsports.Web.Components.Shared;
+namespace Motorsports.Common;
 
 /// <summary>Subtle per-sport visual clue (a coloured left border / chip). Unknown sports get a neutral grey.</summary>
 public static class SportAccent
@@ -15,9 +15,13 @@ public static class SportAccent
                 "#00a3a3",
             var n when n.Contains("rally", StringComparison.Ordinal) || n.Contains("wrc", StringComparison.Ordinal) =>
                 "#7cb342",
-            var n when n.Contains("formula e", StringComparison.Ordinal) => "#3d5afe",
+            var n when n.Contains("formula e", StringComparison.Ordinal) || n is "fe" => "#d500f9",
+            var n when n.Contains("nascar", StringComparison.Ordinal) => "#00c853",
             _ => "#9e9e9e",
         };
 
     public static string Style(string? sportName) => $"border-left: 4px solid {Color(sportName)};";
+
+    /// <summary>Grid row style; pair with the <c>sport-accent-row</c> class to colour the row's left edge.</summary>
+    public static string RowStyle(string? sportName) => $"--sport-accent: {Color(sportName)};";
 }

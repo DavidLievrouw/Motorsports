@@ -17,7 +17,7 @@ else
                 <TemplateColumn Title="Round">
                     <CellTemplate>
                         <MudLink Href="@($"/rounds/details/{context.Item.Id}")">
-                            @RoundLabel.Format(context.Item.Number, context.Item.Name)
+                            Round @RoundLabel.Format(context.Item.Number, context.Item.Name)
                         </MudLink>
                     </CellTemplate>
                 </TemplateColumn>

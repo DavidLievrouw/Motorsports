@@ -7,6 +7,7 @@ public sealed partial class AuthCharacteristicsTests
 {
     private static readonly string[] ReferenceRoutes =
     [
+        "/",
         "/sports",
         "/sports/create",
         "/sports/details/F1",

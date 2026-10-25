@@ -134,8 +134,6 @@ internal sealed class ParticipantService(
         var seasonWins = await db
             .Seasons.AsNoTracking()
             .Where(season => db.SeasonWinners.Any(winner => winner.Season == season.Id && winner.Participant == id))
-            .OrderByDescending(season => season.Label)
-            .ThenByDescending(season => season.Id)
             .Select(season => new ParticipantSeasonWin(
                 season.Id,
                 season.Sport,
@@ -144,6 +142,14 @@ internal sealed class ParticipantService(
                 db.Rounds.Where(round => round.Season == season.Id).Select(round => (DateOnly?)round.Date).Max()
             ))
             .ToArrayAsync(cancellationToken);
+        Array.Sort(
+            seasonWins,
+            static (left, right) =>
+            {
+                var endDateComparison = Comparer<DateOnly?>.Default.Compare(right.EndDate, left.EndDate);
+                return endDateComparison != 0 ? endDateComparison : right.SeasonId.CompareTo(left.SeasonId);
+            }
+        );
 
         return row with
         {

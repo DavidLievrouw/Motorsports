@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Options;
 using Motorsports.Auth;
 using Motorsports.Common;
+using Motorsports.Home;
 using Motorsports.Infrastructure;
 using Motorsports.Infrastructure.Auth;
 using Motorsports.Infrastructure.Lookups;
@@ -60,7 +61,8 @@ builder
     .AddTeamsServices()
     .AddParticipantsServices()
     .AddSeasonsServices()
-    .AddRoundsServices();
+    .AddRoundsServices()
+    .AddHomeServices();
 builder.Services.AddMotorsportsIdentity().AddSignInManager();
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme).AddIdentityCookies();
 builder
@@ -141,6 +143,7 @@ app.MapHealthChecks("/health").AllowAnonymous();
 app.MapStaticAssets().AllowAnonymous();
 app.MapAuthEndpoints();
 app.MapSportImages();
+app.MapRoundsEndpoints();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddAdditionalAssemblies(
@@ -150,7 +153,8 @@ app.MapRazorComponents<App>()
         TeamsModule.Assembly,
         ParticipantsModule.Assembly,
         SeasonsModule.Assembly,
-        RoundsModule.Assembly
+        RoundsModule.Assembly,
+        HomeModule.Assembly
     );
 
 await app.RunAsync();

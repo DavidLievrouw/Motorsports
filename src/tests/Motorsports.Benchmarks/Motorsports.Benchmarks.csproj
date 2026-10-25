@@ -7,5 +7,7 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" />
     <ProjectReference Include="..\..\Motorsports.Common\Motorsports.Common.csproj" />
+    <ProjectReference Include="..\..\Motorsports.Home\Motorsports.Home.csproj" />
+    <ProjectReference Include="..\..\Motorsports.Infrastructure\Motorsports.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

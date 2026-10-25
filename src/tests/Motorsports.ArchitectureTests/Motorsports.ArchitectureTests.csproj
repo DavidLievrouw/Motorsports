@@ -15,6 +15,7 @@
     <ProjectReference Include="..\..\Motorsports.Common\Motorsports.Common.csproj" />
     <ProjectReference Include="..\..\Motorsports.Auth\Motorsports.Auth.csproj" />
     <ProjectReference Include="..\..\Motorsports.Infrastructure\Motorsports.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Motorsports.Home\Motorsports.Home.csproj" />
     <ProjectReference Include="..\..\Motorsports.Participants\Motorsports.Participants.csproj" />
     <ProjectReference Include="..\..\Motorsports.Rounds\Motorsports.Rounds.csproj" />
     <ProjectReference Include="..\..\Motorsports.Seasons\Motorsports.Seasons.csproj" />

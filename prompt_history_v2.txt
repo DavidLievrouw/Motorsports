@@ -237,15 +237,41 @@ In the Participant Details, the round wins should also display the venue, and th
 
 -------------------
 
+Read Plan.md and Agents.md. you are an expert coder. Read the handover. we will implement phase 6 now.
+I have manually tested how it looks in the browser, up until now, and that is fine.
+The phase 5 review is completed. current state is committed and pushed to the remote.
 
+-------------------
 
+From the previous phases:
+SportAccent is never used, except for on Home. Is is useful in all other sport-related, team-related pages or grid rows.
+The list with Season Wins (both for participant and teams) should show the sport icon in the row. The list should be sorted by year the season ended, descending.
+The list with Round Wins should also show the sport icon in the row. It now just shows text.
+In grids with rounds, the Round link is often only a number. Prefix those with "Round", e.g. "Round 9" or "Round 5 - 6 Hours of Mexico City", to make it more easily clickable for users.
 
+For phase 6:
+Drop "Latest Seasons" from Home. It is there for feature parity, but was never used.
+"Edit Round" buttons have no icon. It should be the same as in the grids, e.g. season rounds.
+"Rounds to acquire" should have a button to mark it "Ready to watch".
+"Next up by sport" items should show the dates, winning participants, winning team, rain, and rating for the last 10 years. Feature parity with the legacy application.
 
+--------------------
 
+Also, the page title of the detail page or edit page of a Round, just shows the number. Also make it e.g. "Round 9" or "Round 5 - 6 Hours of Mexico City".
+"Next up by sport" only shows the last 5 events, not all events of the past 10 years.
+When using SportAccent in grids, it is "stuck" to the contents next to it. In grids, it should color the left of the grid, not in a cell. Like on the home page.
+Venue round history does not show the sportaccent.
 
+--------------------
+
+NASCAR and FE have the same accent color. Make NASCAR greenish.
+The Manage Round link on the home page goes to the round overview. It should navigate to the Edit Round page of that round.
+
+--------------------
 
 
 
 Future:
+- Inspect for any performance issues, like additional indexes, more efficient memory usage, etc.
 - Security hardening
 - Redesign the UI

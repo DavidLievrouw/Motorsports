@@ -33,7 +33,7 @@ else
     }
     else
     {
-        <MudDataGrid T="VenueRoundInfo" Items="_venue.Rounds" Dense="true" Hover="true" Striped="true"
+        <MudDataGrid T="VenueRoundInfo" RowClass="sport-accent-row" RowStyleFunc="@((item, _) => SportAccent.RowStyle(item.Sport))" Items="_venue.Rounds" Dense="true" Hover="true" Striped="true"
                      Bordered="true" Elevation="1" Class="mb-4">
             <Columns>
                 <TemplateColumn Title="Date" Sortable="false">

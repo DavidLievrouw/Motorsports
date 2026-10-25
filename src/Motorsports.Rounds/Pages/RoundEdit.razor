@@ -3,7 +3,7 @@
 @inject RoundService Service
 @inject NavigationManager Navigation
 
-<PageTitle>Edit round</PageTitle>
+<PageTitle>@_title</PageTitle>
 @if (_loading)
 {
     <MudProgressLinear Indeterminate="true" />
@@ -14,7 +14,7 @@ else if (_form is null)
 }
 else
 {
-    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">Edit round</MudText>
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">@_title</MudText>
     <EditForm Model="_form" OnSubmit="SaveAsync">
         <MudPaper Class="pa-4" Style="max-width:40rem">
             <MudStack Spacing="2">
@@ -71,6 +71,7 @@ else
     private bool _loading = true;
     private bool _saving;
     private bool _conflict;
+    private string _title = "Edit round";
 
     [Parameter]
     public int Id { get; set; }
@@ -79,6 +80,7 @@ else
     {
         _loading = true;
         _form = await Service.GetFormAsync(Id);
+        SetTitle();
         _loading = false;
     }
 
@@ -118,7 +120,11 @@ else
         _conflict = false;
         _current = null;
         _form = await Service.GetFormAsync(Id);
+        SetTitle();
     }
+
+    private void SetTitle() =>
+        _title = _form is null ? "Edit round" : $"Edit Round {RoundLabel.Format(_form.Number, _form.Name)}";
 
     private async Task ShowDifferencesAsync() => _current = await Service.GetFormAsync(Id);
 }
