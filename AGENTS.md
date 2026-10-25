@@ -72,7 +72,7 @@ public static partial class Extensions
 Use this form for all new extensions. Reference: `Extensions.IServiceCollection.cs` in `Motorsports.Common`.
 
 ### Value Objects (Vogen)
-**Planned for Phase 8.** Replace primitive ID keys with Vogen value objects across entities, handlers, and feature contracts; include natural string keys (Sport, Venue, Status, Country ISO). Use [Vogen](https://github.com/SteveDunn/Vogen) (`SeasonId`, `RoundId`, `TeamId`, `ParticipantId`, ...), with assembly defaults in `Motorsports.Common/Vogen.cs` and EF value converters in `Motorsports.Infrastructure`. Keep database storage and external route formats unchanged unless a migration is separately justified.
+**Planned for Phase 8.** Replace primitive ID keys with Vogen value objects across entities, handlers, and feature contracts; include natural string keys (Sport, Venue, Status, Country ISO) and `UserId`. Convert `UserId` at ASP.NET Identity boundaries. Use [Vogen](https://github.com/SteveDunn/Vogen) (`SeasonId`, `RoundId`, `TeamId`, `ParticipantId`, `UserId`, ...), with assembly defaults in `Motorsports.Common/Vogen.cs` and EF value converters in `Motorsports.Infrastructure`. Keep database storage and external route formats unchanged unless a migration is separately justified.
 
 ### DI Auto-scan
 `AddAll<T>(lifetime, assemblies)` in `Common/Extensions.IServiceCollection.cs` scans assemblies and registers all non-abstract implementations of `T`. Decorate with `[ExcludeFromDiScan]` to opt out.
