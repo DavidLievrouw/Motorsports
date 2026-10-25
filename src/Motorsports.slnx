@@ -10,18 +10,11 @@
     <File Path="PLAN.md" />
     <File Path="version.props" />
   </Folder>
-  <Folder Name="/Legacy/">
-    <Project Path="Motorsports.Scaffolding.Core/Motorsports.Scaffolding.Core.csproj" />
-  </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/Motorsports.ArchitectureTests/Motorsports.ArchitectureTests.csproj" />
     <Project Path="tests/Motorsports.Benchmarks/Motorsports.Benchmarks.csproj" />
     <Project Path="tests/Motorsports.CharacteristicsTests/Motorsports.CharacteristicsTests.csproj" />
     <Project Path="tests/Motorsports.UnitTests/Motorsports.UnitTests.csproj" />
-  </Folder>
-  <Folder Name="/Solution Items/">
-    <File Path="../AGENTS.md" />
-    <File Path="PLAN.md" />
   </Folder>
   <Project Path="Motorsports.Auth/Motorsports.Auth.csproj" />
   <Project Path="Motorsports.Common/Motorsports.Common.csproj" />

@@ -1,6 +1,0 @@
-﻿CREATE USER [MotorsportsApp] FOR LOGIN [MotorsportsApp];
-GO
-CREATE LOGIN [MotorsportsApp] WITH PASSWORD = N'{secret}', SID = 0xEB830ED8985C724580F38A20B8FBCFE2;
-GO
-
-

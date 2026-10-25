@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "Build": {
-      "commandName": "Project",
-      "commandLineArgs": "--interactive",
-      "workingDirectory": "C:\\_git\\Motorsports\\src\\Motorsports.Scaffolding.Core"
-    }
-  }
-}
