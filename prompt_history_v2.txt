@@ -269,7 +269,7 @@ The Manage Round link on the home page goes to the round overview. It should nav
 
 --------------------
 
-
+The project is now ready for production. Inspect code-base for any performance issues, like additional indexes, more efficient memory usage, etc.
 
 Future:
 - Inspect for any performance issues, like additional indexes, more efficient memory usage, etc.

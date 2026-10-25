@@ -399,6 +399,7 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 - Phase 6: EF could not translate a per-sport season rank over a constructed record or a custom comparer in SQL ordering. Latest Seasons was removed in follow-up after user review, eliminating that query and reducing the populated Home query count to four.
 - Phase 7: the Home benchmark initially did not run because BenchmarkDotNet rejects sealed benchmark classes; `HomeOverviewBenchmarks` is now unsealed and the local baseline is recorded above. The Home handler's fixed four-read assertion remains in the characteristics suite.
 - Phase 7: source-controlled Compose files contained credential literals. They now require deployment/local environment variables instead; rotate any credentials previously used from those files. Compose configuration validation passes with the required variables supplied.
+- Phase 7 Docker smoke check: the fallback authorization policy redirected `/_framework/blazor.web.js` to login, returning HTML where JavaScript was required. The bootstrap endpoint now explicitly allows anonymous access; page authorization remains unchanged and an HTTP characteristics test covers the script response.
 
 ## 10. Handover (rewrite at the end of every phase)
 
@@ -415,6 +416,7 @@ State:
 Known gaps / not done:
 - Production password rotation has been prepared by the user but not yet applied.
 - Docker image has not been re-verified with authenticated browser flows. No admin/user UI or account lockout.
+- Docker smoke follow-up: rebuild the image with the public Blazor bootstrap fix. Use a private browser window to avoid localhost cookies from the development host (cookies are not isolated by port). Production Data Protection keys need durable, access-controlled storage to preserve auth/antiforgery tokens across container replacement; current container defaults are ephemeral.
 - Not every Rider `ide`/`csharpsquid` inspection is guaranteed clean (ask before touching captured-disposed warnings).
 - Event history is not grouped by year and includes any event with `Status.Step > 1`, including postponed/cancelled events, by documented design.
 - The Home benchmark is a local Windows developer baseline, not representative production capacity data.

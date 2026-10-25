@@ -171,7 +171,14 @@ app.MapRazorComponents<App>()
         SeasonsModule.Assembly,
         RoundsModule.Assembly,
         HomeModule.Assembly
-    );
+    )
+    .Add(endpoint =>
+    {
+        if (endpoint is RouteEndpointBuilder route && route.RoutePattern.RawText == "/_framework/blazor.web.js")
+        {
+            endpoint.Metadata.Add(new AllowAnonymousAttribute());
+        }
+    });
 
 await app.RunAsync();
 

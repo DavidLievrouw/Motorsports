@@ -5,11 +5,29 @@ COPY global.json version.txt ./
 COPY src/Directory.Build.props src/Directory.Packages.props src/version.props src/
 COPY src/Motorsports.Common/*.csproj src/Motorsports.Common/
 COPY src/Motorsports.Infrastructure/*.csproj src/Motorsports.Infrastructure/
+COPY src/Motorsports.Auth/*.csproj src/Motorsports.Auth/
+COPY src/Motorsports.Home/*.csproj src/Motorsports.Home/
+COPY src/Motorsports.Participants/*.csproj src/Motorsports.Participants/
+COPY src/Motorsports.Rounds/*.csproj src/Motorsports.Rounds/
+COPY src/Motorsports.Seasons/*.csproj src/Motorsports.Seasons/
+COPY src/Motorsports.Sports/*.csproj src/Motorsports.Sports/
+COPY src/Motorsports.Teams/*.csproj src/Motorsports.Teams/
+COPY src/Motorsports.Ui/*.csproj src/Motorsports.Ui/
+COPY src/Motorsports.Venues/*.csproj src/Motorsports.Venues/
 COPY src/Motorsports.Web/*.csproj src/Motorsports.Web/
 RUN dotnet restore src/Motorsports.Web/Motorsports.Web.csproj
 COPY .editorconfig ./
 COPY src/Motorsports.Common src/Motorsports.Common
 COPY src/Motorsports.Infrastructure src/Motorsports.Infrastructure
+COPY src/Motorsports.Auth src/Motorsports.Auth
+COPY src/Motorsports.Home src/Motorsports.Home
+COPY src/Motorsports.Participants src/Motorsports.Participants
+COPY src/Motorsports.Rounds src/Motorsports.Rounds
+COPY src/Motorsports.Seasons src/Motorsports.Seasons
+COPY src/Motorsports.Sports src/Motorsports.Sports
+COPY src/Motorsports.Teams src/Motorsports.Teams
+COPY src/Motorsports.Ui src/Motorsports.Ui
+COPY src/Motorsports.Venues src/Motorsports.Venues
 COPY src/Motorsports.Web src/Motorsports.Web
 ARG SOURCE_REVISION_ID=
 RUN dotnet publish src/Motorsports.Web/Motorsports.Web.csproj -c Release --no-restore -o /out \

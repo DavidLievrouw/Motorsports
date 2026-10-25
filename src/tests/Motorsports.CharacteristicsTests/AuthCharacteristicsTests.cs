@@ -134,6 +134,17 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
     }
 
     [Fact]
+    public async Task Blazor_bootstrap_script_is_available_without_login()
+    {
+        await using var app = await StartAsync();
+        var response = await app.NewClient()
+            .GetAsync("/_framework/blazor.web.js", TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType.ShouldBe("text/javascript");
+    }
+
+    [Fact]
     public async Task Responses_include_security_headers()
     {
         await using var app = await StartAsync();
