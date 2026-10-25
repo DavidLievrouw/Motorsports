@@ -2,7 +2,7 @@ using FluentValidation;
 
 namespace Motorsports.Participants;
 
-public sealed record ParticipantRow(
+internal sealed record ParticipantRow(
     int Id,
     string Title,
     string FirstName,
@@ -11,7 +11,7 @@ public sealed record ParticipantRow(
     string CountryName
 );
 
-public sealed record ParticipantInfo(
+internal sealed record ParticipantInfo(
     int Id,
     string Title,
     string FirstName,
@@ -35,7 +35,7 @@ public sealed class ParticipantForm
     public string? RowVersion { get; set; }
 }
 
-public sealed class ParticipantFormValidator : AbstractValidator<ParticipantForm>
+internal sealed class ParticipantFormValidator : AbstractValidator<ParticipantForm>
 {
     public const int MaxTitleLength = 10;
     public const int MaxFirstNameLength = 100;

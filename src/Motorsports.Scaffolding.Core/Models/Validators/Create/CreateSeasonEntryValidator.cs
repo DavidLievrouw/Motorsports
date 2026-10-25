@@ -4,7 +4,7 @@ using FluentValidation;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
   public class CreateSeasonEntryValidator : MotorsportsValidator<SeasonEntry, SeasonEntry.SeasonEntryKey>, ICreateValidator<SeasonEntry> {
-    readonly MotorsportsContext _context;
+      private readonly MotorsportsContext _context;
 
     public CreateSeasonEntryValidator(MotorsportsContext context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -28,15 +28,15 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
         .WithMessage("A name is required.");
     }
 
-    bool SeasonExists(SeasonEntry seasonEntry, int season) {
+    private bool SeasonExists(SeasonEntry seasonEntry, int season) {
       return _context.Season.Any(_ => _.Id == season);
     }
-    
-    bool TeamExists(SeasonEntry seasonEntry, int team) {
+
+    private bool TeamExists(SeasonEntry seasonEntry, int team) {
       return _context.Team.Any(_ => _.Id == team);
     }
 
-    bool BeUnique(SeasonEntry seasonEntry, int season) {
+    private bool BeUnique(SeasonEntry seasonEntry, int season) {
       return !_context.SeasonEntry.Any(_ => 
         _.Season == seasonEntry.Season && 
         _.Team == seasonEntry.Team);

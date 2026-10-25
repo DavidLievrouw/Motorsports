@@ -3,10 +3,15 @@ using Microsoft.EntityFrameworkCore;
 using Motorsports.Common;
 using Motorsports.Infrastructure;
 using Motorsports.Infrastructure.Entities;
+using Motorsports.Infrastructure.Lookups;
 
 namespace Motorsports.Venues;
 
-public sealed class VenueService(IDbContextFactory<MotorsportsDbContext> factory, IValidator<VenueForm> validator)
+internal sealed class VenueService(
+    IDbContextFactory<MotorsportsDbContext> factory,
+    IValidator<VenueForm> validator,
+    LookupCache cache
+)
 {
     public const string StaleMessage =
         "This venue was changed by someone else since you opened it. Your entries are kept; reload to see the current values.";
@@ -90,22 +95,20 @@ public sealed class VenueService(IDbContextFactory<MotorsportsDbContext> factory
                             .FirstOrDefault(),
             })
             .ToListAsync(cancellationToken);
-        var rounds = roundRows
-            .Select(round => new VenueRoundInfo(
-                round.Id,
-                round.Date,
-                round.Number,
-                round.Name,
-                RoundLabel.Format(round.Number, round.Name),
-                round.Sport,
-                round.HasImage,
-                round.Status,
-                round.Rating,
-                RainLevelDisplay.Format(round.Rain),
-                round.TeamName is null ? null : CountryFlag.WithName(round.TeamCountry, round.TeamName),
-                Array.Empty<string>()
-            ))
-            .ToList();
+        var rounds = roundRows.ConvertAll(round => new VenueRoundInfo(
+            round.Id,
+            round.Date,
+            round.Number,
+            round.Name,
+            RoundLabel.Format(round.Number, round.Name),
+            round.Sport,
+            round.HasImage,
+            round.Status,
+            round.Rating,
+            RainLevelDisplay.Format(round.Rain),
+            round.TeamName is null ? null : CountryFlag.WithName(round.TeamCountry, round.TeamName),
+            Array.Empty<string>()
+        ));
         if (rounds.Count == 0)
         {
             return new VenueInfo(venue.Name, venue.Country, venue.CountryName, 0, rounds);
@@ -135,9 +138,8 @@ public sealed class VenueService(IDbContextFactory<MotorsportsDbContext> factory
             .GroupBy(winner => winner.Round)
             .ToDictionary(
                 group => group.Key,
-                group =>
-                    (IReadOnlyList<string>)
-                        group.Select(w => CountryFlag.WithName(w.Country, $"{w.FirstName} {w.LastName}")).ToArray()
+                IReadOnlyList<string> (group) =>
+                    [.. group.Select(w => CountryFlag.WithName(w.Country, $"{w.FirstName} {w.LastName}"))]
             );
         var roundsWithWinners = rounds
             .Select(round =>
@@ -178,7 +180,7 @@ public sealed class VenueService(IDbContextFactory<MotorsportsDbContext> factory
         }
 
         var name = form.Name!.Trim();
-        return await factory.InTransactionAsync<string>(
+        var result = await factory.InTransactionAsync<string>(
             async (db, ct) =>
             {
                 var country = await CanonicalCountryAsync(db, form.Country!, ct);
@@ -198,6 +200,8 @@ public sealed class VenueService(IDbContextFactory<MotorsportsDbContext> factory
             },
             cancellationToken: cancellationToken
         );
+        InvalidateAfterWrite(result);
+        return result;
     }
 
     public async Task<Result<string>> UpdateAsync(
@@ -213,7 +217,7 @@ public sealed class VenueService(IDbContextFactory<MotorsportsDbContext> factory
         }
 
         var newName = form.Name!.Trim();
-        return await factory.InTransactionAsync<string>(
+        var result = await factory.InTransactionAsync<string>(
             async (db, ct) =>
             {
                 var country = await CanonicalCountryAsync(db, form.Country!, ct);
@@ -264,6 +268,16 @@ public sealed class VenueService(IDbContextFactory<MotorsportsDbContext> factory
             },
             cancellationToken: cancellationToken
         );
+        InvalidateAfterWrite(result);
+        return result;
+    }
+
+    private void InvalidateAfterWrite<T>(Result<T> result)
+    {
+        if (result.IsSuccess)
+        {
+            cache.Invalidate(LookupKind.Venues);
+        }
     }
 
     private static async Task<string?> CanonicalCountryAsync(

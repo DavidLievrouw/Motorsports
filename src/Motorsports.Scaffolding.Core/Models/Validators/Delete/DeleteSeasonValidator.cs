@@ -4,7 +4,7 @@ using FluentValidation;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Delete {
   public class DeleteSeasonValidator : MotorsportsValidator<Season, int>, IDeleteValidator<Season> {
-    readonly MotorsportsContext _context;
+      private readonly MotorsportsContext _context;
 
     public DeleteSeasonValidator(MotorsportsContext context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -16,7 +16,7 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Delete {
         .WithMessage("This season cannot be deleted, because it has rounds.");
     }
 
-    bool NotHaveAnyRounds(Season season, int seasonId) {
+    private bool NotHaveAnyRounds(Season season, int seasonId) {
       return !_context.Round.Any(r => r.Season == seasonId);
     }
   }

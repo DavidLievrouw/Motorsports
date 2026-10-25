@@ -10,7 +10,7 @@ namespace Motorsports.Scaffolding.Core.Security {
   }
 
   public class UserDataService : IUserDataService {
-    readonly IQueryExecutor _queryExecutor;
+      private readonly IQueryExecutor _queryExecutor;
 
     public UserDataService(IQueryExecutor queryExecutor) {
       _queryExecutor = queryExecutor ?? throw new ArgumentNullException(nameof(queryExecutor));

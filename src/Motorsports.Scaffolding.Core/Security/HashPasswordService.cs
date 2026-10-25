@@ -15,11 +15,11 @@ namespace Motorsports.Scaffolding.Core.Security {
 
     public delegate byte[] SaltGenerator();
 
-    readonly SaltGenerator _generateSalt;
-    readonly int _hashSize;
-    readonly int _iterations;
-    readonly Pbkdf2 _pbkdf2;
-    readonly KeyDerivationPrf _prf;
+    private readonly SaltGenerator _generateSalt;
+    private readonly int _hashSize;
+    private readonly int _iterations;
+    private readonly Pbkdf2 _pbkdf2;
+    private readonly KeyDerivationPrf _prf;
 
     public HashPasswordService(PasswordHashingConfig passwordHashingConfig) {
       if (passwordHashingConfig == null) throw new ArgumentNullException(nameof(passwordHashingConfig));
@@ -52,7 +52,7 @@ namespace Motorsports.Scaffolding.Core.Security {
       return new HashedPassword(hash, salt, iterations, prf);
     }
 
-    static SaltGenerator CreateSaltGenerator(int saltSize) {
+    private static SaltGenerator CreateSaltGenerator(int saltSize) {
       return () => {
         var salt = new byte[saltSize];
         using (var rng = RandomNumberGenerator.Create()) {

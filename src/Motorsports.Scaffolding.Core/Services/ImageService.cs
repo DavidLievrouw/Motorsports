@@ -10,8 +10,8 @@ namespace Motorsports.Scaffolding.Core.Services {
   }
 
   public class ImageService : IImageService {
-    readonly IFileProvider _fileProvider;
-    readonly IUrlHelper _urlHelper;
+      private readonly IFileProvider _fileProvider;
+      private readonly IUrlHelper _urlHelper;
 
     public ImageService(IFileProvider fileProvider, IUrlHelper urlHelper) {
       _fileProvider = fileProvider ?? throw new ArgumentNullException(nameof(fileProvider));

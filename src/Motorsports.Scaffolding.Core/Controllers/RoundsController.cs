@@ -13,9 +13,9 @@ using Motorsports.Scaffolding.Core.Services;
 namespace Motorsports.Scaffolding.Core.Controllers {
   [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
   public class RoundsController : Controller {
-    readonly IRoundService _roundService;
-    readonly ISeasonService _seasonService;
-    readonly IModelStatePopulator<Round, int> _roundModelStatePopulator;
+      private readonly IRoundService _roundService;
+      private readonly ISeasonService _seasonService;
+      private readonly IModelStatePopulator<Round, int> _roundModelStatePopulator;
 
     public RoundsController(
       IRoundService roundService, 

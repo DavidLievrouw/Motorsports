@@ -8,7 +8,7 @@ using Motorsports.Infrastructure.Lookups;
 
 namespace Motorsports.Participants;
 
-public sealed class ParticipantService(
+internal sealed class ParticipantService(
     IDbContextFactory<MotorsportsDbContext> factory,
     IValidator<ParticipantForm> validator,
     LookupCache cache
@@ -42,7 +42,8 @@ public sealed class ParticipantService(
         var items = await query
             .OrderBy(p => p.LastName)
             .ThenBy(p => p.FirstName)
-            .ThenBy(p => p.CountryRef!.NiceName ?? p.CountryRef.Name ?? p.Country)
+            .ThenBy(p => p.Title)
+            .ThenBy(p => p.Country)
             .ThenBy(p => p.Id)
             .Skip((page - 1) * Paging.DefaultPageSize)
             .Take(Paging.DefaultPageSize)
@@ -130,8 +131,8 @@ public sealed class ParticipantService(
         var title = form.Title?.Trim() ?? "";
         var first = form.FirstName!.Trim();
         var last = form.LastName!.Trim();
-        // No unique index backs the identity, so serializable isolation guards the duplicate check against races.
-        var result = await factory.InTransactionAsync<int>(
+        // Unique index plus serializable isolation: trim-equal Title/First/Last/Country cannot race in.
+        var result = await factory.InTransactionAsync(
             async (db, ct) =>
             {
                 var country = await CanonicalCountryAsync(db, form.Country!, ct);
@@ -187,7 +188,7 @@ public sealed class ParticipantService(
         var title = form.Title?.Trim() ?? "";
         var first = form.FirstName!.Trim();
         var last = form.LastName!.Trim();
-        var result = await factory.InTransactionAsync<int>(
+        var result = await factory.InTransactionAsync(
             async (db, ct) =>
             {
                 var country = await CanonicalCountryAsync(db, form.Country!, ct);

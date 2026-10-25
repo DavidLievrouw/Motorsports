@@ -274,8 +274,8 @@ namespace Motorsports.Scaffolding.Core.Dapper {
   }
 
   public class QueryExecutor : IQueryExecutor {
-    readonly IDbConnectionFactory _connectionFactory;
-    readonly Query _query;
+      private readonly IDbConnectionFactory _connectionFactory;
+      private readonly Query _query;
 
     /// <summary>
     /// Creates a new <see cref="QueryExecutor"/>.
@@ -285,7 +285,7 @@ namespace Motorsports.Scaffolding.Core.Dapper {
       _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
     }
 
-    QueryExecutor(IDbConnectionFactory connectionFactory, Query query) : this(connectionFactory) {
+    private QueryExecutor(IDbConnectionFactory connectionFactory, Query query) : this(connectionFactory) {
       _query = query ?? throw new ArgumentNullException(nameof(query));
     }
 
@@ -413,26 +413,26 @@ namespace Motorsports.Scaffolding.Core.Dapper {
 
     #region ExecuteOnConnection
 
-    IEnumerable<TResult> ExecuteOnConnection<TResult>(Func<IDbConnection, IEnumerable<TResult>> execute) {
+    private IEnumerable<TResult> ExecuteOnConnection<TResult>(Func<IDbConnection, IEnumerable<TResult>> execute) {
       using (var connection = _connectionFactory.CreateConnection()) {
         return execute(connection);
       }
     }
 
-    TResult ExecuteOnConnection<TResult>(Func<IDbConnection, TResult> execute) {
+    private TResult ExecuteOnConnection<TResult>(Func<IDbConnection, TResult> execute) {
       using (var connection = _connectionFactory.CreateConnection()) {
         return execute(connection);
       }
     }
 
-    async Task<IEnumerable<TResult>> ExecuteOnConnectionAsync<TResult>(
+    private async Task<IEnumerable<TResult>> ExecuteOnConnectionAsync<TResult>(
       Func<IDbConnection, Task<IEnumerable<TResult>>> execute) {
       using (var connection = _connectionFactory.CreateConnection()) {
         return await execute(connection);
       }
     }
 
-    async Task<TResult> ExecuteOnConnectionAsync<TResult>(Func<IDbConnection, Task<TResult>> execute) {
+    private async Task<TResult> ExecuteOnConnectionAsync<TResult>(Func<IDbConnection, Task<TResult>> execute) {
       using (var connection = _connectionFactory.CreateConnection()) {
         return await execute(connection);
       }

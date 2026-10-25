@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace Motorsports.Venues;
 
-public sealed record VenueRow(string Name, string Country, string CountryName);
+internal sealed record VenueRow(string Name, string Country, string CountryName);
 
-public sealed record VenueRoundInfo(
+internal sealed record VenueRoundInfo(
     int Id,
     DateOnly Date,
     short Number,
@@ -19,7 +19,7 @@ public sealed record VenueRoundInfo(
     IReadOnlyList<string> WinningParticipants
 );
 
-public sealed record VenueInfo(
+internal sealed record VenueInfo(
     string Name,
     string Country,
     string CountryName,
@@ -37,7 +37,7 @@ public sealed class VenueForm
     public string? RowVersion { get; set; }
 }
 
-public sealed class VenueFormValidator : AbstractValidator<VenueForm>
+internal sealed class VenueFormValidator : AbstractValidator<VenueForm>
 {
     public const int MaxNameLength = 100;
 

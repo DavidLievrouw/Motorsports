@@ -14,7 +14,10 @@ public static class SeasonsModule
     {
         public IServiceCollection AddSeasonsServices()
         {
-            services.AddValidatorsFromAssemblyContaining<SeasonFormValidator>(ServiceLifetime.Singleton);
+            services.AddValidatorsFromAssemblyContaining<SeasonFormValidator>(
+                ServiceLifetime.Singleton,
+                includeInternalTypes: true
+            );
             services.AddScoped<SeasonService>();
             services.AddScoped<SeasonEntryService>();
             return services;

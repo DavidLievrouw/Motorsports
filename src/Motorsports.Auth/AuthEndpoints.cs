@@ -42,7 +42,10 @@ public static class AuthEndpoints
                 .Bind(configuration.GetSection(AuthOptions.Section))
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
-            services.AddValidatorsFromAssemblyContaining<LoginFormValidator>(ServiceLifetime.Singleton);
+            services.AddValidatorsFromAssemblyContaining<LoginFormValidator>(
+                ServiceLifetime.Singleton,
+                includeInternalTypes: true
+            );
             services.AddRateLimiter(o =>
             {
                 o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

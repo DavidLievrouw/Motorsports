@@ -66,6 +66,14 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
             e.Property(x => x.LastName).HasMaxLength(100);
             e.Property(x => x.Country).HasColumnType("char(2)");
             e.HasOne(x => x.CountryRef).WithMany().HasForeignKey(x => x.Country).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new
+                {
+                    x.Title,
+                    x.FirstName,
+                    x.LastName,
+                    x.Country,
+                })
+                .IsUnique();
         });
 
         modelBuilder.Entity<Team>(e =>

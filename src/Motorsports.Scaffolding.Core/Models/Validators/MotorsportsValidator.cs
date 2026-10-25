@@ -4,7 +4,7 @@ using FluentValidation;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators {
   public class MotorsportsValidator<TModel, TKey> : AbstractValidator<TModel> {
-    const string Key = "Motorsports_KeyForUpdate";
+      private const string Key = "Motorsports_KeyForUpdate";
 
     public async Task<ValidationResult> ValidateForCreateAsync(TModel instance, CancellationToken cancellationToken) {
       var thirdPartyValidationResult = await ValidateAsync(instance, cancellationToken);

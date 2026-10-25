@@ -13,6 +13,7 @@ using Motorsports.Infrastructure;
 using Motorsports.Infrastructure.Auth;
 using Motorsports.Infrastructure.Lookups;
 using Motorsports.Participants;
+using Motorsports.Rounds;
 using Motorsports.Seasons;
 using Motorsports.Sports;
 using Motorsports.Teams;
@@ -58,7 +59,8 @@ builder
     .AddVenuesServices()
     .AddTeamsServices()
     .AddParticipantsServices()
-    .AddSeasonsServices();
+    .AddSeasonsServices()
+    .AddRoundsServices();
 builder.Services.AddMotorsportsIdentity().AddSignInManager();
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme).AddIdentityCookies();
 builder
@@ -147,7 +149,8 @@ app.MapRazorComponents<App>()
         VenuesModule.Assembly,
         TeamsModule.Assembly,
         ParticipantsModule.Assembly,
-        SeasonsModule.Assembly
+        SeasonsModule.Assembly,
+        RoundsModule.Assembly
     );
 
 await app.RunAsync();

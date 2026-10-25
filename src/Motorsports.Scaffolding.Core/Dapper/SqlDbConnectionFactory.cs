@@ -5,7 +5,7 @@ using Microsoft.Data.SqlClient;
 namespace Motorsports.Scaffolding.Core.Dapper;
 
 public class SqlDbConnectionFactory : IDbConnectionFactory {
-  readonly string _connectionString;
+    private readonly string _connectionString;
 
   public SqlDbConnectionFactory(string connectionString) {
     _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));

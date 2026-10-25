@@ -8,7 +8,7 @@ using Motorsports.Infrastructure.Lookups;
 
 namespace Motorsports.Teams;
 
-public sealed class TeamService(
+internal sealed class TeamService(
     IDbContextFactory<MotorsportsDbContext> factory,
     IValidator<TeamForm> validator,
     LookupCache cache
@@ -107,7 +107,7 @@ public sealed class TeamService(
 
         var name = form.Name!.Trim();
         // No unique index backs (Name, Sport), so serializable isolation guards the duplicate check against races.
-        var result = await factory.InTransactionAsync<int>(
+        var result = await factory.InTransactionAsync(
             async (db, ct) =>
             {
                 var lookups = await ResolveAsync(db, form.Sport!, form.Country!, ct);
@@ -155,7 +155,7 @@ public sealed class TeamService(
         }
 
         var name = form.Name!.Trim();
-        var result = await factory.InTransactionAsync<int>(
+        var result = await factory.InTransactionAsync(
             async (db, ct) =>
             {
                 var lookups = await ResolveAsync(db, form.Sport!, form.Country!, ct);
@@ -217,7 +217,7 @@ public sealed class TeamService(
 
     public async Task<Result<Unit>> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var result = await factory.InTransactionAsync<Unit>(
+        var result = await factory.InTransactionAsync(
             async (db, ct) =>
             {
                 var rows = await db

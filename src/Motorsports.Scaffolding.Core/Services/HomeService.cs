@@ -16,9 +16,9 @@ namespace Motorsports.Scaffolding.Core.Services {
   }
 
   public class HomeService : IHomeService {
-    readonly MotorsportsContext _context;
-    readonly IQueryExecutor _queryExecutor;
-    readonly IRoundService _roundService;
+      private readonly MotorsportsContext _context;
+      private readonly IQueryExecutor _queryExecutor;
+      private readonly IRoundService _roundService;
 
     public HomeService(
       MotorsportsContext context,

@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
   public class UpdateRoundValidator : MotorsportsValidator<Round, int>, IUpdateValidator<Round, int> {
-    const int MaxNoteLength = 1024;
+      private const int MaxNoteLength = 1024;
 
-    readonly MotorsportsContext _context;
+      private readonly MotorsportsContext _context;
 
     public UpdateRoundValidator(MotorsportsContext context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -47,27 +47,27 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
         .WithMessage($"The specified note is too long. Maximum number of characters is {MaxNoteLength}.");
     }
 
-    static bool HaveValidLength(Round round, string note) {
+    private static bool HaveValidLength(Round round, string note) {
       return string.IsNullOrEmpty(note) || note.Length <= MaxNoteLength;
     }
 
-    bool MustExist(Round round, short number) {
+    private bool MustExist(Round round, short number) {
       return _context.Round.Any(_ => round.Id == _.Id);
     }
 
-    bool VenueExists(Round round, string venue) {
+    private bool VenueExists(Round round, string venue) {
       return _context.Venue.Any(_ => EF.Functions.Like(_.Name, venue));
     }
-        
-    bool StatusExists(Round round, string status) {
+
+    private bool StatusExists(Round round, string status) {
       return _context.Status.Any(_ => EF.Functions.Like(_.Name, status));
     }
 
-    bool SeasonExists(Round round, int season) {
+    private bool SeasonExists(Round round, int season) {
       return _context.Season.Any(_ => _.Id == season);
     }
 
-    bool BeUniqueOrRound0(Round round, short number) {
+    private bool BeUniqueOrRound0(Round round, short number) {
       return number == 0 || !_context.Round.Any(_ => 
         _.Season == round.Season && 
         _.Number == number &&

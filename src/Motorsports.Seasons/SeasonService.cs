@@ -8,7 +8,7 @@ using Motorsports.Infrastructure.Lookups;
 
 namespace Motorsports.Seasons;
 
-public sealed class SeasonService(
+internal sealed class SeasonService(
     IDbContextFactory<MotorsportsDbContext> factory,
     LookupCache cache,
     IValidator<SeasonForm> validator
@@ -181,7 +181,7 @@ public sealed class SeasonService(
         }
 
         var label = form.Label!.Trim();
-        var result = await factory.InTransactionAsync<int>(
+        var result = await factory.InTransactionAsync(
             async (db, ct) =>
             {
                 var sport = await db
@@ -218,7 +218,7 @@ public sealed class SeasonService(
         }
 
         var label = form.Label!.Trim();
-        var result = await factory.InTransactionAsync<int>(
+        var result = await factory.InTransactionAsync(
             async (db, ct) =>
             {
                 var rows = await db
@@ -322,7 +322,7 @@ public sealed class SeasonService(
 
     public async Task<Result<Unit>> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var result = await factory.InTransactionAsync<Unit>(
+        var result = await factory.InTransactionAsync(
             async (db, ct) =>
             {
                 var rows = await db

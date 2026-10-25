@@ -30,6 +30,7 @@ else
     </MudPaper>
     <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
         <MudButton Href="@($"/seasons/edit/{Id}")" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
+        <MudButton Href="@($"/seasons/{Id}/rounds")" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Flag">Rounds</MudButton>
         <MudButton Href="@($"/seasons/{Id}/entries")" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Groups">Season entries</MudButton>
         <MudButton Href="@($"/seasons/delete/{Id}")" Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
         <MudButton Href="/seasons" Variant="Variant.Text">Back to seasons</MudButton>

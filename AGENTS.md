@@ -99,6 +99,8 @@ Follow architecture roles strict:
 - Keep reusable MudBlazor controls in `Motorsports.Ui`; slices may reference it, but it must not reference feature or data projects.
 - Keep EF Core (`MotorsportsDbContext`, entity classes, configurations, value converters, migrations) in `Motorsports.Infrastructure`.
 - Keep feature behavior (Razor components, handlers, validators, queries) inside slice projects; avoid cross-slice coupling. Slices never reference each other. Shared domain/data needs go to Common or Infrastructure; reusable MudBlazor UI goes to `Motorsports.Ui`.
+- Slice types are `internal` by default. Keep public only `*Module` (and its DI/endpoint extensions), plus anything the host aggregator or another slice must call. Test projects see internals via `InternalsVisibleTo` in `Directory.Build.props`.
+- Fix Rider `ide` and Sonar `csharpsquid` warnings as you go, together with Roslynator. Do not "fix" `Captured variable is disposed in the outer scope` (and similar false positives) without asking.
 - Legacy app `Motorsports.Scaffolding.Core` is read-only reference. Do not edit it, do not reference it.
 
 ### End-of-phase routine (applies to the whole project, every phase, no exceptions)

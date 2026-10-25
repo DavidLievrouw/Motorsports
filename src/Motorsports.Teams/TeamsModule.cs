@@ -15,7 +15,10 @@ public static class TeamsModule
     {
         public IServiceCollection AddTeamsServices()
         {
-            services.AddValidatorsFromAssemblyContaining<TeamFormValidator>(ServiceLifetime.Singleton);
+            services.AddValidatorsFromAssemblyContaining<TeamFormValidator>(
+                ServiceLifetime.Singleton,
+                includeInternalTypes: true
+            );
             services.AddScoped<TeamService>();
             return services;
         }

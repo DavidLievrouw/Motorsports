@@ -21,8 +21,8 @@ namespace Motorsports.Scaffolding.Core.Services {
   }
 
   public class SeasonService : ISeasonService {
-    readonly MotorsportsContext _context;
-    readonly IQueryExecutor _queryExecutor;
+      private readonly MotorsportsContext _context;
+      private readonly IQueryExecutor _queryExecutor;
 
     public SeasonService(
       MotorsportsContext context,

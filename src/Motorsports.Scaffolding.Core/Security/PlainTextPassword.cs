@@ -1,6 +1,6 @@
 ﻿namespace Motorsports.Scaffolding.Core.Security {
   public struct PlainTextPassword {
-    readonly string _value;
+      private readonly string _value;
 
     public static PlainTextPassword Empty = new PlainTextPassword();
 

@@ -4,7 +4,7 @@ using FluentValidation;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
   public class UpdateSeasonEntryValidator : MotorsportsValidator<SeasonEntry, SeasonEntry.SeasonEntryKey>, IUpdateValidator<SeasonEntry, SeasonEntry.SeasonEntryKey> {
-    readonly MotorsportsContext _context;
+      private readonly MotorsportsContext _context;
 
     public UpdateSeasonEntryValidator(MotorsportsContext context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -28,15 +28,15 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
         .WithMessage("The season entry to update does not exist.");
     }
 
-    bool MustExist(SeasonEntry seasonEntry, string name) {
+    private bool MustExist(SeasonEntry seasonEntry, string name) {
       return _context.SeasonEntry.Any(_ => _.Season == seasonEntry.Season && _.Team == seasonEntry.Team);
     }
 
-    bool SeasonExists(SeasonEntry seasonEntry, int season) {
+    private bool SeasonExists(SeasonEntry seasonEntry, int season) {
       return _context.Season.Any(_ => _.Id == season);
     }
-    
-    bool TeamExists(SeasonEntry seasonEntry, int team) {
+
+    private bool TeamExists(SeasonEntry seasonEntry, int team) {
       return _context.Team.Any(_ => _.Id == team);
     }
   }

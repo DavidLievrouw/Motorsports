@@ -1,0 +1,122 @@
+@page "/seasons/{SeasonId:int}/rounds"
+@attribute [Authorize]
+@inject RoundService Service
+@inject IJSRuntime Js
+
+<PageTitle>Rounds</PageTitle>
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_season is null)
+{
+    <NotFoundNotice Message="Season not found." />
+}
+else
+{
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2">
+        <MudText Typo="Typo.h4" HtmlTag="h1">@($"{_season.Sport} {_season.Label} rounds".Trim())</MudText>
+        <MudButton Href="@($"/seasons/{SeasonId}/rounds/create")" Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add">New round</MudButton>
+    </MudStack>
+    @if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-2">@_error</MudAlert>
+    }
+    @if (_rounds is { Count: 0 })
+    {
+        <MudText>No rounds in this season.</MudText>
+    }
+    else if (_rounds is not null)
+    {
+        <MudDataGrid T="RoundRow" Items="_rounds" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1">
+            <Columns>
+                <TemplateColumn Title="Date">
+                    <CellTemplate>@DateDisplay.Format(context.Item.Date)</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Round">
+                    <CellTemplate>
+                        <span class="@(context.Item.Number == 0 ? "mud-text-secondary" : null)">
+                            @(context.Item.Number == 0
+                                ? $"{RoundLabel.Format(context.Item.Number, context.Item.Name)} (non-championship)"
+                                : RoundLabel.Format(context.Item.Number, context.Item.Name))
+                        </span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Venue">
+                    <CellTemplate>@CountryFlag.WithName(context.Item.VenueCountry, context.Item.Venue)</CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="round => round.Status" Title="Status" />
+                <TemplateColumn Title="Rating">
+                    <CellTemplate>@RatingDisplay.Format(context.Item.Rating)</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Winning team">
+                    <CellTemplate>@(context.Item.WinningTeamName is null ? "—" : CountryFlag.WithName(context.Item.WinningTeamCountry, context.Item.WinningTeamName))</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Winners">
+                    <CellTemplate>@(context.Item.Winners.Length == 0 ? "—" : string.Join(", ", context.Item.Winners))</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Actions" Sortable="false">
+                    <CellTemplate>
+                        <MudButton Href="@($"/rounds/details/{context.Item.Id}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>
+                        <MudButton Href="@($"/rounds/edit/{context.Item.Id}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
+                        <MudButton Href="@($"/rounds/delete/{context.Item.Id}")" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
+                        @if (context.Item.StatusStep < 1)
+                        {
+                            <MudButton Size="Size.Small" Color="Color.Tertiary" OnClick="() => MarkReadyAsync(context.Item.Id)">Ready to watch</MudButton>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+        <div id="rounds-end"></div>
+    }
+    <MudButton Href="@($"/seasons/details/{SeasonId}")" Variant="Variant.Text" Class="mt-2">Back to season</MudButton>
+}
+
+@code {
+    private RoundSeasonContext? _season;
+    private IReadOnlyList<RoundRow>? _rounds;
+    private bool _loading = true;
+    private string? _error;
+
+    [Parameter]
+    public int SeasonId { get; set; }
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _rounds is { Count: > 0 })
+        {
+            try
+            {
+                await Js.InvokeVoidAsync("eval", "document.getElementById('rounds-end')?.scrollIntoView()");
+            }
+            catch (JSException)
+            {
+            }
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _season = await Service.GetSeasonAsync(SeasonId);
+        _rounds = _season is null ? null : await Service.ListAsync(SeasonId);
+        _loading = false;
+    }
+
+    private async Task MarkReadyAsync(int id)
+    {
+        _error = null;
+        var result = await Service.MarkReadyToWatchAsync(id);
+        if (!result.IsSuccess)
+        {
+            _error = result.Error.Message;
+            return;
+        }
+
+        _rounds = await Service.ListAsync(SeasonId);
+    }
+}

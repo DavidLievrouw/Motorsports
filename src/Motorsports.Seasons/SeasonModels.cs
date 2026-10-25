@@ -2,7 +2,7 @@ using FluentValidation;
 
 namespace Motorsports.Seasons;
 
-public sealed record SeasonRow(
+internal sealed record SeasonRow(
     int Id,
     string Sport,
     string? SportFullName,
@@ -14,7 +14,7 @@ public sealed record SeasonRow(
     int RoundCount
 );
 
-public sealed record SeasonInfo(
+internal sealed record SeasonInfo(
     int Id,
     string Sport,
     string? SportFullName,
@@ -41,7 +41,7 @@ public sealed class SeasonForm
     public string? RowVersion { get; set; }
 }
 
-public sealed class SeasonFormValidator : AbstractValidator<SeasonForm>
+internal sealed class SeasonFormValidator : AbstractValidator<SeasonForm>
 {
     public const int MaxLabelLength = 100;
 

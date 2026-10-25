@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace Motorsports.Teams;
 
-public sealed record TeamRow(int Id, string Name, string Sport, string Country, string CountryName);
+internal sealed record TeamRow(int Id, string Name, string Sport, string Country, string CountryName);
 
-public sealed record TeamInfo(
+internal sealed record TeamInfo(
     int Id,
     string Name,
     string Sport,
@@ -25,7 +25,7 @@ public sealed class TeamForm
     public string? RowVersion { get; set; }
 }
 
-public sealed class TeamFormValidator : AbstractValidator<TeamForm>
+internal sealed class TeamFormValidator : AbstractValidator<TeamForm>
 {
     public const int MaxNameLength = 50;
 

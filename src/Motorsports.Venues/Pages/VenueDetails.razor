@@ -57,7 +57,6 @@ else
                 <TemplateColumn Title="Winning team" Sortable="false">
                     <CellTemplate>@(context.Item.WinningTeamName ?? "—")</CellTemplate>
                 </TemplateColumn>
-                <PropertyColumn Property="round => round.Status" Title="Status" />
                 <TemplateColumn Title="Rating" Sortable="false">
                     <CellTemplate>@(context.Item.Rating is { } rating ? $"{rating.ToString("0", CultureInfo.InvariantCulture)} / 10" : "—")</CellTemplate>
                 </TemplateColumn>

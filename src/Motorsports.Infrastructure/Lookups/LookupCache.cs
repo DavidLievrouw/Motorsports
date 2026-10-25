@@ -12,6 +12,8 @@ public enum LookupKind
     Participants,
     Teams,
     SeasonEntries,
+    Venues,
+    Statuses,
 }
 
 public sealed class LookupCacheOptions
@@ -53,6 +55,10 @@ public sealed record SeasonEntryOption(
     string CountryName
 );
 
+public sealed record VenueOption(string Name, string Country, string CountryName);
+
+public sealed record StatusOption(string Name, sbyte Step);
+
 /// <summary>
 /// Shared, immutable lookup lists (one query per kind). Writers call <see cref="Invalidate"/> after commit: the next read
 /// reloads synchronously. Entries older than <c>MaxAge</c> are served stale and refreshed in the background; forms
@@ -67,6 +73,8 @@ public sealed class LookupCache
     private readonly Slot<ParticipantOption> participants;
     private readonly Slot<TeamOption> teams;
     private readonly Slot<SeasonEntryOption> seasonEntries;
+    private readonly Slot<VenueOption> venues;
+    private readonly Slot<StatusOption> statuses;
 
     public LookupCache(
         IDbContextFactory<MotorsportsDbContext> factory,
@@ -114,6 +122,8 @@ public sealed class LookupCache
                     .Participants.AsNoTracking()
                     .OrderBy(p => p.LastName)
                     .ThenBy(p => p.FirstName)
+                    .ThenBy(p => p.Title)
+                    .ThenBy(p => p.Country)
                     .Select(p => new ParticipantOption(
                         p.Id,
                         p.FirstName,
@@ -215,6 +225,39 @@ public sealed class LookupCache
             maxAge,
             logger
         );
+        venues = new Slot<VenueOption>(
+            async ct =>
+            {
+                await using var context = await factory.CreateDbContextAsync(ct);
+                return await context
+                    .Venues.AsNoTracking()
+                    .OrderBy(venue => venue.Name)
+                    .Select(venue => new VenueOption(
+                        venue.Name,
+                        venue.Country,
+                        venue.CountryRef!.NiceName ?? venue.CountryRef.Name ?? venue.Country
+                    ))
+                    .ToArrayAsync(ct);
+            },
+            time,
+            maxAge,
+            logger
+        );
+        statuses = new Slot<StatusOption>(
+            async ct =>
+            {
+                await using var context = await factory.CreateDbContextAsync(ct);
+                return await context
+                    .Statuses.AsNoTracking()
+                    .OrderBy(status => status.Step)
+                    .ThenBy(status => status.Name)
+                    .Select(status => new StatusOption(status.Name, status.Step))
+                    .ToArrayAsync(ct);
+            },
+            time,
+            maxAge,
+            logger
+        );
     }
 
     /// <summary>Countries sorted by display name.</summary>
@@ -232,6 +275,12 @@ public sealed class LookupCache
 
     public ValueTask<SeasonEntryOption[]> GetSeasonEntriesAsync(CancellationToken cancellationToken = default) =>
         seasonEntries.GetAsync(null, cancellationToken);
+
+    public ValueTask<VenueOption[]> GetVenuesAsync(CancellationToken cancellationToken = default) =>
+        venues.GetAsync(null, cancellationToken);
+
+    public ValueTask<StatusOption[]> GetStatusesAsync(CancellationToken cancellationToken = default) =>
+        statuses.GetAsync(null, cancellationToken);
 
     /// <summary>Reloads the kinds a form needs when their data is older than <see cref="FormRevalidateAge"/>.</summary>
     public async Task RevalidateAsync(LookupKind kind, CancellationToken cancellationToken = default)
@@ -252,6 +301,12 @@ public sealed class LookupCache
                 break;
             case LookupKind.SeasonEntries:
                 await seasonEntries.GetAsync(FormRevalidateAge, cancellationToken);
+                break;
+            case LookupKind.Venues:
+                await venues.GetAsync(FormRevalidateAge, cancellationToken);
+                break;
+            case LookupKind.Statuses:
+                await statuses.GetAsync(FormRevalidateAge, cancellationToken);
                 break;
         }
     }
@@ -274,6 +329,12 @@ public sealed class LookupCache
                 break;
             case LookupKind.SeasonEntries:
                 seasonEntries.Invalidate();
+                break;
+            case LookupKind.Venues:
+                venues.Invalidate();
+                break;
+            case LookupKind.Statuses:
+                statuses.Invalidate();
                 break;
         }
     }

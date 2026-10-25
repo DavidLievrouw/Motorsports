@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace Motorsports.Sports;
 
-public sealed record SportRow(string Name, string? FullName, bool HasImage);
+internal sealed record SportRow(string Name, string? FullName, bool HasImage);
 
-public sealed record SportInfo(
+internal sealed record SportInfo(
     string Name,
     string? FullName,
     int TeamCount,
@@ -35,7 +35,7 @@ public sealed class SportForm
     public string? ImageUploadError { get; set; }
 }
 
-public sealed class SportFormValidator : AbstractValidator<SportForm>
+internal sealed class SportFormValidator : AbstractValidator<SportForm>
 {
     public const int MaxNameLength = 50;
     public const int MaxFullNameLength = 100;

@@ -21,7 +21,10 @@ public static class SportsModule
     {
         public IServiceCollection AddSportsServices()
         {
-            services.AddValidatorsFromAssemblyContaining<SportFormValidator>(ServiceLifetime.Singleton);
+            services.AddValidatorsFromAssemblyContaining<SportFormValidator>(
+                ServiceLifetime.Singleton,
+                includeInternalTypes: true
+            );
             services.AddScoped<SportService>();
             return services;
         }

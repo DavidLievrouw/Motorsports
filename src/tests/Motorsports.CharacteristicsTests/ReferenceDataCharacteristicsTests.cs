@@ -49,7 +49,7 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
             Factory = factory,
             Cache = cache,
             Sports = new SportService(factory, cache, new SportFormValidator()),
-            Venues = new VenueService(factory, new VenueFormValidator()),
+            Venues = new VenueService(factory, new VenueFormValidator(), cache),
             Teams = new TeamService(factory, new TeamFormValidator(), cache),
             Participants = new ParticipantService(factory, new ParticipantFormValidator(), cache),
         };

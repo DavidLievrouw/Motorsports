@@ -15,7 +15,10 @@ public static class ParticipantsModule
     {
         public IServiceCollection AddParticipantsServices()
         {
-            services.AddValidatorsFromAssemblyContaining<ParticipantFormValidator>(ServiceLifetime.Singleton);
+            services.AddValidatorsFromAssemblyContaining<ParticipantFormValidator>(
+                ServiceLifetime.Singleton,
+                includeInternalTypes: true
+            );
             services.AddScoped<ParticipantService>();
             return services;
         }

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
   public class CreateTeamValidator : MotorsportsValidator<Team, int>, ICreateValidator<Team> {
-    readonly MotorsportsContext _context;
+      private readonly MotorsportsContext _context;
 
     public CreateTeamValidator(MotorsportsContext context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -36,15 +36,15 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
         .When(_ => !string.IsNullOrEmpty(_.Name));
     }
 
-    bool SportExists(Team team, string sport) {
+    private bool SportExists(Team team, string sport) {
       return _context.Sport.Any(_ => EF.Functions.Like(_.Name, sport));
     }
-    
-    bool CountryExists(Team team, string country) {
+
+    private bool CountryExists(Team team, string country) {
       return _context.Country.Any(_ => EF.Functions.Like(_.Iso, country));
     }
 
-    bool BeUnique(Team team, string name) {
+    private bool BeUnique(Team team, string name) {
       return !_context.Team.Any(_ => EF.Functions.Like(_.Name, name) && EF.Functions.Like(_.Sport, team.Sport));
     }
   }

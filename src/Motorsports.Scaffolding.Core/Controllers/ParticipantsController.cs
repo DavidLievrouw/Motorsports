@@ -12,8 +12,8 @@ using Motorsports.Scaffolding.Core.Models.Validators;
 namespace Motorsports.Scaffolding.Core.Controllers {
   [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
   public class ParticipantsController : Controller {
-    readonly MotorsportsContext _context;
-    readonly IModelStatePopulator<Participant, int> _participantModelStatePopulator;
+      private readonly MotorsportsContext _context;
+      private readonly IModelStatePopulator<Participant, int> _participantModelStatePopulator;
 
     public ParticipantsController(MotorsportsContext context, IModelStatePopulator<Participant, int> participantModelStatePopulator) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -96,7 +96,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       return View(participant);
     }
 
-    bool ParticipantExists(int id) {
+    private bool ParticipantExists(int id) {
       return _context.Participant.Any(e => e.Id == id);
     }
   }

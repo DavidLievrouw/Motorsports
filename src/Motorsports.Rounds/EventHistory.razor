@@ -1,0 +1,52 @@
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_items.Count == 0)
+{
+    <MudText Class="mt-2">No previous events at this venue.</MudText>
+}
+else
+{
+    <MudText Typo="Typo.h5" HtmlTag="h2" Class="mt-4 mb-2">Event history</MudText>
+    <MudDataGrid T="EventHistoryItem" Items="_items" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1" Class="mb-2">
+            <Columns>
+                <TemplateColumn Title="Date">
+                    <CellTemplate>@DateDisplay.Format(context.Item.Date)</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Round">
+                    <CellTemplate>@RoundLabel.Format(context.Item.Number, context.Item.Name)</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Rating">
+                    <CellTemplate>@RatingDisplay.Format(context.Item.Rating)</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Rain">
+                    <CellTemplate>@(RainLevelDisplay.Format(context.Item.Rain) ?? "—")</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Winning team">
+                    <CellTemplate>@(context.Item.WinningTeamName is null ? "—" : CountryFlag.WithName(context.Item.WinningTeamCountry, context.Item.WinningTeamName))</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Winners">
+                    <CellTemplate>@(context.Item.Winners.Length == 0 ? "—" : string.Join(", ", context.Item.Winners))</CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+}
+
+@code {
+    private IReadOnlyList<EventHistoryItem> _items = [];
+    private bool _loading = true;
+
+    [Parameter, EditorRequired]
+    public int RoundId { get; set; }
+
+    [Inject]
+    private RoundService Service { get; set; } = default!;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _items = await Service.GetEventHistoryAsync(RoundId);
+        _loading = false;
+    }
+}

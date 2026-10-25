@@ -13,8 +13,8 @@ using Motorsports.Scaffolding.Core.Models.Validators;
 namespace Motorsports.Scaffolding.Core.Controllers {
   [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
   public class TeamsController : Controller {
-    readonly MotorsportsContext _context;
-    readonly IModelStatePopulator<Team, int> _teamModelStatePopulator;
+      private readonly MotorsportsContext _context;
+      private readonly IModelStatePopulator<Team, int> _teamModelStatePopulator;
 
     public TeamsController(MotorsportsContext context, IModelStatePopulator<Team, int> teamModelStatePopulator) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -106,8 +106,8 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       ViewData["Sport"] = new SelectList(_context.Sport.OrderBy(_ => _.Name), "Name", "Name", team.Sport);
       return View(team);
     }
-    
-    bool TeamExists(int id) {
+
+    private bool TeamExists(int id) {
       return _context.Team.Any(e => e.Id == id);
     }
   }

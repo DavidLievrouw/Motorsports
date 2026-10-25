@@ -11,8 +11,8 @@ using Motorsports.Scaffolding.Core.Services;
 namespace Motorsports.Scaffolding.Core.Controllers {
   [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
   public class SeasonsController : Controller {
-    readonly ISeasonService _seasonService;
-    readonly IModelStatePopulator<Season, int> _seasonModelStatePopulator;
+      private readonly ISeasonService _seasonService;
+      private readonly IModelStatePopulator<Season, int> _seasonModelStatePopulator;
 
     public SeasonsController(ISeasonService seasonService, IModelStatePopulator<Season, int> seasonModelStatePopulator) {
       _seasonService = seasonService ?? throw new ArgumentNullException(nameof(seasonService));

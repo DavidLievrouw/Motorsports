@@ -3,9 +3,9 @@ using Motorsports.Infrastructure.Auth;
 
 namespace Motorsports.Auth;
 
-public sealed record LoginForm(string? Username, string? Password, string? ReturnUrl);
+internal sealed record LoginForm(string? Username, string? Password, string? ReturnUrl);
 
-public sealed class LoginFormValidator : AbstractValidator<LoginForm>
+internal sealed class LoginFormValidator : AbstractValidator<LoginForm>
 {
     public const int MaxUsernameLength = 255;
     public const int MaxPasswordLength = 256;
@@ -17,7 +17,7 @@ public sealed class LoginFormValidator : AbstractValidator<LoginForm>
     }
 }
 
-public sealed class ChangePasswordModel
+internal sealed class ChangePasswordModel
 {
     public string? CurrentPassword { get; set; }
 
@@ -28,7 +28,7 @@ public sealed class ChangePasswordModel
     public string? ReturnUrl { get; set; }
 }
 
-public sealed class ChangePasswordValidator : AbstractValidator<ChangePasswordModel>
+internal sealed class ChangePasswordValidator : AbstractValidator<ChangePasswordModel>
 {
     public ChangePasswordValidator()
     {

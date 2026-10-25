@@ -22,6 +22,13 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(IsLegacyProject)' != 'true'">
+    <InternalsVisibleTo Include="Motorsports.ArchitectureTests" />
+    <InternalsVisibleTo Include="Motorsports.CharacteristicsTests" />
+    <InternalsVisibleTo Include="Motorsports.UnitTests" />
+    <InternalsVisibleTo Include="Motorsports.Benchmarks" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(IsLegacyProject)' != 'true'">
     <PackageReference Include="Roslynator.Analyzers" PrivateAssets="all" />
     <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" PrivateAssets="all" />
     <PackageReference Include="Roslynator.Formatting.Analyzers" PrivateAssets="all" />

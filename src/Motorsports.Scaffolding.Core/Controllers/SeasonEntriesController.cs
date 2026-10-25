@@ -12,9 +12,9 @@ using Motorsports.Scaffolding.Core.Services;
 namespace Motorsports.Scaffolding.Core.Controllers {
   [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
   public class SeasonEntriesController : Controller {
-    readonly ISeasonService _seasonService;
-    readonly ISeasonEntryService _seasonEntryService;
-    readonly IModelStatePopulator<SeasonEntry, SeasonEntry.SeasonEntryKey> _seasonEntryModelStatePopulator;
+      private readonly ISeasonService _seasonService;
+      private readonly ISeasonEntryService _seasonEntryService;
+      private readonly IModelStatePopulator<SeasonEntry, SeasonEntry.SeasonEntryKey> _seasonEntryModelStatePopulator;
 
     public SeasonEntriesController(
       ISeasonService seasonService,

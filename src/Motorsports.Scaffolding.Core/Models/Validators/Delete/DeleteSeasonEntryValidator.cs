@@ -4,7 +4,7 @@ using FluentValidation;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Delete {
   public class DeleteSeasonEntryValidator : MotorsportsValidator<SeasonEntry, SeasonEntry.SeasonEntryKey>, IDeleteValidator<SeasonEntry> {
-    readonly MotorsportsContext _context;
+      private readonly MotorsportsContext _context;
 
     public DeleteSeasonEntryValidator(MotorsportsContext context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -18,11 +18,11 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Delete {
         .WithMessage("This entry cannot be deleted, because the team has won the season.");
     }
 
-    bool NotHaveWonSeason(SeasonEntry seasonEntry, int teamId) {
+    private bool NotHaveWonSeason(SeasonEntry seasonEntry, int teamId) {
       return !_context.Season.Any(r => r.Id == seasonEntry.Season && r.WinningTeam == teamId);
     }
 
-    bool NotHaveWonAnyRounds(SeasonEntry seasonEntry, int teamId) {
+    private bool NotHaveWonAnyRounds(SeasonEntry seasonEntry, int teamId) {
       return !_context.Round.Any(r => r.Season == seasonEntry.Season && r.WinningTeam == teamId);
     }
   }

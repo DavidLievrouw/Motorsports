@@ -182,3 +182,53 @@ Then update the PLAN.md handover for the next agent.
 - Wherever a date is shown in format "September 2, 2024", prefix it with the day of the week, abbreviated. e.g. Sa or Su. so "Sa, September 2, 2024".
 
 -------------------
+
+Read PLAN.md and AGENTS.md. Phase 5 is clear enough to start, but a few defaults need your call first so we copy the Seasons patterns instead of guessing.
+Phase 5 = new Motorsports.Rounds RCL (list per season, details + event history, create/edit/delete, MarkReadyToWatch POST), venue country flags everywhere a venue shows, victory lists, DateDisplay + integer ratings. Cache Venues + Statuses. Copy Seasons: InTransactionAsync, FOR UPDATE, RowVersion, FormErrors, characteristics tests. No debugger until something actually fails at runtime.
+
+-------------------
+
+In general:
+We are using Vertical Slice Architecture. That means that each slices lives in its own assembly. I noticed that all content is public in those assemblies. That opens the door to violations. Make as much as possible `internal`. Only the parts that are used by the aggregator, or maybe service calls that another slice calls, should be public. Not more.
+I noticed that there are quite a lot of `ide` and `csharpsquid` warnings in the code-base. Fix those. You will not be able to fix all of them (e.g. some instances of "Captured variable is disposed in the outer scope"), when in doubt, ask me.
+
+Add these instructions also to AGENTS.md and PLAN.md so that future agents take this into account in their edits immediately.
+
+Remarks on the performed phase 5 work:
+- Round details contain an event history, but it has a separate table per year. That's pointless and very cluttered. Show just a simple list of all events, sorted by date, with the latest first. Like the venue details page does.
+- The "Round" datepicker is fine, but when not editing, I would like it to be in the same format as the dates in the list, e.g. "Sa, September 2, 2024". I still want to be able to type directly in the form of YYYY-MM-DD too.
+- When creating a round, the Note field is not needed. Only when editing a round.
+- When editing a round, the Rating should be a slider from 0 to 10.
+- There should be links on the Edit Round page that navigate to the Season Entries page, so I can quickly add a new season entry, if it does not exist yet.
+- Also, add a link to the Participants list, so I can add one quickly, if it does not exist yet.
+- In the Edit Round screen, Note should be at the bottom of the form.
+- In the Edit Round screen, I would also like to see the event history, like in the Round Details page.
+
+Bugs discovered:
+- I can add a second participant with the same details. Look in the dev database to "Mr. Nicolas Prost". That should not be possible.
+- The list with Participants should by default be sorted on LastName, Firstname, Title, Country ASC, in that order. The Teams and Venues lists already appears to be correct.
+
+-------------------
+
+- The Venue Details contains a list of past events. The Venue and Status columns in that table is redundant. Drop them.
+- The Round Details and Edit Round pages contain a list of past events. The Venue and Status columns in that table is redundant. Drop them.
+- The account popover has two items: Change password and LOG OUT. They both have icons. Make them both have the same casing, so "Change password" and "Log out". Also the two icons have different widths. That doesn't look clean. Align the icons and the labels.
+- Round Datepicker is now in format MM/DD/YYYY. That's completely wrong. Either in the form of "Sa, September 2, 2024" or when editing as YYYY-MM-DD!
+- The requested links on the Edit Round page are still not there: navigate to the Season Entries page, so I can quickly add a new season entry, if it does not exist yet. and to the Participants list, so I can add one quickly, if it does not exist yet.
+- The event history tables should have links that point to the details page of the round.
+
+-------------------
+
+
+
+
+
+
+
+
+
+
+
+Future:
+- Security hardening
+- Redesign the UI

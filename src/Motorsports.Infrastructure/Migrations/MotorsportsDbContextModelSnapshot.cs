@@ -82,6 +82,9 @@ namespace Motorsports.Infrastructure.Migrations
 
                     b.HasIndex("Country");
 
+                    b.HasIndex("Title", "FirstName", "LastName", "Country")
+                        .IsUnique();
+
                     b.ToTable("Participant", (string)null);
                 });
 

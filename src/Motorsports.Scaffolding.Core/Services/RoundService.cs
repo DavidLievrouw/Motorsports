@@ -24,8 +24,8 @@ namespace Motorsports.Scaffolding.Core.Services {
   }
 
   public class RoundService : IRoundService {
-    readonly MotorsportsContext _context;
-    readonly IQueryExecutor _queryExecutor;
+      private readonly MotorsportsContext _context;
+      private readonly IQueryExecutor _queryExecutor;
 
     public RoundService(
       MotorsportsContext context,

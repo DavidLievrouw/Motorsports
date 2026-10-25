@@ -11,14 +11,14 @@ namespace Motorsports.Scaffolding.Core.Dapper {
   }
 
   public class TransactionalQueryExecutor : ITransactionalQueryExecutor {
-    readonly IDbTransaction _transaction;
-    readonly Query _query;
+      private readonly IDbTransaction _transaction;
+      private readonly Query _query;
 
     public TransactionalQueryExecutor(IDbTransaction transaction) {
       _transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
     }
 
-    TransactionalQueryExecutor(IDbTransaction transaction, Query query): this(transaction) {
+    private TransactionalQueryExecutor(IDbTransaction transaction, Query query): this(transaction) {
       _query = query ?? throw new ArgumentNullException(nameof(query));
     }
 
@@ -146,19 +146,19 @@ namespace Motorsports.Scaffolding.Core.Dapper {
 
     #region ExecuteOnConnection
 
-    IEnumerable<TResult> ExecuteOnConnection<TResult>(Func<IDbConnection, IEnumerable<TResult>> execute) {
+    private IEnumerable<TResult> ExecuteOnConnection<TResult>(Func<IDbConnection, IEnumerable<TResult>> execute) {
       return execute(_transaction.Connection);
     }
 
-    TResult ExecuteOnConnection<TResult>(Func<IDbConnection, TResult> execute) {
+    private TResult ExecuteOnConnection<TResult>(Func<IDbConnection, TResult> execute) {
       return execute(_transaction.Connection);
     }
 
-    async Task<IEnumerable<TResult>> ExecuteOnConnectionAsync<TResult>(Func<IDbConnection, Task<IEnumerable<TResult>>> execute) {
+    private async Task<IEnumerable<TResult>> ExecuteOnConnectionAsync<TResult>(Func<IDbConnection, Task<IEnumerable<TResult>>> execute) {
       return await execute(_transaction.Connection);
     }
 
-    async Task<TResult> ExecuteOnConnectionAsync<TResult>(Func<IDbConnection, Task<TResult>> execute) {
+    private async Task<TResult> ExecuteOnConnectionAsync<TResult>(Func<IDbConnection, Task<TResult>> execute) {
       return await execute(_transaction.Connection);
     }
 

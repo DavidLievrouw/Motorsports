@@ -8,7 +8,7 @@ using Motorsports.Infrastructure.Lookups;
 
 namespace Motorsports.Sports;
 
-public sealed class SportService(
+internal sealed class SportService(
     IDbContextFactory<MotorsportsDbContext> factory,
     LookupCache cache,
     IValidator<SportForm> validator

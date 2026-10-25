@@ -9,7 +9,7 @@ namespace Motorsports.Scaffolding.Core.Dapper {
       Sql = sql ?? throw new ArgumentNullException();
     }
 
-    Query(string sql, CommandType? commandType, object parameters) : this(sql) {
+    private Query(string sql, CommandType? commandType, object parameters) : this(sql) {
       CommandType = commandType;
       Parameters = parameters;
     }

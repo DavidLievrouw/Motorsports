@@ -15,7 +15,10 @@ public static class VenuesModule
     {
         public IServiceCollection AddVenuesServices()
         {
-            services.AddValidatorsFromAssemblyContaining<VenueFormValidator>(ServiceLifetime.Singleton);
+            services.AddValidatorsFromAssemblyContaining<VenueFormValidator>(
+                ServiceLifetime.Singleton,
+                includeInternalTypes: true
+            );
             services.AddScoped<VenueService>();
             return services;
         }

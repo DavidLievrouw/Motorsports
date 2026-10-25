@@ -8,7 +8,7 @@ using Motorsports.Scaffolding.Core.Services;
 namespace Motorsports.Scaffolding.Core.Controllers {
   [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
   public class HomeController : Controller {
-    readonly IHomeService _homeService;
+      private readonly IHomeService _homeService;
 
     public HomeController(IHomeService homeService) {
       _homeService = homeService ?? throw new ArgumentNullException(nameof(homeService));

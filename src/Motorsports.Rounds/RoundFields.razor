@@ -1,0 +1,100 @@
+@inject LookupCache Lookups
+
+<DateField Label="Date" Value="Form.Date" ValueChanged="OnDate" Required="true"
+           MinDate="@(Form.OriginalDate is { } original && original < RoundFormValidator.MinDate ? null : RoundFormValidator.MinDate)"
+           Error="@Errors.Has(nameof(RoundForm.Date))" ErrorText="@Errors.Text(nameof(RoundForm.Date))" />
+<MudNumericField T="short" @bind-Value="Form.Number" Label="Number" Min="0" Max="99" Variant="Variant.Outlined"
+                 Margin="Margin.Dense" Error="@Errors.Has(nameof(RoundForm.Number))"
+                 ErrorText="@Errors.Text(nameof(RoundForm.Number))" />
+<MudTextField @bind-Value="Form.Name" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense"
+              Error="@Errors.Has(nameof(RoundForm.Name))" ErrorText="@Errors.Text(nameof(RoundForm.Name))" />
+<FuzzySelect T="VenueOption" Value="_venue" ValueChanged="VenueChangedAsync" Items="_venues" Text="VenueText"
+             Label="Venue" Error="@Errors.Has(nameof(RoundForm.Venue))" ErrorText="@Errors.Text(nameof(RoundForm.Venue))" />
+<FuzzySelect T="StatusOption" Value="_status" ValueChanged="StatusChangedAsync" Items="_statuses" Text="StatusText"
+             Label="Status" Error="@Errors.Has(nameof(RoundForm.Status))" ErrorText="@Errors.Text(nameof(RoundForm.Status))" />
+@if (ShowResults)
+{
+    <MudText Typo="Typo.subtitle2">Rating @(Form.Rating is { } rating ? $"{rating} / 10" : "—")</MudText>
+    <MudSlider T="int" Value="Form.Rating ?? 0" ValueChanged="OnRating" Min="0" Max="10" Step="1" Color="Color.Primary" />
+    @if (Errors.Has(nameof(RoundForm.Rating)))
+    {
+        <MudText Typo="Typo.caption" Color="Color.Error">@Errors.Text(nameof(RoundForm.Rating))</MudText>
+    }
+    <MudSelect T="RainLevel?" @bind-Value="Form.Rain" Label="Rain" Variant="Variant.Outlined" Margin="Margin.Dense"
+               Clearable="true" Error="@Errors.Has(nameof(RoundForm.Rain))" ErrorText="@Errors.Text(nameof(RoundForm.Rain))">
+        @foreach (var level in Enum.GetValues<RainLevel>())
+        {
+            <MudSelectItem T="RainLevel?" Value="level">@RainLevelDisplay.Format((int)level)</MudSelectItem>
+        }
+    </MudSelect>
+}
+@if (ShowNote)
+{
+    <MudTextField @bind-Value="Form.Note" Label="Note" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3"
+                  Error="@Errors.Has(nameof(RoundForm.Note))" ErrorText="@Errors.Text(nameof(RoundForm.Note))" />
+}
+
+@code {
+    private IReadOnlyList<VenueOption> _venues = [];
+    private IReadOnlyList<StatusOption> _statuses = [];
+    private VenueOption? _venue;
+    private StatusOption? _status;
+
+    [Parameter, EditorRequired]
+    public RoundForm Form { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public FormErrors Errors { get; set; } = default!;
+
+    [Parameter]
+    public bool ShowResults { get; set; }
+
+    [Parameter]
+    public bool ShowNote { get; set; }
+
+    private Task OnRating(int value)
+    {
+        Form.Rating = value;
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(Lookups.RevalidateAsync(LookupKind.Venues), Lookups.RevalidateAsync(LookupKind.Statuses));
+        _venues = await Lookups.GetVenuesAsync();
+        _statuses = await Lookups.GetStatusesAsync();
+        SyncSelection();
+    }
+
+    protected override void OnParametersSet() => SyncSelection();
+
+    private void SyncSelection()
+    {
+        _venue = _venues.FirstOrDefault(venue => venue.Name == Form.Venue);
+        _status = _statuses.FirstOrDefault(status => status.Name == Form.Status);
+    }
+
+    private static string VenueText(VenueOption venue) => CountryFlag.WithName(venue.Country, venue.Name);
+
+    private static string StatusText(StatusOption status) => status.Name;
+
+    private Task OnDate(DateOnly? date)
+    {
+        Form.Date = date;
+        return Task.CompletedTask;
+    }
+
+    private Task VenueChangedAsync(VenueOption? venue)
+    {
+        _venue = venue;
+        Form.Venue = venue?.Name;
+        return Task.CompletedTask;
+    }
+
+    private Task StatusChangedAsync(StatusOption? status)
+    {
+        _status = status;
+        Form.Status = status?.Name;
+        return Task.CompletedTask;
+    }
+}

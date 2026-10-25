@@ -13,9 +13,9 @@ using Motorsports.Scaffolding.Core.Services;
 namespace Motorsports.Scaffolding.Core.Controllers {
   [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
   public class VenuesController : Controller {
-    readonly IVenueService _venueService;
-    readonly IModelStatePopulator<Venue, string> _venueModelStatePopulator;
-    readonly MotorsportsContext _context;
+      private readonly IVenueService _venueService;
+      private readonly IModelStatePopulator<Venue, string> _venueModelStatePopulator;
+      private readonly MotorsportsContext _context;
 
     public VenuesController(
       MotorsportsContext context,
@@ -97,7 +97,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       return View(venue);
     }
 
-    bool VenueExists(string id) {
+    private bool VenueExists(string id) {
       return _context.Venue.Any(e => e.Name == id);
     }
   }

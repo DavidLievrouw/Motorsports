@@ -6,11 +6,11 @@ using Microsoft.AspNetCore.Authentication;
 
 namespace Motorsports.Scaffolding.Core.Security {
   public class UsernamePasswordAuthenticateUserService : IAuthenticateUserService<UsernamePasswordCredentials> {
-    readonly IUserDataService _userDataService;
-    readonly IHashPasswordService _hashPasswordService;
-    readonly IRandomHashedPasswordProvider _randomHashedPasswordProvider;
-    readonly IValidator<UsernamePasswordCredentials> _usernamePasswordCredentialsValidator;
-    readonly IAuthenticationSchemeProvider _authenticationSchemeProvider;
+      private readonly IUserDataService _userDataService;
+      private readonly IHashPasswordService _hashPasswordService;
+      private readonly IRandomHashedPasswordProvider _randomHashedPasswordProvider;
+      private readonly IValidator<UsernamePasswordCredentials> _usernamePasswordCredentialsValidator;
+      private readonly IAuthenticationSchemeProvider _authenticationSchemeProvider;
 
     public UsernamePasswordAuthenticateUserService(
       IUserDataService userDataService,

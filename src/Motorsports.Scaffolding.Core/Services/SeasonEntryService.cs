@@ -20,8 +20,8 @@ namespace Motorsports.Scaffolding.Core.Services {
   }
 
   public class SeasonEntryService : ISeasonEntryService {
-    readonly MotorsportsContext _context;
-    readonly IQueryExecutor _queryExecutor;
+      private readonly MotorsportsContext _context;
+      private readonly IQueryExecutor _queryExecutor;
 
     public SeasonEntryService(
       MotorsportsContext context,

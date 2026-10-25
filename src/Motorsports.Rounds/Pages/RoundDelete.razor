@@ -1,0 +1,80 @@
+@page "/rounds/delete/{Id:int}"
+@attribute [Authorize]
+@inject RoundService Service
+@inject NavigationManager Navigation
+
+<PageTitle>Delete round</PageTitle>
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_round is null)
+{
+    <NotFoundNotice Message="Round not found." />
+}
+else
+{
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">Delete round</MudText>
+    <MudPaper Class="pa-4" Style="max-width:40rem">
+        <MudStack Spacing="2">
+            @if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error">@_error</MudAlert>
+            }
+            <MudText>Delete @_round.Label?</MudText>
+            @if (_round.HasWinners || _round.HasWinningTeam)
+            {
+                <MudAlert Severity="Severity.Warning">This round has winners or a winning team and cannot be deleted.</MudAlert>
+            }
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAsync" Disabled="_saving || _round.HasWinners || _round.HasWinningTeam">Delete</MudButton>
+                <MudButton Href="@($"/rounds/details/{Id}")" Variant="Variant.Text">Cancel</MudButton>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    private RoundDeleteInfo? _round;
+    private bool _loading = true;
+    private bool _saving;
+    private string? _error;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _round = await Service.GetDeleteInfoAsync(Id);
+        _loading = false;
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (_saving || _round is null)
+        {
+            return;
+        }
+
+        _saving = true;
+        _error = null;
+        var result = await Service.DeleteAsync(Id);
+        _saving = false;
+        if (result.IsSuccess)
+        {
+            Navigation.NavigateTo($"/seasons/{_round.SeasonId}/rounds");
+            return;
+        }
+
+        _error = result.Error.Message;
+        if (result.Error.Kind == ErrorKind.NotFound)
+        {
+            _round = null;
+        }
+        else
+        {
+            _round = await Service.GetDeleteInfoAsync(Id);
+        }
+    }
+}

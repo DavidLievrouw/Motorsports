@@ -34,6 +34,11 @@ public sealed partial class AuthCharacteristicsTests
         "/season-entries/details/1/1",
         "/season-entries/edit/1/1",
         "/season-entries/delete/1/1",
+        "/seasons/1/rounds",
+        "/seasons/1/rounds/create",
+        "/rounds/details/1",
+        "/rounds/edit/1",
+        "/rounds/delete/1",
     ];
 
     [Fact]
@@ -173,6 +178,7 @@ public sealed partial class AuthCharacteristicsTests
                 "/participants/details/99",
                 "/seasons/details/99",
                 "/season-entries/details/99/99",
+                "/rounds/details/99",
             }
         )
         {
@@ -198,6 +204,10 @@ public sealed partial class AuthCharacteristicsTests
                 "/season-entries/details/1/1",
                 "/season-entries/edit/1/1",
                 "/season-entries/delete/1/1",
+                "/seasons/1/rounds",
+                "/seasons/1/rounds/create",
+                "/rounds/edit/1",
+                "/rounds/delete/1",
             }
         )
         {

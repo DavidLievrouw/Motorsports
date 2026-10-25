@@ -1,0 +1,54 @@
+@page "/rounds/details/{Id:int}"
+@attribute [Authorize]
+@inject RoundService Service
+
+<PageTitle>Round</PageTitle>
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_round is null)
+{
+    <NotFoundNotice Message="Round not found." />
+}
+else
+{
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">@RoundLabel.Format(_round.Number, _round.Name)</MudText>
+    <MudPaper Class="pa-4 mb-2" Style="max-width:48rem">
+        <MudSimpleTable Dense="true" Style="overflow-x:auto">
+            <tbody>
+                <tr><th>Season</th><td>@($"{_round.Sport} {_round.SeasonLabel}".Trim())</td></tr>
+                <tr><th>Date</th><td>@DateDisplay.Format(_round.Date)</td></tr>
+                <tr><th>Number</th><td>@(_round.Number == 0 ? "0 (non-championship)" : _round.Number)</td></tr>
+                <tr><th>Venue</th><td>@CountryFlag.WithName(_round.VenueCountry, _round.Venue)</td></tr>
+                <tr><th>Status</th><td>@_round.Status</td></tr>
+                <tr><th>Rating</th><td>@RatingDisplay.Format(_round.Rating)</td></tr>
+                <tr><th>Rain</th><td>@(RainLevelDisplay.Format(_round.Rain) ?? "—")</td></tr>
+                <tr><th>Note</th><td>@(_round.Note ?? "—")</td></tr>
+                <tr><th>Winning team</th><td>@(_round.WinningTeamName is null ? "—" : CountryFlag.WithName(_round.WinningTeamCountry, _round.WinningTeamName))</td></tr>
+                <tr><th>Winning participants</th><td>@(_round.WinningParticipants.Length == 0 ? "—" : string.Join(", ", _round.WinningParticipants))</td></tr>
+            </tbody>
+        </MudSimpleTable>
+    </MudPaper>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2" Class="mb-2">
+        <MudButton Href="@($"/rounds/edit/{Id}")" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
+        <MudButton Href="@($"/rounds/delete/{Id}")" Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
+        <MudButton Href="@($"/seasons/{_round.SeasonId}/rounds")" Variant="Variant.Text">Back to rounds</MudButton>
+    </MudStack>
+    <EventHistory RoundId="Id" />
+}
+
+@code {
+    private RoundInfo? _round;
+    private bool _loading = true;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _round = await Service.GetAsync(Id);
+        _loading = false;
+    }
+}

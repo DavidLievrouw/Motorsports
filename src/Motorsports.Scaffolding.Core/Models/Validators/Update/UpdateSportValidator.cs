@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
   public class UpdateSportValidator : MotorsportsValidator<Sport, string>, IUpdateValidator<Sport, string> {
-    readonly MotorsportsContext _context;
+      private readonly MotorsportsContext _context;
 
     public UpdateSportValidator(MotorsportsContext context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -21,7 +21,7 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
         .When(_ => !string.IsNullOrEmpty(_.Name));
     }
 
-    bool MustExist(Sport sport, string name, ValidationContext<Sport> context) {
+    private bool MustExist(Sport sport, string name, ValidationContext<Sport> context) {
       var existingKey = GetKey(context);
       return _context.Sport.Any(_ => EF.Functions.Like(_.Name, existingKey));
     }

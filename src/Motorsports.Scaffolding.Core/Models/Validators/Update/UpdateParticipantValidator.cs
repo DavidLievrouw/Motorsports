@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
   public class UpdateParticipantValidator : MotorsportsValidator<Participant, int>, IUpdateValidator<Participant, int> {
-    readonly MotorsportsContext _context;
+      private readonly MotorsportsContext _context;
 
     public UpdateParticipantValidator(MotorsportsContext context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -40,15 +40,15 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Update {
         .When(_ => !string.IsNullOrEmpty(_.Title) && !string.IsNullOrEmpty(_.FirstName) && !string.IsNullOrEmpty(_.LastName));
     }
 
-    bool CountryExists(Participant participant, string country) {
+    private bool CountryExists(Participant participant, string country) {
       return _context.Country.Any(_ => EF.Functions.Like(_.Iso, country));
     }
 
-    bool MustExist(Participant participant, string title) {
+    private bool MustExist(Participant participant, string title) {
       return _context.Participant.Any(_ => participant.Id == _.Id);
     }
 
-    bool BeUnique(Participant participant, string title) {
+    private bool BeUnique(Participant participant, string title) {
       return !_context.Participant.Any(_ => 
         EF.Functions.Like(_.Title, participant.Title) && 
         EF.Functions.Like(_.FirstName, participant.FirstName) && 

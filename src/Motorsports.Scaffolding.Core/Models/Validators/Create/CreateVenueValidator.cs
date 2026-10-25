@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
   public class CreateVenueValidator : MotorsportsValidator<Venue, string>, ICreateValidator<Venue> {
-    readonly MotorsportsContext _context;
+      private readonly MotorsportsContext _context;
 
     public CreateVenueValidator(MotorsportsContext context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -26,11 +26,11 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
         .When(_ => !string.IsNullOrEmpty(_.Name));
     }
 
-    bool BeUnique(Venue venue, string name) {
+    private bool BeUnique(Venue venue, string name) {
       return !_context.Venue.Any(_ => EF.Functions.Like(_.Name, name));
-    }    
+    }
 
-    bool CountryExists(Venue venue, string country) {
+    private bool CountryExists(Venue venue, string country) {
       return _context.Country.Any(_ => EF.Functions.Like(_.Iso, country));
     }
   }

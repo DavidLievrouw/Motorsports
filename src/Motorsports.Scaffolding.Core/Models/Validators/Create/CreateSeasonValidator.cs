@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
   public class CreateSeasonValidator : MotorsportsValidator<Season, int>, ICreateValidator<Season> {
-    readonly MotorsportsContext _context;
+      private readonly MotorsportsContext _context;
 
     public CreateSeasonValidator(MotorsportsContext context) {
       _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -17,7 +17,7 @@ namespace Motorsports.Scaffolding.Core.Models.Validators.Create {
         .WithMessage("The specified sport does not exist.");
     }
 
-    bool SportExists(Season season, string sport) {
+    private bool SportExists(Season season, string sport) {
       return _context.Sport.Any(_ => EF.Functions.Like(_.Name, sport));
     }
   }

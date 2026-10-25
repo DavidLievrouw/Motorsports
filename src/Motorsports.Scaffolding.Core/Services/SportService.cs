@@ -10,7 +10,7 @@ namespace Motorsports.Scaffolding.Core.Services {
   }
 
   public class SportService : ISportService {
-    readonly IQueryExecutor _queryExecutor;
+      private readonly IQueryExecutor _queryExecutor;
 
     public SportService(IQueryExecutor queryExecutor) {
       _queryExecutor = queryExecutor ?? throw new ArgumentNullException(nameof(queryExecutor));

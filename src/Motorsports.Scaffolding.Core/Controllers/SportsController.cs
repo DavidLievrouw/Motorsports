@@ -12,9 +12,9 @@ using Motorsports.Scaffolding.Core.Services;
 namespace Motorsports.Scaffolding.Core.Controllers {
   [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
   public class SportsController : Controller {
-    readonly MotorsportsContext _context;
-    readonly ISportService _sportService;
-    readonly IModelStatePopulator<Sport, string> _sportModelStatePopulator;
+      private readonly MotorsportsContext _context;
+      private readonly ISportService _sportService;
+      private readonly IModelStatePopulator<Sport, string> _sportModelStatePopulator;
 
     public SportsController(
       MotorsportsContext context, 
@@ -90,7 +90,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
       return View(sport);
     }
 
-    bool SportExists(string id) {
+    private bool SportExists(string id) {
       return _context.Sport.Any(e => e.Name == id);
     }
   }

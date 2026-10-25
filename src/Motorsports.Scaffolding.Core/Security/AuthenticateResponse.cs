@@ -15,7 +15,7 @@ namespace Motorsports.Scaffolding.Core.Security {
 
   public class AuthenticationFailure<TFailureReason> : AuthenticateResponse where TFailureReason : struct {
     public AuthenticationFailure(params TFailureReason[] reasons) {
-      FailureReasons = reasons ?? new TFailureReason[0];
+      FailureReasons = reasons ?? [];
     }
 
     public TFailureReason[] FailureReasons { get; }
@@ -24,7 +24,7 @@ namespace Motorsports.Scaffolding.Core.Security {
       return Equals(obj as AuthenticationFailure<TFailureReason>);
     }
 
-    bool Equals(AuthenticationFailure<TFailureReason> other) {
+    private bool Equals(AuthenticationFailure<TFailureReason> other) {
       if (ReferenceEquals(this, null)) return ReferenceEquals(other, null);
       if (ReferenceEquals(other, null)) return false;
       return FailureReasons.SequenceEqual(other.FailureReasons);

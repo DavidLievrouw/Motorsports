@@ -14,7 +14,7 @@ namespace Motorsports.Scaffolding.Core.Controllers {
   [Route("")]
   [AllowAnonymous]
   public class LoginController : Controller {
-    readonly IAuthenticateUserService<UsernamePasswordCredentials> _authUserService;
+      private readonly IAuthenticateUserService<UsernamePasswordCredentials> _authUserService;
 
     public LoginController(IAuthenticateUserService<UsernamePasswordCredentials> authUserService) {
       _authUserService = authUserService ?? throw new ArgumentNullException(nameof(authUserService));
