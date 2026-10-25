@@ -9,8 +9,8 @@ services:
       - "81:81"
       - "443:443"
     environment:
-      - INITIAL_ADMIN_EMAIL=david@davidlievrouw.dev
-      - INITIAL_ADMIN_PASSWORD=S3cr37
+      - INITIAL_ADMIN_EMAIL=${NPM_INITIAL_ADMIN_EMAIL:?Set NPM_INITIAL_ADMIN_EMAIL in your environment}
+      - INITIAL_ADMIN_PASSWORD=${NPM_INITIAL_ADMIN_PASSWORD:?Set NPM_INITIAL_ADMIN_PASSWORD in your environment}
     volumes:
       - /etc/dalion/motorsports/npm/data/:/data/
       - /etc/dalion/motorsports/npm/letsencrypt/:/etc/letsencrypt/

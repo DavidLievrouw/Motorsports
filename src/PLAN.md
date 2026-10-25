@@ -319,10 +319,12 @@ Delivered (checklist):
 
 ### Phase 7 – Hardening & parity `[ ]`
 - Walk the section 2 table, tick every row after a manual phone-width + desktop check.
-- Data-integrity pass: concurrency, FK/unique conflict handling, nullability vs. DB.
-- Security pass: antiforgery, cookies, headers, rate limiting on login, no secrets in repo.
-- Performance pass: run the Home MariaDB benchmark, record latency and circuit-memory measurements; the fixed query-count test is in Phase 6.
-- Docs: README (run, config, docker, migration note).
+- [x] Data-integrity pass: reviewed transaction/error mapping and existing uniqueness, FK, nullability and optimistic-concurrency characteristics coverage.
+- [x] Security pass: verified existing antiforgery and login-rate-limit coverage; added response security headers and secure-cookie coverage. Production HSTS is enabled. Replaced Compose credential literals with required environment variables.
+- [x] Home MariaDB benchmark: 11.156 ms mean and 272.17 KB managed allocation per call on the local Windows 11 / .NET 10.0.4 host. This is a developer-machine baseline, not a production SLA.
+- [ ] Circuit-memory measurement; requires an active representative browser circuit.
+- [x] Docs: README covers local run/configuration, Docker, and migration notes.
+- [ ] Manual phone-width + desktop browser pass for the section 2 parity table and interactive controls.
 - Cut-over (manual, by user): deploy, verify, then remove the legacy project, `Build` (Cake/IIS), `Db` sqlproj/Azure backups from the solution. Do not do this without asking.
 
 ## 7. Resolved decisions and remaining open points
@@ -395,29 +397,26 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 - Reference-data follow-up: `AddSportImages` adds nullable `Sport.Image` idempotently and seeds the six current legacy logos from embedded image resources; the migration tests compare persisted bytes with the embedded files.
 - Phase 5 migration follow-up: the participant identity migration was not discoverable because it lacked EF's generated context metadata. EF migration metadata is now present. Per the user's production-data confirmation, the migration only creates the approved unique index and makes no participant or winner data changes.
 - Phase 6: EF could not translate a per-sport season rank over a constructed record or a custom comparer in SQL ordering. Latest Seasons was removed in follow-up after user review, eliminating that query and reducing the populated Home query count to four.
+- Phase 7: the Home benchmark initially did not run because BenchmarkDotNet rejects sealed benchmark classes; `HomeOverviewBenchmarks` is now unsealed and the local baseline is recorded above. The Home handler's fixed four-read assertion remains in the characteristics suite.
+- Phase 7: source-controlled Compose files contained credential literals. They now require deployment/local environment variables instead; rotate any credentials previously used from those files. Compose configuration validation passes with the required variables supplied.
 
 ## 10. Handover (rewrite at the end of every phase)
 
-Date: 2026-10-25. Phases 0 to 6 are done. Phases 0 to 5, including the Phase 5 follow-up (visibility, round UI, participant uniqueness), were committed and pushed before Phase 6. Phase 6 and its presentation/parity follow-up are uncommitted.
+Date: 2026-10-25. Phases 0–6 are complete; Phase 7 hardening is in progress. No user-only cut-over has been started.
 
 State:
-- Projects: Common, shared UI RCL (`Motorsports.Ui`), Infrastructure (incl. `Auth/`, `Lookups/`, `DbOperations`), feature slices (may reference Common + Infrastructure + shared UI, never Web or another slice), Web host/wiring/nav, and UnitTests, ArchitectureTests, Benchmarks, and Testcontainers CharacteristicsTests.
-- Slice C# types are internal except `*Module` / host endpoints; tests use InternalsVisibleTo.
-- Round event history is one date-desc list (details + edit), with linked rounds prefixed by “Round”. Create has no Note. Edit has rating slider 0–10, Note at the bottom, links to season entries and participants, and the same history.
-- Event-history entries link to round details. Participant round wins include venue flags and ratings; participant/team season wins link to seasons and display their computed start/end dates.
-- `Motorsports.Home` owns `/` and uses `HomeService.GetHomeOverviewAsync`; its populated path uses four database reads, with event winners fetched in one batch. The characteristic test asserts the query count and selection rules.
-- Home shows next-up, rounds to acquire, and up to 50 event-history results from the previous ten years on each next-up-by-sport card; Latest Seasons was removed. Ready-to-watch uses a Rounds-owned POST endpoint with antiforgery validation. Sport/team/season pages and win grids show sport logos and subtle accents; grids colour the row's left edge (`RowClass="sport-accent-row"` + `SportAccent.RowStyle`), including venue round history. Round details/edit/delete titles read "Round 9 - Name".
-- Participant and team season-win lists sort by season end date descending; participant round-win and event-history links identify their target as “Round N”.
-- `HomeOverviewBenchmarks` measures the query path against a MariaDB database supplied through `ConnectionStrings__Motorsports`; the baseline is pending Phase 7.
-- DateField displays `DateDisplay` and still parses `yyyy-MM-dd`.
-- Participant uniqueness: create/edit trims Title/First/Last/Country; a unique index enforces the tuple. Migration adds the index only; List sort: LastName, FirstName, Title, Country.
+- The new app is organized into Common, shared UI, Infrastructure, feature slices, and the Web host. Unit, architecture, benchmark, and MariaDB characteristics projects are in the solution.
+- `Motorsports.Home` owns `/`; its populated query path performs four reads, covered by a characteristics test. The local benchmark baseline is 11.156 ms mean / 272.17 KB managed allocation per call.
+- Phase 7 added security response headers and production HSTS; auth characteristics cover antiforgery, login throttling, cookie flags, and security headers.
+- Compose files no longer embed database/admin credentials. Supply their required variables from the deployment environment and rotate any previously used values.
+- `README.md` documents local setup, configuration, container deployment, and startup migrations.
 
 Known gaps / not done:
-- User manually checked the visual UI through Phase 5; Home still needs a phone-width and desktop browser check in Phase 7. Picker interaction, conflict alerts, Reload/Show differences, theme switching, and round-list scroll-to-bottom still need that pass.
-- Sports list has no search/paging (few rows). Home is implemented; the MariaDB benchmark and circuit-memory measurement remain to run/record in Phase 7.
-- Carry-over from Phase 2: no admin/user UI, no account lockout, Docker image not re-verified with auth.
+- Manual 360px/desktop browser checks remain, including fuzzy-picker keyboard/touch interaction, conflict/reload UI, theme switching, and round-list scroll-to-bottom.
+- Circuit memory has not been measured; the Home benchmark's managed allocation is not a per-circuit measurement. This environment has no installed browser or `dotnet-counters` tool for that live-circuit pass.
+- Docker image has not been re-verified with authenticated browser flows. No admin/user UI or account lockout.
 - Not every Rider `ide`/`csharpsquid` inspection is guaranteed clean (ask before touching captured-disposed warnings).
-- Phase 5 review: event history is not grouped by year. Results are bounded to 50 records per the user's decision, so paging is not recommended at this size. The participant migration gap is fixed; the user confirmed production has no duplicates, so the migration only creates the unique index.
-- Home event history follows the documented `Status.Step > 1` rule, so postponed/cancelled rounds can appear alongside finished rounds.
+- Event history is not grouped by year and includes any event with `Status.Step > 1`, including postponed/cancelled events, by documented design.
+- The Home benchmark is a local Windows developer baseline, not representative production capacity data.
 
-Next: Phase 7 (hardening and parity). Keep schema changes legacy-compatible, do not edit `src/Db/*`, and ask before the user-only cut-over.
+Next: finish the manual responsive/interaction pass and obtain a circuit-memory measurement, then repeat the full build, format check, and tests. Keep schema changes legacy-compatible, do not edit `src/Db/*`, and ask before the user-only cut-over.

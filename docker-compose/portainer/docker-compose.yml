@@ -4,7 +4,7 @@ services:
     container_name: portainer
     entrypoint: >
       sh -c "apk add --update apache2-utils
-      && pass_hash=$$(htpasswd -nbB admin 'S3cr37' | cut -d ':' -f 2)
+      && pass_hash=$$(htpasswd -nbB admin "${PORTAINER_ADMIN_PASSWORD:?Set PORTAINER_ADMIN_PASSWORD in your environment}" | cut -d ':' -f 2)
       && /portainer -H unix:///var/run/docker.sock --admin-password $$pass_hash"
     restart: always
     volumes:

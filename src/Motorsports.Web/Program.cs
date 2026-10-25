@@ -126,6 +126,22 @@ builder.Services.AddHealthChecks();
 var app = builder.Build();
 
 app.UseForwardedHeaders();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
+app.Use(
+    async (context, next) =>
+    {
+        context.Response.Headers["Content-Security-Policy"] = "frame-ancestors 'none'";
+        context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+        context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        context.Response.Headers["X-Frame-Options"] = "DENY";
+        await next();
+    }
+);
 app.UseResponseCompression();
 if (!app.Environment.IsDevelopment())
 {

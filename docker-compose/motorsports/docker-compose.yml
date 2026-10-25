@@ -4,7 +4,7 @@ services:
     container_name: motorsports
     restart: unless-stopped
     environment:
-      - ConnectionStrings__Motorsports=server=localhost;database=motorsports;user=motorsports;password=S3cr37_1234
+      - ConnectionStrings__Motorsports=${MOTORSPORTS_CONNECTION_STRING:?Set MOTORSPORTS_CONNECTION_STRING in your environment}
       - Kestrel:Endpoints:Http:Url=http://0.0.0.0:80
     networks:
       - motorsports_network

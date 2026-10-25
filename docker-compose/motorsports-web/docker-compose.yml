@@ -4,8 +4,10 @@ services:
     container_name: motorsports-web
     restart: unless-stopped
     environment:
-      - ConnectionStrings__Motorsports=${MOTORSPORTS_CONNECTION_STRING}
+      - ConnectionStrings__Motorsports=${MOTORSPORTS_CONNECTION_STRING:?Set MOTORSPORTS_CONNECTION_STRING in your environment}
       - App__TimeZone=Europe/Brussels
+      - Auth__SecureCookies=true
+      - ForwardedHeaders__KnownProxies__0=${FORWARDED_HEADERS_KNOWN_PROXY_0:?Set FORWARDED_HEADERS_KNOWN_PROXY_0 in your environment}
     ports:
       - "8080:8080"
     networks:

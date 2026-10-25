@@ -7,7 +7,7 @@ using Motorsports.Infrastructure;
 namespace Motorsports.Benchmarks;
 
 [MemoryDiagnoser]
-public sealed class HomeOverviewBenchmarks
+public class HomeOverviewBenchmarks
 {
     private PooledDbContextFactory<MotorsportsDbContext> factory = null!;
     private HomeService service = null!;

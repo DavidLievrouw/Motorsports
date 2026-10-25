@@ -5,9 +5,9 @@ services:
     container_name: mariadb
     restart: always
     environment:
-      - MARIADB_ROOT_PASSWORD=S3cr37_4321
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD:?Set MARIADB_ROOT_PASSWORD in your environment}
       - MARIADB_USER=motorsports
-      - MARIADB_PASSWORD=S3cr37_1234
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD:?Set MARIADB_PASSWORD in your environment}
       - MARIADB_DATABASE=motorsports
     volumes:
       - /etc/dalion/motorsports/mariadb:/var/lib/mysql

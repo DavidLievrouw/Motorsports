@@ -14,12 +14,13 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
 {
     private const string Password = "S3cret pässword!";
 
-    private sealed class AuthApp(string connectionString, int loginLimit) : WebApplicationFactory<Program>
+    private sealed class AuthApp(string connectionString, int loginLimit, bool secureCookies)
+        : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
         {
             builder.UseSetting("ConnectionStrings:Motorsports", connectionString);
-            builder.UseSetting("Auth:SecureCookies", "false");
+            builder.UseSetting("Auth:SecureCookies", secureCookies.ToString());
             builder.UseSetting("Auth:LoginPermitLimit", loginLimit.ToString());
         }
 
@@ -32,10 +33,10 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
             ? response.Headers.Location.PathAndQuery
             : response.Headers.Location.OriginalString;
 
-    private async Task<AuthApp> StartAsync(int loginLimit = 1000)
+    private async Task<AuthApp> StartAsync(int loginLimit = 1000, bool secureCookies = false)
     {
         await fixture.ResetSchemaAsync();
-        return new AuthApp(fixture.ConnectionString, loginLimit);
+        return new AuthApp(fixture.ConnectionString, loginLimit, secureCookies);
     }
 
     private async Task SeedUserAsync(
@@ -133,6 +134,20 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
     }
 
     [Fact]
+    public async Task Responses_include_security_headers()
+    {
+        await using var app = await StartAsync();
+        var client = app.NewClient();
+        var response = await client.GetAsync("/health", TestContext.Current.CancellationToken);
+
+        response.Headers.GetValues("Content-Security-Policy").ShouldContain("frame-ancestors 'none'");
+        response.Headers.GetValues("Permissions-Policy").ShouldContain("camera=(), microphone=(), geolocation=()");
+        response.Headers.GetValues("Referrer-Policy").ShouldContain("strict-origin-when-cross-origin");
+        response.Headers.GetValues("X-Content-Type-Options").ShouldContain("nosniff");
+        response.Headers.GetValues("X-Frame-Options").ShouldContain("DENY");
+    }
+
+    [Fact]
     public async Task Authenticated_navigation_has_a_change_password_link()
     {
         await using var app = await StartAsync();
@@ -154,9 +169,10 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
     [InlineData("HMACSHA512")]
     public async Task Legacy_user_logs_in_gets_a_secure_cookie_and_is_rehashed(string prf)
     {
-        await using var app = await StartAsync();
+        await using var app = await StartAsync(secureCookies: true);
         await SeedUserAsync("legacy", prf);
         var client = app.NewClient();
+        client.BaseAddress = new Uri("https://localhost");
         await client.GetAsync("/login", TestContext.Current.CancellationToken);
         (await V3HashAsync("legacy")).ShouldBeNull();
 
@@ -169,11 +185,14 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
             .Single(c => c.StartsWith("ms.auth=", StringComparison.Ordinal));
         cookie.ShouldContain("httponly", Case.Insensitive);
         cookie.ShouldContain("samesite=lax", Case.Insensitive);
+        cookie.ShouldContain("secure", Case.Insensitive);
         (await V3HashAsync("legacy")).ShouldNotBeNullOrEmpty();
         (await client.GetAsync("/", TestContext.Current.CancellationToken)).StatusCode.ShouldBe(HttpStatusCode.OK);
 
         // The v3 hash now verifies on its own; a second client logs in again.
-        var again = await LoginAsync(app.NewClient(), "legacy", Password);
+        var secondClient = app.NewClient();
+        secondClient.BaseAddress = new Uri("https://localhost");
+        var again = await LoginAsync(secondClient, "legacy", Password);
         LocationPathOf(again).ShouldBe("/");
     }
 
