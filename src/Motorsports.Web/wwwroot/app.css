@@ -26,6 +26,30 @@ h1:focus {
     top: 0.5rem;
 }
 
+html[data-theme='dark'] a:not(.mud-button-root):not(.ms-brand-link),
+html[data-theme='dark'] .mud-link:not(.mud-link-disabled):not(.ms-brand-link) {
+    color: #c4b5fd !important;
+}
+
+html[data-theme='dark'] a:not(.mud-button-root):not(.ms-brand-link):hover,
+html[data-theme='dark'] .mud-link:not(.mud-link-disabled):not(.ms-brand-link):hover {
+    color: #ddd6fe !important;
+}
+
+html[data-theme='light'] a:not(.mud-button-root):not(.ms-brand-link),
+html[data-theme='light'] .mud-link:not(.mud-link-disabled):not(.ms-brand-link) {
+    color: #5947c7 !important;
+}
+
+html[data-theme='light'] a:not(.mud-button-root):not(.ms-brand-link):hover,
+html[data-theme='light'] .mud-link:not(.mud-link-disabled):not(.ms-brand-link):hover {
+    color: #4030a8 !important;
+}
+
+.mud-theme-dark .ms-brand-link {
+    color: inherit;
+}
+
 /* Footer sits at the viewport bottom on short pages and follows the content on long ones. */
 .mud-main-content.ms-main {
     display: flex;

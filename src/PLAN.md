@@ -434,6 +434,7 @@ Resolved:
 ## 9. Issues encountered and corrections (keep updated every phase)
 
 Corrections to earlier assumptions (verified against the real MariaDB dump and the running app):
+- Theme switching must update both the cookie and `html[data-theme]` immediately; updating only the cookie leaves link and auth-page CSS in the previous theme until a full reload.
 - `Virtualize` on statically rendered Home rendered only its first few items (Home history showed 5 events); short Home lists use `@foreach`.
 - Real column widths differ from the legacy EF model: `Venue.Name` and `Round.Venue` are `varchar(100)` (legacy model said 50); `Round.Note` is `text`; `Round.Number` is `smallint`; `Status.Step` is `tinyint`. Validation max lengths must follow the **DB**: Participant Title 10, First/Last 100, Team Name 50, Sport Name 50 / FullName 100, Season Label 100, SeasonEntry Name 50, Round Name 100, Venue Name 100.
 - Real FK constraint names are `<Table>_<Col>_FK` (e.g. `Round_Season_FK`), not the legacy model's `FK_Season_Round`. Nothing depends on them; do not hardcode either.
@@ -492,6 +493,7 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 Date: 2026-10-26. Phases 0–8 are complete.
 
 State:
+- Presentation follow-up: the header title links Home; link colors differ for dark/light mode, and the theme-cookie helper synchronizes `html[data-theme]` when toggled without reloading.
 - The new app is organized into Common, shared UI, Infrastructure, feature slices, and the Web host. Unit, architecture, benchmark, and MariaDB characteristics projects are in the solution.
 - `Motorsports.Home` owns `/`; its populated query path performs four reads, covered by a characteristics test. The local benchmark baseline is 11.156 ms mean / 272.17 KB managed allocation per call.
 - The user completed the mobile/desktop checks and supplied full-GC heap snapshots: the five-tab incremental live-heap estimate is ~3.16 MiB per circuit, including shared/runtime growth.
