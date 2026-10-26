@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Logging.Abstractions;
 using Motorsports.CharacteristicsTests.Fixtures;
 using Motorsports.Common;
@@ -36,6 +38,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
             "20261024163411_AddSportImages",
             "20261025083000_ParticipantUniqueIdentity",
             "20261026081111_PersistDataProtectionKeys",
+            "20261026100239_AddBusinessUniqueConstraints",
         ]);
         (await context.Users.CountAsync(cancellationToken)).ShouldBe(0);
     }
@@ -122,6 +125,68 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
     }
 
     [Fact]
+    public async Task Business_constraints_allow_unnumbered_rounds_and_enforce_positive_uniqueness()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await fixture.ResetSchemaAsync();
+        var factory = fixture.CreateContextFactory();
+        await CreateMigrator(factory).MigrateAsync(cancellationToken);
+        await fixture.ExecuteSqlAsync(
+            """
+            INSERT INTO `Country` (`ISO`, `Name`, `NiceName`) VALUES ('GB', 'UNITED KINGDOM', 'United Kingdom');
+            INSERT INTO `Sport` (`Name`) VALUES ('F1'), ('MotoGP');
+            INSERT INTO `Status` (`Name`, `Step`) VALUES ('Scheduled', 0);
+            INSERT INTO `Venue` (`Name`, `Country`) VALUES ('Test Circuit', 'GB');
+            INSERT INTO `Season` (`Sport`, `Label`) VALUES ('F1', '2025'), ('F1', '2026');
+            """
+        );
+
+        await using var context = await factory.CreateDbContextAsync(cancellationToken);
+        context.Teams.AddRange(
+            new Team
+            {
+                Name = "Same name",
+                Sport = SportName.From("F1"),
+                Country = CountryIso.From("GB"),
+            },
+            new Team
+            {
+                Name = "Same name",
+                Sport = SportName.From("MotoGP"),
+                Country = CountryIso.From("GB"),
+            }
+        );
+        await context.SaveChangesAsync(cancellationToken);
+
+        context.Teams.Add(
+            new Team
+            {
+                Name = "Same name",
+                Sport = SportName.From("F1"),
+                Country = CountryIso.From("GB"),
+            }
+        );
+        await Should.ThrowAsync<DbUpdateException>(() => context.SaveChangesAsync(cancellationToken));
+        context.ChangeTracker.Clear();
+
+        context.Rounds.AddRange(CreateRound(0, 1), CreateRound(0, 1), CreateRound(1, 1), CreateRound(1, 2));
+        await context.SaveChangesAsync(cancellationToken);
+
+        context.Rounds.Add(CreateRound(1, 1));
+        await Should.ThrowAsync<DbUpdateException>(() => context.SaveChangesAsync(cancellationToken));
+
+        Round CreateRound(short number, int seasonId) =>
+            new()
+            {
+                Date = new DateOnly(2026, 1, number + 1),
+                Number = number,
+                Season = SeasonId.From(seasonId),
+                Venue = VenueName.From("Test Circuit"),
+                Status = StatusName.Scheduled,
+            };
+    }
+
+    [Fact]
     public async Task Sport_image_migration_seeds_the_current_legacy_logos()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -146,6 +211,20 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
             await stream.CopyToAsync(expected, cancellationToken);
             images[SportName.From(name)].ShouldBe(expected.ToArray());
         }
+    }
+
+    [Fact]
+    public async Task Business_constraint_migration_can_be_reverted_and_reapplied()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await fixture.ResetSchemaAsync();
+        var factory = fixture.CreateContextFactory();
+        await CreateMigrator(factory).MigrateAsync(cancellationToken);
+
+        await using var context = await factory.CreateDbContextAsync(cancellationToken);
+        var migrator = context.GetService<IMigrator>();
+        await migrator.MigrateAsync("20261026081111_PersistDataProtectionKeys", cancellationToken);
+        await migrator.MigrateAsync(null, cancellationToken);
     }
 
     [Fact]
@@ -207,7 +286,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
         await Task.WhenAll(first, second);
 
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
-        (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).Count().ShouldBe(5);
+        (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).Count().ShouldBe(6);
     }
 
     [Fact]

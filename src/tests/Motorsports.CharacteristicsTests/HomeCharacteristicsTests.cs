@@ -62,9 +62,9 @@ public sealed class HomeCharacteristicsTests(MariaDbFixture fixture)
               ('2026-10-23', 0, 'Very next event', 5, 'Spa', 'Scheduled', NULL),
               ('2026-10-24', 1, 'F1 due event', 2, 'Spa', 'Scheduled', NULL);
             INSERT INTO `Round` (`Date`, `Number`, `Name`, `Season`, `Venue`, `Status`, `Rating`, `Rain`, `WinningTeam`) VALUES
-              ('2025-10-24', 1, 'F1 Spa history', 1, 'Spa', 'Finished', 8, 2, 2),
-              ('2016-10-23', 1, 'Outside ten years', 1, 'Spa', 'Finished', 5, 1, NULL),
-              ('2016-10-24', 1, 'At ten-year boundary', 1, 'Spa', 'Finished', 7, 3, NULL);
+              ('2025-10-24', 4, 'F1 Spa history', 1, 'Spa', 'Finished', 8, 2, 2),
+              ('2016-10-23', 2, 'Outside ten years', 1, 'Spa', 'Finished', 5, 1, NULL),
+              ('2016-10-24', 3, 'At ten-year boundary', 1, 'Spa', 'Finished', 7, 3, NULL);
             INSERT INTO `RoundWinner` (`Round`, `Participant`) VALUES (2, 1), (8, 1);
             """
         );

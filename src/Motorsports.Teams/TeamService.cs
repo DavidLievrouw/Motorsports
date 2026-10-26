@@ -153,7 +153,6 @@ internal sealed class TeamService(
         }
 
         var name = form.Name!.Trim();
-        // No unique index backs (Name, Sport), so serializable isolation guards the duplicate check against races.
         var result = await factory.InTransactionAsync(
             async (db, ct) =>
             {

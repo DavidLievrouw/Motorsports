@@ -97,6 +97,7 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
             e.Property(x => x.Country).HasColumnType("char(2)");
             e.HasOne(x => x.SportRef).WithMany().HasForeignKey(x => x.Sport).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.CountryRef).WithMany().HasForeignKey(x => x.Country).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.Sport, x.Name }).IsUnique();
         });
 
         modelBuilder.Entity<Season>(e =>
@@ -135,6 +136,10 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
             e.Property(x => x.Name).HasMaxLength(100);
             e.Property(x => x.Venue).HasMaxLength(100);
             e.Property(x => x.Status).HasMaxLength(20).HasDefaultValue(StatusName.Scheduled);
+            e.Property<short?>("ChampionshipNumber")
+                .HasColumnType("smallint")
+                .HasComputedColumnSql("CASE WHEN `Number` > 0 THEN `Number` ELSE NULL END", stored: true);
+            e.HasIndex("Season", "ChampionshipNumber").IsUnique();
             e.Property(x => x.Rating).HasColumnType("decimal(3,1)");
             e.Property(x => x.Rain).HasColumnType("decimal(1,0)");
             e.Property(x => x.Note).HasColumnType("text");

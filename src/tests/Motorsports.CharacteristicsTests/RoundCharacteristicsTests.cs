@@ -192,7 +192,7 @@ public sealed class RoundCharacteristicsTests(MariaDbFixture fixture)
             Enumerable
                 .Range(0, 55)
                 .Select(index =>
-                    $"('{new DateOnly(2026, 1, 1).AddDays(index):yyyy-MM-dd}', 3, {seasonId}, 'Spa', 'Finished')"
+                    $"('{new DateOnly(2026, 1, 1).AddDays(index):yyyy-MM-dd}', {index + 3}, {seasonId}, 'Spa', 'Finished')"
                 )
         );
         await fixture.ExecuteSqlAsync(

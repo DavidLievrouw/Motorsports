@@ -296,6 +296,7 @@ Vogen:
 ----------------------
 
 Future:
+- Phase 8 closing: browser check for CSP in read-only, login still active after restart. Then let AI close the phase.
 - Switch from Pomelo to Microting.EntityFrameworkCore.MySql, that supports dotnet10 and dotnet11 in the near future.
 - Update dependencies and NuGet packages.
 - Update to dotnet 11. Target framework, NuGet references and docker image.

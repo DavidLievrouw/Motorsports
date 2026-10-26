@@ -116,6 +116,11 @@ namespace Motorsports.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<short?>("ChampionshipNumber")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("smallint")
+                        .HasComputedColumnSql("CASE WHEN `Number` > 0 THEN `Number` ELSE NULL END", true);
+
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
@@ -155,13 +160,14 @@ namespace Motorsports.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Season");
-
                     b.HasIndex("Status");
 
                     b.HasIndex("Venue");
 
                     b.HasIndex("WinningTeam");
+
+                    b.HasIndex("Season", "ChampionshipNumber")
+                        .IsUnique();
 
                     b.ToTable("Round", (string)null);
                 });
@@ -319,7 +325,8 @@ namespace Motorsports.Infrastructure.Migrations
 
                     b.HasIndex("Country");
 
-                    b.HasIndex("Sport");
+                    b.HasIndex("Sport", "Name")
+                        .IsUnique();
 
                     b.ToTable("Team", (string)null);
                 });
