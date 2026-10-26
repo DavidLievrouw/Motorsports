@@ -105,6 +105,16 @@ The Data Protection key ring is stored in the `DataProtectionKeys` table in the 
 normal database backups. Database access exposes the unencrypted key XML, so restrict database credentials and backup
 access accordingly.
 
+The application database user needs only these grants on its own database (startup migrations need the DDL rights;
+`GET_LOCK` needs none). No global rights, no `DROP`, routines, triggers, events, or `GRANT OPTION`:
+
+```sql
+REVOKE ALL PRIVILEGES ON `motorsports`.* FROM 'motorsports'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, REFERENCES ON `motorsports`.* TO 'motorsports'@'%';
+```
+
+Rolling back a migration (`Down`) needs `DROP`; run it with an admin account, not the application user.
+
 Restore the database and its Data Protection key table from the same backup point. If the key table is missing,
 inconsistent with the restored application data, or the application discriminator changes, existing authentication and
 antiforgery tokens may become unreadable and users will need to sign in again. ASP.NET Data Protection creates new
