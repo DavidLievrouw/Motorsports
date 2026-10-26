@@ -59,6 +59,24 @@ public sealed class SeasonCharacteristicsTests(MariaDbFixture fixture)
     }
 
     [Fact]
+    public async Task Team_picker_history_breaks_equal_start_date_ties_by_primitive_season_id()
+    {
+        var services = await StartAsync();
+        await fixture.ExecuteSqlAsync(
+            """
+            INSERT INTO Sport (Name) VALUES ('F1');
+            INSERT INTO Team (Name, Sport, Country) VALUES ('Synthetic team', 'F1', 'GB');
+            INSERT INTO Season (Sport, Label) VALUES ('F1', 'Earlier'), ('F1', 'Later');
+            INSERT INTO SeasonEntry (Season, Team, Name) VALUES (1, 1, 'First entry'), (2, 1, 'Second entry');
+            """
+        );
+
+        var team = (await services.Cache.GetTeamsAsync(Ct)).ShouldHaveSingleItem();
+        team.History.Select(entry => entry.SeasonId.Value).ShouldBe([2, 1]);
+        team.LatestEntryName.ShouldBe("Second entry");
+    }
+
+    [Fact]
     public async Task Season_winners_are_validated_replaced_and_protected_by_concurrency()
     {
         var services = await StartAsync();

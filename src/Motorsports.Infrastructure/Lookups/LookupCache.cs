@@ -213,7 +213,7 @@ public sealed class LookupCache
                             ))
                             .OrderByDescending(entry => entry.StartDate is null)
                             .ThenByDescending(entry => entry.StartDate)
-                            .ThenByDescending(entry => entry.SeasonId)
+                            .ThenByDescending(entry => entry.SeasonId.Value)
                             .ToArray()
                     ))
                     .OrderBy(team => team.Name, StringComparer.Ordinal)

@@ -140,6 +140,12 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
                 .HasColumnType("smallint")
                 .HasComputedColumnSql("CASE WHEN `Number` > 0 THEN `Number` ELSE NULL END", stored: true);
             e.HasIndex("Season", "ChampionshipNumber").IsUnique();
+            e.HasIndex(x => new
+            {
+                x.Season,
+                x.Date,
+                x.Number,
+            });
             e.Property(x => x.Rating).HasColumnType("decimal(3,1)");
             e.Property(x => x.Rain).HasColumnType("decimal(1,0)");
             e.Property(x => x.Note).HasColumnType("text");

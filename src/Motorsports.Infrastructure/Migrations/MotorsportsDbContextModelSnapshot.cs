@@ -169,6 +169,8 @@ namespace Motorsports.Infrastructure.Migrations
                     b.HasIndex("Season", "ChampionshipNumber")
                         .IsUnique();
 
+                    b.HasIndex("Season", "Date", "Number");
+
                     b.ToTable("Round", (string)null);
                 });
 

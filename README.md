@@ -70,6 +70,25 @@ MariaDB using `ConnectionStrings__Motorsports`:
 dotnet run -c Release --project src/tests/Motorsports.Benchmarks -- --filter "*HomeOverview*"
 ```
 
+For the reproducible Phase 8 query/index audit, point `ConnectionStrings__Motorsports` at the disposable
+**`motorsports_phase8`** database, then run from the repository root:
+
+```powershell
+dotnet run -c Release --project src\tests\Motorsports.Benchmarks -- --phase8-audit-reset "$env:TEMP\motorsports-phase8-audit.json"
+```
+
+**Destructive:** this resets the application's tables, including users, migration history, and Data Protection keys,
+then replaces their contents with synthetic fixtures at current-size and 10× scales. Never use a production database.
+The exact database name is checked before connecting; all other names are rejected. The account needs schema-change
+permissions on that database. Do not run a web app against it while auditing.
+
+The JSON report contains warmed p50/p95 timings, approximate process-wide managed allocations, SQL command counts,
+actual MariaDB query plans, and before/indexed/restored comparisons for six candidate indexes. The audit removes the
+retained performance index for the baseline, restores it afterward, and records final indexed workloads separately.
+Temporary candidate indexes are removed even if a measurement fails. Run without concurrent builds/tests for useful
+timings; allocations include harness/background overhead and are not retained-memory or circuit-size measurements.
+Recorded evidence and index decisions are in `src\PLAN.md`, section 4b.
+
 ## Release and Docker deployment
 
 Build the release image from the repository root, tagging it with the version in `version.txt`:

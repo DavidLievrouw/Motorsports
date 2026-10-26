@@ -39,6 +39,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
             "20261025083000_ParticipantUniqueIdentity",
             "20261026081111_PersistDataProtectionKeys",
             "20261026100239_AddBusinessUniqueConstraints",
+            "20261026133143_AddRoundSeasonDateNumberIndex",
         ]);
         (await context.Users.CountAsync(cancellationToken)).ShouldBe(0);
     }
@@ -228,6 +229,84 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
     }
 
     [Fact]
+    public async Task Round_history_index_accepts_existing_schema_and_preserves_rounds_on_down_and_reapply()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await fixture.ResetSchemaAsync();
+        await fixture.ExecuteSqlAsync(
+            """
+            INSERT INTO `Country` (`ISO`, `Name`, `NiceName`) VALUES ('GB', 'UNITED KINGDOM', 'United Kingdom');
+            INSERT INTO `Sport` (`Name`) VALUES ('F1');
+            INSERT INTO `Status` (`Name`, `Step`) VALUES ('Scheduled', 0);
+            INSERT INTO `Venue` (`Name`, `Country`) VALUES ('Synthetic circuit', 'GB');
+            INSERT INTO `Season` (`Sport`, `Label`) VALUES ('F1', 'Synthetic season');
+            INSERT INTO `Round` (`Date`, `Number`, `Season`, `Venue`, `Status`)
+            VALUES ('2026-01-01', 1, 1, 'Synthetic circuit', 'Scheduled'),
+                   ('2026-01-01', 2, 1, 'Synthetic circuit', 'Scheduled'),
+                   ('2026-02-01', 0, 1, 'Synthetic circuit', 'Scheduled'),
+                   ('2026-02-01', 0, 1, 'Synthetic circuit', 'Scheduled');
+            CREATE INDEX `IX_Round_Season_Date_Number` ON `Round` (`Season`, `Date`, `Number`);
+            """
+        );
+        var factory = fixture.CreateContextFactory();
+        await CreateMigrator(factory).MigrateAsync(cancellationToken);
+        await CreateMigrator(factory).MigrateAsync(cancellationToken);
+
+        await using var context = await factory.CreateDbContextAsync(cancellationToken);
+        var expected = await ReadRoundsAsync();
+        expected.Select(round => round.Id).ShouldBe([1, 2, 3, 4]);
+        expected
+            .Select(round => (round.Date, round.Number))
+            .ShouldBe([
+                (new DateOnly(2026, 1, 1), (short)1),
+                (new DateOnly(2026, 1, 1), (short)2),
+                (new DateOnly(2026, 2, 1), (short)0),
+                (new DateOnly(2026, 2, 1), (short)0),
+            ]);
+        expected.ShouldAllBe(round =>
+            round.Season == 1 && round.Venue == "Synthetic circuit" && round.Status == "Scheduled"
+        );
+        (await IndexColumnsAsync()).ShouldBe(["Season", "Date", "Number"]);
+
+        var migrator = context.GetService<IMigrator>();
+        await migrator.MigrateAsync("20261026100239_AddBusinessUniqueConstraints", cancellationToken);
+        (await IndexColumnsAsync()).ShouldBeEmpty();
+        (await ReadRoundsAsync()).ShouldBe(expected);
+
+        await migrator.MigrateAsync(null, cancellationToken);
+        (await IndexColumnsAsync()).ShouldBe(["Season", "Date", "Number"]);
+        (await ReadRoundsAsync()).ShouldBe(expected);
+
+        Task<string[]> IndexColumnsAsync() =>
+            context
+                .Database.SqlQueryRaw<string>(
+                    """
+                    SELECT COLUMN_NAME AS Value FROM information_schema.statistics
+                    WHERE table_schema = DATABASE() AND table_name = 'Round'
+                      AND index_name = 'IX_Round_Season_Date_Number'
+                    ORDER BY SEQ_IN_INDEX
+                    """
+                )
+                .ToArrayAsync(cancellationToken);
+
+        Task<RoundSnapshot[]> ReadRoundsAsync() =>
+            context
+                .Rounds.AsNoTracking()
+                .OrderBy(round => round.Id)
+                .Select(round => new RoundSnapshot(
+                    round.Id.Value,
+                    round.Season.Value,
+                    round.Date,
+                    round.Number,
+                    round.Venue.Value,
+                    round.Status.Value
+                ))
+                .ToArrayAsync(cancellationToken);
+    }
+
+    private sealed record RoundSnapshot(int Id, int Season, DateOnly Date, short Number, string Venue, string Status);
+
+    [Fact]
     public async Task Sport_image_migration_accepts_an_image_column_that_already_exists()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -286,7 +365,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
         await Task.WhenAll(first, second);
 
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
-        (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).Count().ShouldBe(6);
+        (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).Count().ShouldBe(7);
     }
 
     [Fact]
