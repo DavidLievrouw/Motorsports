@@ -97,8 +97,11 @@ Build the release image from the repository root, tagging it with the version in
 docker build -f src/Motorsports.Web/Dockerfile -t motorsports-web:2.0.0 .
 ```
 
-`docker-compose/motorsports-web/docker-compose.yml` requires `MOTORSPORTS_CONNECTION_STRING` and
-`FORWARDED_HEADERS_KNOWN_PROXY_0` from the deployment environment. Production runs behind nginx-proxy-manager at
+`docker-compose/motorsports-web/docker-compose.yml` requires `MOTORSPORTS_CONNECTION_STRING` (and
+`FORWARDED_HEADERS_KNOWN_PROXY_0` if the proxy is not at `172.18.0.3`). It replaces the old `motorsports` container
+(same container name, which is NPM's upstream), publishes no host port, and listens on port 80 via
+`Kestrel__Endpoints__Http__Url` (use the double-underscore spelling: the health probe reads that variable). Stop the
+old `docker-compose/motorsports` stack first. Production runs behind nginx-proxy-manager at
 `ms.dalion.eu`; only the trusted proxy at `172.18.0.3` should reach the app container, which listens on port 80 in that
 deployment. Keep Secure cookies enabled and back up the database before the first deployment that applies migrations.
 The Data Protection key ring is stored in the `DataProtectionKeys` table in the configured database and is included in

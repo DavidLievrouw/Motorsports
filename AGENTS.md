@@ -150,7 +150,7 @@ Full plan and phases: `src/PLAN.md`. Update its checklist as you finish work.
   - MariaDB DDL is not transactional, so every migration statement must be self-guarding (`ADD COLUMN IF NOT EXISTS`, `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`) via `migrationBuilder.Sql`.
   - Baseline migration for existing tables is empty. Tests: run twice, run concurrently, run against a DB where the change already exists.
   - Check generated SQL with `dotnet ef migrations script --idempotent` before committing.
-- State changes are POST/PUT/DELETE only, never GET (e.g. `MarkReadyToWatch`, logout). Antiforgery on.
+- State changes are POST/PUT/DELETE only, never GET (e.g. `MarkReadyToWatch`, logout). Antiforgery on; its cookie follows `Auth:SecureCookies` like the auth cookie. Production compose (`docker-compose/motorsports-web`) publishes no host port and sets `Kestrel__Endpoints__Http__Url` (double underscore: the health probe reads that env var).
 - Auth: ASP.NET Identity with custom `IUserStore` over the existing `User` table and custom `IPasswordHasher` (verify existing PBKDF2 hashes and rehash on login). Everything `[Authorize]` by default; opt out with `[AllowAnonymous]`. Validate `returnUrl` is local.
 - Validation: FluentValidation. Messages shown inline (MudBlazor `Error`/`ErrorText`).
 - Config: `WebApplication.CreateBuilder`, Options pattern with validation (`ValidateOnStart`), user-secrets locally, env vars in Docker. Never commit connection strings or passwords. No sensitive data logging outside Development. Built-in `ILogger`, no `Console.WriteLine`.
@@ -187,7 +187,7 @@ CPU cycles are drinking water. Memory bytes are gold. Every change is judged on 
 
 ## Environment
 
-- SDK: .NET 10.0.200 installed (also 8, 9). Docker available. Dev DB = MariaDB **11.7.x** (production is `11.7.2-MariaDB-ubu2404`, utf8mb4). Local dev: `docker-compose.yml` MariaDB + restore a dump from `src/Db/Backup*_MariaDB.sql` (newest file; user maintains these, ignore the older and the `_Azure`/`.bak` ones; never edit them).
+- SDK: .NET 10.0.200 installed (also 8, 9). Docker available. Dev DB = MariaDB **11.7.x** (production is `11.7.2-MariaDB-ubu2404`, utf8mb4). Local dev: `docker-compose.yml` MariaDB + restore a dump from `db/Backup*_MariaDB.sql` (newest file; user maintains these, ignore the older and the `_Azure`/`.bak` ones; never edit them).
 - Dumps contain real data and `User` password hashes: never print them, never copy them into tests or logs. Tests use a schema-only extract plus synthetic seed data.
 - Secrets: connection string via user-secrets (`ConnectionStrings:Motorsports`) or env var `ConnectionStrings__Motorsports`. Do not read credentials into output.
 - Ports: development `http://localhost:4100`; container listens on 8080.

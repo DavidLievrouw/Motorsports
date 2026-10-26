@@ -1,6 +1,7 @@
 using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -115,6 +116,14 @@ builder
         }
     );
 builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(5));
+builder
+    .Services.AddOptions<AntiforgeryOptions>()
+    .Configure<IOptions<AuthOptions>>(
+        (antiforgery, auth) =>
+            antiforgery.Cookie.SecurePolicy = auth.Value.SecureCookies
+                ? CookieSecurePolicy.Always
+                : CookieSecurePolicy.SameAsRequest
+    );
 builder
     .Services.AddAuthorizationBuilder()
     .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());

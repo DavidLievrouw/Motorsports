@@ -206,6 +206,23 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
     }
 
     [Fact]
+    public async Task Antiforgery_cookie_is_secure_when_secure_cookies_are_enabled()
+    {
+        await using var app = await StartAsync(secureCookies: true);
+        var client = app.NewClient();
+        client.BaseAddress = new Uri("https://localhost");
+
+        var response = await client.GetAsync("/login", TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var cookie = response
+            .Headers.GetValues("Set-Cookie")
+            .Single(c => c.StartsWith(".AspNetCore.Antiforgery.", StringComparison.Ordinal));
+        cookie.ShouldContain("secure", Case.Insensitive);
+        cookie.ShouldContain("httponly", Case.Insensitive);
+    }
+
+    [Fact]
     public async Task Data_protection_cookies_survive_another_application_instance()
     {
         await fixture.ResetSchemaAsync();

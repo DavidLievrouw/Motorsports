@@ -375,7 +375,7 @@ Delivered (checklist):
 - [x] Docker smoke follow-ups resolved; user confirmed the corrected container/footer. Consolidated build-stage copies into two COPY instructions and restore/publish into one RUN, preserving the published-script guard and the non-root runtime stage.
 - [x] Release version 2.0.0; final warning-free solution build, CSharpier format/check, 143 tests, and optimized Docker image build passed.
 
-### Phase 8 – Production performance, Vogen IDs, database cleanup & security hardening `[ ]`
+### Phase 8 – Production performance, Vogen IDs, database cleanup & security hardening `[x]`
 
 The 2.0.0 application is release-ready. This phase is a measured post-release quality pass; retain behavior and persisted data unless a planned migration explicitly changes them.
 
@@ -385,7 +385,16 @@ The 2.0.0 application is release-ready. This phase is a measured post-release qu
 - [x] **Vogen IDs:** define Vogen value objects for all persisted entity IDs and natural string IDs, including `UserId`, and use them consistently in EF entities/relations, slice commands and queries, and relevant lookup contracts. Convert `UserId` to/from the existing string representation at ASP.NET Identity boundaries. Add EF value converters and update test fixtures. Keep database column types/values, routes, and user-visible behavior unchanged; convert at other framework boundaries where primitives are required. Query-translation regression tests cover converted-key ordering, membership, projections, team/participant searches, and the Home earliest-round query. Do not access a Vogen `.Value` inside translated EF predicates/orderings; compare/order the converted property or perform conversion after materialization.
 - [x] **Schema inventory and cleanup plan:** compared the local restored schema, EF model, migration metadata, and query usage. The copy has no migration-history or Data Protection key table and lacks the expected auth columns, sport image column, and Participant unique index; existing migrations add these. Existing FKs are all `RESTRICT`. No other column-type mismatch was identified. Duplicate aggregates confirmed the new Team and positive Round constraints are data-compatible.
 - [x] **Data-preserving migrations:** added idempotent migration `20261026100239_AddBusinessUniqueConstraints` with matching `Down`, removing redundant single-column FK indexes only after replacement indexes exist. It passed MariaDB characteristics tests, including re-running the migrator. The local restored copy was not migrated; actual production was not accessed.
-- [ ] **Production ingress and host validation:** production hostname is `ms.dalion.eu`, served through nginx-proxy-manager (NPM). NPM and the Web app share a Docker network; ASP.NET Core sees NPM at `172.18.0.3`. The app container must not publish a host port; only NPM reaches it over the shared Docker network. NPM terminates HTTPS and proxies to `http://motorsports:80`; production sets `Kestrel:Endpoints:Http:Url=http://0.0.0.0:80` (the checked-in image default remains port 8080). Configure `AllowedHosts` for the production hostname and trust forwarded headers only from `172.18.0.3`. Test rejection of unexpected Host and spoofed forwarding headers.
+- [x] **Production ingress and host validation:** production hostname is `ms.dalion.eu`, served through nginx-proxy-manager (NPM). NPM and the Web app share a Docker network; ASP.NET Core sees NPM at `172.18.0.3`. The app container must not publish a host port; only NPM reaches it over the shared Docker network. NPM terminates HTTPS and proxies to `http://motorsports:80`; production sets `Kestrel__Endpoints__Http__Url=http://0.0.0.0:80` (the checked-in image default remains port 8080). Configure `AllowedHosts` for the production hostname and trust forwarded headers only from `172.18.0.3`. Test rejection of unexpected Host and spoofed forwarding headers.
+  - Fixed `docker-compose/motorsports-web/docker-compose.yml`, which contradicted this setup. It now uses service/container `motorsports` (the NPM target), publishes no host port, and sets `Kestrel__Endpoints__Http__Url=http://0.0.0.0:80`. The double-underscore spelling is required because the exec-form health probe reads only that environment variable; the old `Kestrel:Endpoints:Http:Url` spelling would leave it probing 8080. `FORWARDED_HEADERS_KNOWN_PROXY_0` defaults to `172.18.0.3`.
+  - Simulated 2026-10-26 with image `motorsports-web:2.0.0` on a private Docker network (no published port, trusted proxy IP `172.30.0.3`). The non-root app bound port 80 and became healthy. Results:
+    - Trusted proxy, `Host: ms.dalion.eu`, `X-Forwarded-Proto: https`: 302 to `https://ms.dalion.eu/login`.
+    - `Host: evil.example`: 400. A bare container IP as Host: 400.
+    - Spoofed `X-Forwarded-Host: evil.example` from the proxy: ignored (redirect stays on `ms.dalion.eu`).
+    - Untrusted source with spoofed `X-Forwarded-Proto: https` / `X-Forwarded-For`: ignored (redirect stays `http://`). Forwarded-For spoofing against the rate limiter is covered by tests.
+    - HSTS present.
+  - Found and fixed: the antiforgery cookie lacked `Secure` (the ASP.NET default policy is `None`). It now follows `Auth:SecureCookies` like the auth cookie; regression test `Antiforgery_cookie_is_secure_when_secure_cookies_are_enabled`.
+  - A live production smoke test after deployment is a user action.
 - [x] **Data Protection key persistence:** user selected MariaDB storage for the Data Protection key ring, provisioned automatically during startup migration. Use a stable application discriminator and a dedicated key table/context integration compatible with the existing Pomelo/MariaDB setup. User explicitly says at-rest encryption is not required. Document that database access therefore grants access to the key ring, plus backup/restore and key-rotation procedures. Verify cookies/tokens survive container replacement and the application has only the necessary DB access.
   - Container replacement: ✅ verified 2026-10-26 with image `motorsports-web:2.0.0` against restored DB `motorsports`, `ASPNETCORE_ENVIRONMENT=Production`. The container was created and became healthy, then the user logged in. It was then removed (`docker rm -f`) and recreated from the same image with the same settings, and became healthy again. The browser session stayed signed in. `DataProtectionKeys` held 1 row before and 1 after, so no new key ring was generated.
   - Least-privilege DB access: ✅ verified 2026-10-26. The restored DB `motorsports` user had `ALL PRIVILEGES` on `motorsports.*` only, with no global rights and no `GRANT OPTION`: scoped, but broader than needed. Required set: `SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, REFERENCES` on the app DB (documented in README with `REVOKE`/`GRANT`).
@@ -396,7 +405,7 @@ The 2.0.0 application is release-ready. This phase is a measured post-release qu
     - Applying the narrowed grants on production is a user action. Applied 2026-10-26 on the local restored `motorsports` DB; `SHOW GRANTS` confirms exactly the 8 rights plus global `USAGE`.
 - [x] **Content Security Policy:** user confirmed no application CSP errors in the browser on 2026-10-26 after excluding Firefox-extension noise. Promoted the expanded policy from report-only to enforcement; characteristics tests assert the enforcing header, nonce-bearing import map/scripts, and absence of the report-only header. Inline styles remain allowed for MudBlazor.
 - [x] **Regression coverage:** MariaDB characteristics cover the schema changes, pre-existing index, duplicate/zero/same-date data, concurrent/repeated migration, `Down`/reapply, row preservation, and the Vogen cache tie-breaker. All 156 tests pass. Section 4b records paired index comparisons, allocations, memory-measurement limits, and the storage/write trade-off.
-- [ ] **Exit:** warning-free build, CSharpier format/check, full solution tests, migration SQL reviewed, and measurable performance/schema/security outcomes recorded in this plan. If the audit finds no justified optimization or schema change, record that result rather than adding speculative changes.
+- [x] **Exit:** warning-free build, CSharpier format/check, full solution tests, migration SQL reviewed, and measurable performance/schema/security outcomes recorded in this plan. If the audit finds no justified optimization or schema change, record that result rather than adding speculative changes. Closed 2026-10-26: `-warnaserror` build clean, CSharpier check clean, 157/157 tests green, idempotent migration SQL reviewed, evidence recorded above and in section 4b.
 
 ## 7. Resolved decisions and remaining open points
 
@@ -480,7 +489,7 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 
 ## 10. Handover (rewrite at the end of every phase)
 
-Date: 2026-10-26. Phases 0–7 are complete. Phase 8 is in progress.
+Date: 2026-10-26. Phases 0–8 are complete.
 
 State:
 - The new app is organized into Common, shared UI, Infrastructure, feature slices, and the Web host. Unit, architecture, benchmark, and MariaDB characteristics projects are in the solution.
@@ -492,14 +501,21 @@ State:
 - Docker restores with Razor source present, verifies the published bootstrap script, and uses two build-stage COPY instructions plus one restore/publish RUN. The user confirmed the corrected container/footer; SHA metadata is no longer duplicated.
 - Phase 8 Vogen conversion and Data Protection key persistence are implemented. The idempotent migration SQL was reviewed, and EF reports no pending model changes.
 - The chiseled Docker image passed schema-only MariaDB startup/health checks on ports 8080 and 80. The 266,555,591-byte image is 29.6% smaller than the 378,754,981-byte optimized baseline; single local cold-start observations were 2.38 s versus 1.85 s.
-- Final validation after the synthetic performance/index audit: warning-as-error solution build passed, CSharpier format/check passed, and all 156 tests passed. Build/test used isolated artifact paths to avoid the running development app's output DLLs. Generated idempotent migration SQL was reviewed; EF reports no pending model changes. The earlier chiseled Docker build and health smoke also passed.
+- Final Phase 8 validation (after the ingress fixes): warning-as-error solution build passed, CSharpier check passed, and all 157 tests passed. Build/test used isolated artifact paths to avoid the running development app's output DLLs. Generated idempotent migration SQL was reviewed; EF reports no pending model changes. The earlier chiseled Docker build and health smoke also passed.
 - The user-authorized preflight used a local restored copy only. It has 1,823 rounds (80 unnumbered), 88 seasons, 77 teams, and 214 participants; duplicate aggregates for Team names, positive round numbers, and participant identity were all zero. User data and password hashes were not read. No persistent schema or data changes were made to that copy; temporary benchmark indexes were removed.
 - Performance/index audit is solved (section 4b). The separately authorized `motorsports_phase8` throwaway DB was reset to synthetic data and measured at current-size and 10× growth scales. Retained only `Round(Season, Date, Number)` for the demonstrated cold team-history lookup improvement (~46% growth p50); added guarded migration `20261026133143_AddRoundSeasonDateNumberIndex` and regression coverage. All seven migrations are applied to the throwaway DB, with 18,240 synthetic rounds and no temporary audit indexes. The original restored copy and live production were not changed.
 
 Known gaps / not done:
 - Production password rotation has been prepared by the user but not yet applied.
 - No admin/user UI or account lockout (outside the agreed phase scope).
-- User confirmed on 2026-10-26 that authentication survives an app restart with the MariaDB `DataProtectionKeys` key ring. Full container replacement was verified the same day: the session survived, and the key row count stayed at 1. Least-privilege DB access was verified with a restricted user (the 8 grants listed in README). Narrowing the production user's `ALL PRIVILEGES` is a pending user action.
+- User confirmed on 2026-10-26 that authentication survives an app restart with the MariaDB `DataProtectionKeys` key ring. Full container replacement was verified the same day: the session survived, and the key row count stayed at 1. Least-privilege DB access was verified with a restricted user (the 8 grants listed in README) and applied to the local restored `motorsports` DB.
+- Ingress was verified in a local production-shaped simulation (section Phase 8). The production compose was fixed (container `motorsports`, no published port, `Kestrel__Endpoints__Http__Url` on port 80), and the antiforgery cookie is now Secure.
+
+User actions at deployment (live production was never accessed by the agent):
+1. Back up the production DB.
+2. Apply the narrowed grants to the production DB user.
+3. Stop the old `docker-compose/motorsports` stack, then start `docker-compose/motorsports-web`.
+4. Smoke test `https://ms.dalion.eu`: login, a cookie with `Secure`, CSP clean, and no host port published.
 - Not every Rider `ide`/`csharpsquid` inspection is guaranteed clean (ask before touching captured-disposed warnings).
 - Event history is not grouped by year and includes any event with `Status.Step > 1`, including postponed/cancelled events, by documented design.
 - Home and representative service/cache/fuzzy baselines now include production-shaped synthetic current-size and 10× datasets; these are still local Windows/Docker observations, not production capacity data. Allocation deltas are process-wide and include harness overhead; no new isolated retained-circuit measurement was made.
@@ -510,11 +526,11 @@ Known gaps / not done:
 - CSP enforcement follow-up: Blazor adds a separate framing policy on page responses. The header regression test selects the application's full policy rather than assuming there is only one enforcing header; both policies remain enforced.
 - The venue list search uses the shared lookup cache to resolve Vogen venue keys before a translated SQL key filter; the other reference-list searches use translated string/name or typed-key queries.
 
-Next: complete the remaining ingress/deployment checks (container-replacement cookie survival and least-privilege grants are verified; user applies the narrowed grants in production). Phase 8 remains open for those deployment checks; the performance baseline/audit, measured-index decision, and corresponding regression coverage are solved.
+Next: Phase 8 is closed. Remaining items are the deployment actions listed above. No further phase is planned; ask the user before starting new work.
 
 ### Phase 8 clarification handoff (2026-10-26)
 
-The user asked to clarify Phase 8 before implementation. The confirmed deployment/security decisions below remain binding; do not ask the user to repeat them. Implementation is underway, but the phase exit criteria are not yet met.
+The user asked to clarify Phase 8 before implementation. The confirmed deployment/security decisions below remain binding; do not ask the user to repeat them. Implementation is complete and the phase exit criteria are met.
 
 Confirmed decisions:
 - Production hostname is `ms.dalion.eu`, behind nginx-proxy-manager (NPM). NPM and Web share a Docker network; ASP.NET Core sees NPM at `172.18.0.3`. Do not publish a Web host port; only NPM reaches the app.

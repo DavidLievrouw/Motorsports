@@ -1,15 +1,14 @@
 services:
-  motorsports-web:
-    image: motorsports-web:latest
-    container_name: motorsports-web
+  motorsports:
+    image: motorsports-web:${MOTORSPORTS_VERSION:-2.0.0}
+    container_name: motorsports
     restart: unless-stopped
     environment:
       - ConnectionStrings__Motorsports=${MOTORSPORTS_CONNECTION_STRING:?Set MOTORSPORTS_CONNECTION_STRING in your environment}
+      - Kestrel__Endpoints__Http__Url=http://0.0.0.0:80
       - App__TimeZone=Europe/Brussels
       - Auth__SecureCookies=true
-      - ForwardedHeaders__KnownProxies__0=${FORWARDED_HEADERS_KNOWN_PROXY_0:?Set FORWARDED_HEADERS_KNOWN_PROXY_0 in your environment}
-    ports:
-      - "8080:8080"
+      - ForwardedHeaders__KnownProxies__0=${FORWARDED_HEADERS_KNOWN_PROXY_0:-172.18.0.3}
     networks:
       - motorsports_network
 
