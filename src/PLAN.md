@@ -332,9 +332,9 @@ Delivered (checklist):
 The 2.0.0 application is release-ready. This phase is a measured post-release quality pass; retain behavior and persisted data unless a planned migration explicitly changes them.
 
 - [ ] **Performance baseline and audit:** record reproducible baselines for Home and other representative hot paths, SQL command counts, query plans, and allocations/memory. Profile production-shaped synthetic data rather than real backup contents. Inspect EF queries, picker/cache paths, Blazor circuit state, and hot allocations; fix only demonstrated bottlenecks.
-- [ ] **Container image size:** measure the current optimized image as a baseline, then reduce final image size without weakening runtime reliability or security. Evaluate a .NET 10 chiseled runtime base first, including `aspnet:10.0-noble-chiseled-extra` if IANA time-zone data is required; account for the current `tzdata` and `curl` health-check dependencies, non-root execution, invariant globalization, and native/runtime assets. Replace shell-based health checks with an image-compatible approach where needed. Record image-size and startup/health-check results before and after; retain the current base if chiseled variants introduce unacceptable trade-offs.
+- [x] **Container image size:** the `aspnet:10.0-noble-chiseled-extra` image runs the non-root app with IANA time-zone data and an exec-form `dotnet` health probe (no shell or `curl`). Against the prior optimized image, size fell from 378,754,981 to 266,555,591 bytes (112,199,390 bytes / 29.6%). On the same local Docker host and schema-only MariaDB fixture, `/health` was ready in 1.85 s on the baseline and 2.38 s on chiseled; both returned healthy. The chiseled probe was also verified with the production-style Kestrel port 80 and `ms.dalion.eu` Host header. These are single local smoke measurements, not production startup guarantees.
 - [ ] **Indexes:** evaluate the candidates in section 4b with representative data and `EXPLAIN`/`EXPLAIN ANALYZE`; add indexes only when they measurably improve a workload. Check existing indexes for redundancy before proposing removal. Record query plan, measurement, migration, and before/after result.
-- [ ] **Vogen IDs:** define Vogen value objects for all persisted entity IDs and natural string IDs, including `UserId`, and use them consistently in EF entities/relations, slice commands and queries, and relevant lookup contracts. Convert `UserId` to/from the existing string representation at ASP.NET Identity boundaries. Add EF value converters and update test fixtures. Keep database column types/values, routes, and user-visible behavior unchanged; convert at other framework boundaries where primitives are required. Remove the Vogen deferral in `AGENTS.md` when complete.
+- [x] **Vogen IDs:** define Vogen value objects for all persisted entity IDs and natural string IDs, including `UserId`, and use them consistently in EF entities/relations, slice commands and queries, and relevant lookup contracts. Convert `UserId` to/from the existing string representation at ASP.NET Identity boundaries. Add EF value converters and update test fixtures. Keep database column types/values, routes, and user-visible behavior unchanged; convert at other framework boundaries where primitives are required. Query-translation regression tests cover converted-key ordering, membership, projections, team/participant searches, and the Home earliest-round query. Do not access a Vogen `.Value` inside translated EF predicates/orderings; compare/order the converted property or perform conversion after materialization.
 - [ ] **Schema inventory and cleanup plan:** compare the live schema, EF model, migration history, and actual query usage. Review the deferred items in section 4b, including Team `(Sport, Name)` uniqueness, Round-number uniqueness for positive numbers only (multiple `Number = 0` rounds remain valid), column type alignment, and redundant indexes. Confirm existing data satisfies each proposed constraint before migration; do not force a uniqueness rule that conflicts with domain behavior.
 - [ ] **Data-preserving migrations:** implement only evidenced constraint, index, and schema-type cleanup as separate idempotent migrations with matching `Down` methods. Preserve `User.PasswordHash`, `Salt`, `Iterations`, and `Prf`; dropping these password-hash columns is explicitly out of scope. Removing unused tables or other columns is also out of scope for this phase.
 - [ ] **Production ingress and host validation:** production hostname is `ms.dalion.eu`, served through nginx-proxy-manager (NPM). NPM and the Web app share a Docker network; ASP.NET Core sees NPM at `172.18.0.3`. The app container must not publish a host port; only NPM reaches it over the shared Docker network. NPM terminates HTTPS and proxies to `http://motorsports:80`; production sets `Kestrel:Endpoints:Http:Url=http://0.0.0.0:80` (the checked-in image default remains port 8080). Configure `AllowedHosts` for the production hostname and trust forwarded headers only from `172.18.0.3`. Test rejection of unexpected Host and spoofed forwarding headers.
@@ -391,7 +391,7 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 - Test projects live in `src/tests/` (not the repo-root `tests/`) so `Directory.Build.props` applies to them. `Motorsports.CharacteristicsTests` is created in Phase 1 (needs Testcontainers).
 - The `create` tool and a `Remove-Item`/`New-Item` in the same parallel batch race; create directories first, in a separate call.
 - MudBlazor 9: the `PickerActions` context is `MudPicker<DateTime?>`, not `MudDatePicker`.
-- Docker: `src/Motorsports.Web/Dockerfile` (build context = repo root: `docker build -f src/Motorsports.Web/Dockerfile -t motorsports-web:latest .`), base `10.0-noble`, installs tzdata + curl, healthcheck on `/health`, listens on 8080. Verified: container starts against the dev DB, `/` 200, `/health` Healthy, second start logs "Database is up to date" (idempotent migrations), `/usr/share/zoneinfo/Europe/Brussels` exists. From a container, reach the host DB via `host.docker.internal`.
+- Docker: `src/Motorsports.Web/Dockerfile` (build context = repo root: `docker build -f src/Motorsports.Web/Dockerfile -t motorsports-web:latest .`) uses the .NET 10 `noble-chiseled-extra` runtime, runs non-root, and listens on 8080 by default. Its exec-form health probe calls `/health` without a shell or `curl`; `HEALTHCHECK_HOST` defaults to `ms.dalion.eu` and can be set when `AllowedHosts` differs. A schema-only MariaDB smoke test verified migration startup and health on both default port 8080 and production-style port 80. The runtime variant includes IANA zone data.
 - The legacy csproj still builds (0 warnings, 0 errors) with the new `global.json`, `version.props` and `Directory.*.props`.
 - Phase 2: `User` itself is the Identity user type (no separate `AppUser`). Legacy `PasswordHash/Salt/Iterations/Prf` are never modified; a password set in the new app is stored only in `PasswordHashV3`, so it will not work in the legacy app.
 - Blazor routing ignores the fallback authorize policy: every routable page needs an explicit `[Authorize]` or `[AllowAnonymous]` (Phase 3+ pages must do so). Login, access denied, error, and not-found pages remain static SSR (`ExcludeFromInteractiveRouting`); login/logout/change-password POSTs are minimal-API endpoints so antiforgery and login rate-limiting apply.
@@ -423,7 +423,7 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 
 ## 10. Handover (rewrite at the end of every phase)
 
-Date: 2026-10-25. Phases 0–7 are complete. Version 2.0.0 is release-ready; Phase 8 is planned.
+Date: 2026-10-26. Phases 0–7 are complete. Phase 8 is in progress.
 
 State:
 - The new app is organized into Common, shared UI, Infrastructure, feature slices, and the Web host. Unit, architecture, benchmark, and MariaDB characteristics projects are in the solution.
@@ -433,21 +433,28 @@ State:
 - Compose files no longer embed database/admin credentials. Supply their required variables from the deployment environment and rotate any previously used values.
 - `README.md` documents local setup, configuration, container deployment, and startup migrations.
 - Docker restores with Razor source present, verifies the published bootstrap script, and uses two build-stage COPY instructions plus one restore/publish RUN. The user confirmed the corrected container/footer; SHA metadata is no longer duplicated.
-- Final checks passed: warning-free solution build, CSharpier format/check, all 143 tests, and optimized Docker image build.
+- Phase 8 Vogen conversion and Data Protection key persistence are implemented. The idempotent migration SQL was reviewed, and EF reports no pending model changes.
+- The chiseled Docker image passed schema-only MariaDB startup/health checks on ports 8080 and 80. The 266,555,591-byte image is 29.6% smaller than the 378,754,981-byte optimized baseline; single local cold-start observations were 2.38 s versus 1.85 s.
+- Final validation: warning-as-error solution build passed, CSharpier format/check passed, and all 150 tests passed. The chiseled Docker build and health smoke also passed.
 
 Known gaps / not done:
 - Production password rotation has been prepared by the user but not yet applied.
 - No admin/user UI or account lockout (outside the agreed phase scope).
-- Production Data Protection keys need durable, access-controlled storage to preserve auth/antiforgery tokens across container replacement; current container defaults are ephemeral. Use a private browser window for side-by-side localhost testing because cookies are not isolated by port.
+- Data Protection keys persist in MariaDB and the migration ran in the container smoke test. Browser verification that auth cookies survive container replacement remains outstanding.
 - Not every Rider `ide`/`csharpsquid` inspection is guaranteed clean (ask before touching captured-disposed warnings).
 - Event history is not grouped by year and includes any event with `Status.Step > 1`, including postponed/cancelled events, by documented design.
 - The Home benchmark is a local Windows developer baseline, not representative production capacity data.
+- Phase 8 Vogen conversion is complete. EF translation regressions are covered, including converted-key ordering, membership, projections, team/participant searches, and Home query behavior.
+- The Data Protection key table and stable application name, production host allow-list, trusted-proxy configuration, and CSP report-only policy are implemented; the full suite includes MariaDB-backed characteristics.
+- No Rider database connections are configured. The authorized production schema/query-plan preflight remains blocked; no production rows or schema were inspected or changed.
+- The expanded CSP remains in report-only mode pending browser verification of login, authenticated routes, Blazor reconnects, MudBlazor controls, images, and static assets; only `frame-ancestors 'none'` is enforced.
+- The venue list search uses the shared lookup cache to resolve Vogen venue keys before a translated SQL key filter; the other reference-list searches use translated string/name or typed-key queries.
 
-Next: start Phase 8 implementation using the decisions in "Phase 8 clarification handoff" below. No Phase 8 code has been changed; begin with reproducible performance/image baselines, then proceed through Vogen, read-only production schema preflight, data-protection persistence, ingress, and CSP.
+Next: run the authorized read-only production schema/query-plan preflight when a connection is available; collect representative performance and allocation evidence; verify the report-only CSP and Data Protection cookie survival in a browser; and evaluate indexes/schema cleanup without speculative migrations. Do not mark Phase 8 complete until the exit criteria are evidenced.
 
-### Phase 8 clarification handoff (2026-10-25)
+### Phase 8 clarification handoff (2026-10-26)
 
-The user asked to clarify Phase 8 before implementation. No Phase 8 code or migrations have been started. Begin implementation from the confirmed deployment/security choices below; do not ask the user to repeat them.
+The user asked to clarify Phase 8 before implementation. The confirmed deployment/security decisions below remain binding; do not ask the user to repeat them. Implementation is underway, but the phase exit criteria are not yet met.
 
 Confirmed decisions:
 - Production hostname is `ms.dalion.eu`, behind nginx-proxy-manager (NPM). NPM and Web share a Docker network; ASP.NET Core sees NPM at `172.18.0.3`. Do not publish a Web host port; only NPM reaches the app.

@@ -32,7 +32,7 @@
             Lookups.RevalidateAsync(LookupKind.SeasonEntries)
         );
         _participants = await Lookups.GetParticipantsAsync();
-        _entries = (await Lookups.GetSeasonEntriesAsync()).Where(entry => entry.SeasonId == SeasonId).ToArray();
+        _entries = (await Lookups.GetSeasonEntriesAsync()).Where(entry => entry.SeasonId.Value == SeasonId).ToArray();
         SyncSelection();
     }
 
@@ -40,9 +40,9 @@
 
     private void SyncSelection()
     {
-        _selectedTeam = _entries.FirstOrDefault(entry => entry.TeamId == Form.WinningTeam);
+        _selectedTeam = _entries.FirstOrDefault(entry => entry.TeamId.Value == Form.WinningTeam);
         var winners = Form.Winners.ToHashSet();
-        _selectedWinners = _participants.Where(participant => winners.Contains(participant.Id)).ToArray();
+        _selectedWinners = _participants.Where(participant => winners.Contains(participant.Id.Value)).ToArray();
     }
 
     private static string EntryText(SeasonEntryOption entry) => entry.Name;
@@ -79,14 +79,14 @@
     private Task TeamChangedAsync(SeasonEntryOption? team)
     {
         _selectedTeam = team;
-        Form.WinningTeam = team?.TeamId;
+        Form.WinningTeam = team?.TeamId.Value;
         return Task.CompletedTask;
     }
 
     private Task WinnersChangedAsync(IReadOnlyList<ParticipantOption> winners)
     {
         _selectedWinners = winners;
-        Form.Winners = winners.Select(participant => participant.Id).ToList();
+        Form.Winners = winners.Select(participant => participant.Id.Value).ToList();
         return Task.CompletedTask;
     }
 }

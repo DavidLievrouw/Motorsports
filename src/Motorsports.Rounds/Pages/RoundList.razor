@@ -44,7 +44,7 @@ else
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Venue">
-                    <CellTemplate>@CountryFlag.WithName(context.Item.VenueCountry, context.Item.Venue)</CellTemplate>
+                    <CellTemplate>@CountryFlag.WithName(context.Item.VenueCountry.Value, context.Item.Venue.Value)</CellTemplate>
                 </TemplateColumn>
                 <PropertyColumn Property="round => round.Status" Title="Status" />
                 <TemplateColumn Title="Rating">
@@ -58,12 +58,12 @@ else
                 </TemplateColumn>
                 <TemplateColumn Title="Actions" Sortable="false">
                     <CellTemplate>
-                        <MudButton Href="@($"/rounds/details/{context.Item.Id}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>
-                        <MudButton Href="@($"/rounds/edit/{context.Item.Id}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
-                        <MudButton Href="@($"/rounds/delete/{context.Item.Id}")" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
+                        <MudButton Href="@($"/rounds/details/{context.Item.Id.Value}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>
+                        <MudButton Href="@($"/rounds/edit/{context.Item.Id.Value}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
+                        <MudButton Href="@($"/rounds/delete/{context.Item.Id.Value}")" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
                         @if (context.Item.StatusStep < 1)
                         {
-                            <MudButton Size="Size.Small" Color="Color.Tertiary" OnClick="() => MarkReadyAsync(context.Item.Id)">Ready to watch</MudButton>
+                            <MudButton Size="Size.Small" Color="Color.Tertiary" OnClick="() => MarkReadyAsync(context.Item.Id.Value)">Ready to watch</MudButton>
                         }
                     </CellTemplate>
                 </TemplateColumn>

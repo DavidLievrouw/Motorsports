@@ -22,7 +22,7 @@
     public bool SportReadOnly { get; set; }
 
     protected override void OnParametersSet() =>
-        _selectedSport = _sports.FirstOrDefault(sport => sport.Name == Form.Sport);
+        _selectedSport = _sports.FirstOrDefault(sport => sport.Name.Value == Form.Sport);
 
     protected override async Task OnInitializedAsync()
     {
@@ -31,12 +31,12 @@
         OnParametersSet();
     }
 
-    private static string SportText(SportOption sport) => sport.Name;
+    private static string SportText(SportOption sport) => sport.Name.Value;
 
     private Task SportChangedAsync(SportOption? sport)
     {
         _selectedSport = sport;
-        Form.Sport = sport?.Name;
+        Form.Sport = sport?.Name.Value;
         return Task.CompletedTask;
     }
 }

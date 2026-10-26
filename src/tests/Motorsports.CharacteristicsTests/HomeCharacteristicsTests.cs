@@ -78,13 +78,13 @@ public sealed class HomeCharacteristicsTests(MariaDbFixture fixture)
         var overview = await new HomeService(factory).GetHomeOverviewAsync(new DateOnly(2026, 10, 25), Ct);
 
         overview.VeryNextUp.ShouldNotBeNull();
-        overview.VeryNextUp.Id.ShouldBe(6);
-        overview.VeryNextUp.Sport.ShouldBe("MotoGP");
-        overview.NextUp.Select(round => round.Sport).ShouldBe(["F1"]);
-        overview.RoundsToAcquire.Select(round => round.Id).ShouldBe([6, 7]);
+        overview.VeryNextUp.Id.Value.ShouldBe(6);
+        overview.VeryNextUp.Sport.Value.ShouldBe("MotoGP");
+        overview.NextUp.Select(round => round.Sport.Value).ShouldBe(["F1"]);
+        overview.RoundsToAcquire.Select(round => round.Id.Value).ShouldBe([6, 7]);
         var f1History = overview.NextUp.Single().EventHistory;
-        f1History.Select(item => item.Id).ShouldBe([8, 10]);
-        var historicalWin = f1History.Single(item => item.Id == 8);
+        f1History.Select(item => item.Id.Value).ShouldBe([8, 10]);
+        var historicalWin = f1History.Single(item => item.Id.Value == 8);
         historicalWin.Rating.ShouldBe(8m);
         historicalWin.Rain.ShouldBe(2m);
         historicalWin.WinningTeamName!.ShouldContain("Ferrari");

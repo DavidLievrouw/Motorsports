@@ -70,13 +70,14 @@
 
     private void SyncSelection()
     {
-        _venue = _venues.FirstOrDefault(venue => venue.Name == Form.Venue);
-        _status = _statuses.FirstOrDefault(status => status.Name == Form.Status);
+        _venue = _venues.FirstOrDefault(venue => venue.Name.Value == Form.Venue);
+        _status = _statuses.FirstOrDefault(status => status.Name.Value == Form.Status);
     }
 
-    private static string VenueText(VenueOption venue) => CountryFlag.WithName(venue.Country, venue.Name);
+    private static string VenueText(VenueOption venue) =>
+        CountryFlag.WithName(venue.Country.Value, venue.Name.Value);
 
-    private static string StatusText(StatusOption status) => status.Name;
+    private static string StatusText(StatusOption status) => status.Name.Value;
 
     private Task OnDate(DateOnly? date)
     {
@@ -87,14 +88,14 @@
     private Task VenueChangedAsync(VenueOption? venue)
     {
         _venue = venue;
-        Form.Venue = venue?.Name;
+        Form.Venue = venue?.Name.Value;
         return Task.CompletedTask;
     }
 
     private Task StatusChangedAsync(StatusOption? status)
     {
         _status = status;
-        Form.Status = status?.Name;
+        Form.Status = status?.Name.Value;
         return Task.CompletedTask;
     }
 }

@@ -24,23 +24,27 @@
     public FormErrors Errors { get; set; } = default!;
 
     protected override void OnParametersSet() =>
-        _selectedCountry = _countries.FirstOrDefault(country => country.Iso == Form.Country);
+        _selectedCountry = _countries.FirstOrDefault(country =>
+            Form.Country is { } iso && country.Iso == CountryIso.From(iso)
+        );
 
     protected override async Task OnInitializedAsync()
     {
         await Lookups.RevalidateAsync(LookupKind.Countries);
         _countries = await Lookups.GetCountriesAsync();
-        _selectedCountry = _countries.FirstOrDefault(country => country.Iso == Form.Country);
+        _selectedCountry = _countries.FirstOrDefault(country =>
+            Form.Country is { } iso && country.Iso == CountryIso.From(iso)
+        );
     }
 
-    private static string CountryText(CountryOption country) => CountryFlag.WithName(country.Iso, country.Name);
+    private static string CountryText(CountryOption country) => CountryFlag.WithName(country.Iso.Value, country.Name);
 
     private static string[] CountryKeys(CountryOption country) => [country.Name];
 
     private Task CountryChangedAsync(CountryOption? country)
     {
         _selectedCountry = country;
-        Form.Country = country?.Iso;
+        Form.Country = country?.Iso.Value;
         return Task.CompletedTask;
     }
 }

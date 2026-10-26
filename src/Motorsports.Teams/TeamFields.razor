@@ -28,8 +28,8 @@
 
     protected override void OnParametersSet()
     {
-        _selectedCountry = _countries.FirstOrDefault(country => country.Iso == Form.Country);
-        _selectedSport = _sports.FirstOrDefault(sport => sport.Name == Form.Sport);
+        _selectedCountry = _countries.FirstOrDefault(country => country.Iso.Value == Form.Country);
+        _selectedSport = _sports.FirstOrDefault(sport => sport.Name.Value == Form.Sport);
     }
 
     protected override async Task OnInitializedAsync()
@@ -41,23 +41,23 @@
         OnParametersSet();
     }
 
-    private static string CountryText(CountryOption country) => CountryFlag.WithName(country.Iso, country.Name);
+    private static string CountryText(CountryOption country) => CountryFlag.WithName(country.Iso.Value, country.Name);
 
-    private static string SportText(SportOption sport) => sport.Name;
+    private static string SportText(SportOption sport) => sport.Name.Value;
 
     private static string[] CountryKeys(CountryOption country) => [country.Name];
 
     private Task CountryChangedAsync(CountryOption? country)
     {
         _selectedCountry = country;
-        Form.Country = country?.Iso;
+        Form.Country = country?.Iso.Value;
         return Task.CompletedTask;
     }
 
     private Task SportChangedAsync(SportOption? sport)
     {
         _selectedSport = sport;
-        Form.Sport = sport?.Name;
+        Form.Sport = sport?.Name.Value;
         return Task.CompletedTask;
     }
 }

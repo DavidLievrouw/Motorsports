@@ -24,7 +24,7 @@ internal sealed class SeasonEntryService(
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         return await db
             .Seasons.AsNoTracking()
-            .Where(season => season.Id == seasonId)
+            .Where(season => season.Id == SeasonId.From(seasonId))
             .Select(season => new SeasonEntryContext(season.Id, season.Label, season.Sport))
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -37,7 +37,7 @@ internal sealed class SeasonEntryService(
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         return await db
             .SeasonEntries.AsNoTracking()
-            .Where(entry => entry.Season == seasonId)
+            .Where(entry => entry.Season == SeasonId.From(seasonId))
             .OrderBy(entry => entry.TeamRef!.Name)
             .ThenBy(entry => entry.Name)
             .Select(entry => new SeasonEntryRow(
@@ -46,7 +46,7 @@ internal sealed class SeasonEntryService(
                 entry.Name,
                 entry.TeamRef!.Name,
                 entry.TeamRef.Country,
-                entry.TeamRef.CountryRef!.NiceName ?? entry.TeamRef.CountryRef.Name ?? entry.TeamRef.Country
+                entry.TeamRef.CountryRef!.NiceName ?? entry.TeamRef.CountryRef.Name ?? entry.TeamRef.Country.Value
             ))
             .ToListAsync(cancellationToken);
     }
@@ -60,7 +60,7 @@ internal sealed class SeasonEntryService(
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         return await db
             .SeasonEntries.AsNoTracking()
-            .Where(entry => entry.Season == seasonId && entry.Team == teamId)
+            .Where(entry => entry.Season == SeasonId.From(seasonId) && entry.Team == TeamId.From(teamId))
             .Select(entry => new SeasonEntryInfo(
                 entry.Season,
                 entry.Team,
@@ -69,7 +69,7 @@ internal sealed class SeasonEntryService(
                 entry.Name,
                 entry.TeamRef!.Name,
                 entry.TeamRef.Country,
-                entry.TeamRef.CountryRef!.NiceName ?? entry.TeamRef.CountryRef.Name ?? entry.TeamRef.Country,
+                entry.TeamRef.CountryRef!.NiceName ?? entry.TeamRef.CountryRef.Name ?? entry.TeamRef.Country.Value,
                 entry.SeasonRef.WinningTeam == entry.Team,
                 db.Rounds.Any(round => round.Season == entry.Season && round.WinningTeam == entry.Team)
             ))
@@ -85,7 +85,7 @@ internal sealed class SeasonEntryService(
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         var name = await db
             .SeasonEntries.AsNoTracking()
-            .Where(entry => entry.Season == seasonId && entry.Team == teamId)
+            .Where(entry => entry.Season == SeasonId.From(seasonId) && entry.Team == TeamId.From(teamId))
             .Select(entry => entry.Name)
             .FirstOrDefaultAsync(cancellationToken);
         return name is null
@@ -120,20 +120,26 @@ internal sealed class SeasonEntryService(
             async (db, ct) =>
             {
                 var season = await db
-                    .Seasons.Where(row => row.Id == seasonId)
-                    .Select(row => row.Sport)
+                    .Seasons.Where(row => row.Id == SeasonId.From(seasonId))
+                    .Select(row => (SportName?)row.Sport)
                     .FirstOrDefaultAsync(ct);
                 if (season is null)
                 {
                     return Error.NotFound("Season not found.");
                 }
 
-                if (!await db.Teams.AnyAsync(row => row.Id == form.TeamId.Value && row.Sport == season, ct))
+                var teamId = TeamId.From(form.TeamId.Value);
+                if (!await db.Teams.AnyAsync(row => row.Id == teamId && row.Sport == season.Value, ct))
                 {
                     return Error.Validation(nameof(SeasonEntryForm.TeamId), "Select a team from this season's sport.");
                 }
 
-                if (await db.SeasonEntries.AnyAsync(entry => entry.Season == seasonId && entry.Team == form.TeamId, ct))
+                if (
+                    await db.SeasonEntries.AnyAsync(
+                        entry => entry.Season == SeasonId.From(seasonId) && entry.Team == teamId,
+                        ct
+                    )
+                )
                 {
                     return Error.Validation("", "This team already has an entry in the season.");
                 }
@@ -141,13 +147,13 @@ internal sealed class SeasonEntryService(
                 db.SeasonEntries.Add(
                     new SeasonEntry
                     {
-                        Season = seasonId,
-                        Team = form.TeamId.Value,
+                        Season = SeasonId.From(seasonId),
+                        Team = teamId,
                         Name = name,
                     }
                 );
                 await db.SaveChangesAsync(ct);
-                return Result<int>.Ok(form.TeamId.Value);
+                return Result<int>.Ok(teamId.Value);
             },
             IsolationLevel.Serializable,
             cancellationToken
@@ -195,7 +201,9 @@ internal sealed class SeasonEntryService(
                 }
 
                 await db
-                    .SeasonEntries.Where(entry => entry.Season == seasonId && entry.Team == teamId)
+                    .SeasonEntries.Where(entry =>
+                        entry.Season == SeasonId.From(seasonId) && entry.Team == TeamId.From(teamId)
+                    )
                     .ExecuteUpdateAsync(updates => updates.SetProperty(entry => entry.Name, name), ct);
                 return Result<int>.Ok(teamId);
             },
@@ -222,15 +230,23 @@ internal sealed class SeasonEntryService(
                 }
 
                 if (
-                    await db.Seasons.AnyAsync(season => season.Id == seasonId && season.WinningTeam == teamId, ct)
-                    || await db.Rounds.AnyAsync(round => round.Season == seasonId && round.WinningTeam == teamId, ct)
+                    await db.Seasons.AnyAsync(
+                        season => season.Id == SeasonId.From(seasonId) && season.WinningTeam == TeamId.From(teamId),
+                        ct
+                    )
+                    || await db.Rounds.AnyAsync(
+                        round => round.Season == SeasonId.From(seasonId) && round.WinningTeam == TeamId.From(teamId),
+                        ct
+                    )
                 )
                 {
                     return Error.Conflict(WinningEntryMessage);
                 }
 
                 await db
-                    .SeasonEntries.Where(entry => entry.Season == seasonId && entry.Team == teamId)
+                    .SeasonEntries.Where(entry =>
+                        entry.Season == SeasonId.From(seasonId) && entry.Team == TeamId.From(teamId)
+                    )
                     .ExecuteDeleteAsync(ct);
                 return Result.Ok();
             },

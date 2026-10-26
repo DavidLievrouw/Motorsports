@@ -3,16 +3,16 @@ using Motorsports.Common;
 
 namespace Motorsports.Rounds;
 
-internal sealed record RoundSeasonContext(int Id, string Sport, string? Label);
+internal sealed record RoundSeasonContext(SeasonId Id, SportName Sport, string? Label);
 
 internal sealed record RoundRow(
-    int Id,
+    RoundId Id,
     DateOnly Date,
     short Number,
     string? Name,
-    string Venue,
-    string VenueCountry,
-    string Status,
+    VenueName Venue,
+    CountryIso VenueCountry,
+    StatusName Status,
     sbyte StatusStep,
     decimal? Rating,
     string? WinningTeamName,
@@ -21,34 +21,34 @@ internal sealed record RoundRow(
 );
 
 internal sealed record RoundInfo(
-    int Id,
-    int SeasonId,
-    string Sport,
+    RoundId Id,
+    SeasonId SeasonId,
+    SportName Sport,
     string? SeasonLabel,
     DateOnly Date,
     short Number,
     string? Name,
-    string Venue,
-    string VenueCountry,
-    string Status,
+    VenueName Venue,
+    CountryIso VenueCountry,
+    StatusName Status,
     sbyte StatusStep,
     decimal? Rating,
     decimal? Rain,
     string? Note,
-    int? WinningTeam,
+    TeamId? WinningTeam,
     string? WinningTeamName,
     string? WinningTeamCountry,
     string[] WinningParticipants
 );
 
 internal sealed record EventHistoryItem(
-    int Id,
+    RoundId Id,
     DateOnly Date,
     short Number,
     string? Name,
-    string Venue,
-    string VenueCountry,
-    string Status,
+    VenueName Venue,
+    CountryIso VenueCountry,
+    StatusName Status,
     decimal? Rating,
     decimal? Rain,
     string? WinningTeamName,
@@ -56,7 +56,13 @@ internal sealed record EventHistoryItem(
     string[] Winners
 );
 
-internal sealed record RoundDeleteInfo(int Id, int SeasonId, string Label, bool HasWinners, bool HasWinningTeam);
+internal sealed record RoundDeleteInfo(
+    RoundId Id,
+    SeasonId SeasonId,
+    string Label,
+    bool HasWinners,
+    bool HasWinningTeam
+);
 
 public sealed class RoundForm
 {

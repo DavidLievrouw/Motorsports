@@ -1,32 +1,33 @@
 using FluentValidation;
+using Motorsports.Common;
 
 namespace Motorsports.Seasons;
 
 internal sealed record SeasonEntryRow(
-    int SeasonId,
-    int TeamId,
+    SeasonId SeasonId,
+    TeamId TeamId,
     string Name,
     string TeamName,
-    string Country,
+    CountryIso Country,
     string CountryName
 );
 
 internal sealed record SeasonEntryInfo(
-    int SeasonId,
-    int TeamId,
+    SeasonId SeasonId,
+    TeamId TeamId,
     string? SeasonLabel,
-    string Sport,
+    SportName Sport,
     string Name,
     string TeamName,
-    string Country,
+    CountryIso Country,
     string CountryName,
     bool IsSeasonWinner,
     bool IsRoundWinner
 );
 
-public sealed record SeasonEntryContext(int Id, string? Label, string Sport);
+public sealed record SeasonEntryContext(SeasonId Id, string? Label, SportName Sport);
 
-internal sealed record SeasonDeleteInfo(int Id, string? Label, int RoundCount, int EntryCount, int WinnerCount);
+internal sealed record SeasonDeleteInfo(SeasonId Id, string? Label, int RoundCount, int EntryCount, int WinnerCount);
 
 public sealed class SeasonEntryForm
 {

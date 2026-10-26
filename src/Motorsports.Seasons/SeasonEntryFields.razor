@@ -63,7 +63,7 @@ else
 
     protected override void OnParametersSet()
     {
-        _selectedTeam = _teams.FirstOrDefault(team => team.Id == Form.TeamId);
+        _selectedTeam = _teams.FirstOrDefault(team => team.Id.Value == Form.TeamId);
         _availableTeams = _teams.Where(team => team.Sport == Season.Sport).ToArray();
     }
 
@@ -85,7 +85,7 @@ else
     private Task TeamChangedAsync(TeamOption? team)
     {
         _selectedTeam = team;
-        Form.TeamId = team?.Id;
+        Form.TeamId = team?.Id.Value;
         if (string.IsNullOrWhiteSpace(Form.Name) && team is not null)
         {
             Form.Name = team.LatestEntryName;

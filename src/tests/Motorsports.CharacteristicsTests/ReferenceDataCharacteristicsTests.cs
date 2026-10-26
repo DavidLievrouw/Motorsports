@@ -176,9 +176,9 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
 
         await using (var db = await s.Factory.CreateDbContextAsync(Ct))
         {
-            (await db.Sports.AsNoTracking().Select(x => x.Name).ToListAsync(Ct)).ShouldBe(["RALLY"]);
-            (await db.Teams.AsNoTracking().Select(x => x.Sport).SingleAsync(Ct)).ShouldBe("RALLY");
-            (await db.Seasons.AsNoTracking().Select(x => x.Sport).SingleAsync(Ct)).ShouldBe("RALLY");
+            (await db.Sports.AsNoTracking().Select(x => x.Name.Value).ToListAsync(Ct)).ShouldBe(["RALLY"]);
+            (await db.Teams.AsNoTracking().Select(x => x.Sport.Value).SingleAsync(Ct)).ShouldBe("RALLY");
+            (await db.Seasons.AsNoTracking().Select(x => x.Sport.Value).SingleAsync(Ct)).ShouldBe("RALLY");
         }
 
         var form2 = (await s.Sports.GetFormAsync("RALLY", Ct))!;
@@ -231,7 +231,7 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
 
         await s.Sports.CreateAsync(new SportForm { Name = "Tennis" }, Ct);
 
-        (await s.Cache.GetSportsAsync(Ct)).Select(x => x.Name).ShouldBe(["Tennis"]);
+        (await s.Cache.GetSportsAsync(Ct)).Select(x => x.Name.Value).ShouldBe(["Tennis"]);
     }
 
     [Fact]
@@ -247,7 +247,7 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
         await s.Cache.GetCountriesAsync(Ct); // stale entry is served while a refresh runs
         await Task.Delay(300, Ct);
 
-        (await s.Cache.GetCountriesAsync(Ct)).Select(c => c.Iso).ShouldContain("AU");
+        (await s.Cache.GetCountriesAsync(Ct)).Select(c => c.Iso.Value).ShouldContain("AU");
     }
 
     // ---------- Venues ----------
@@ -258,7 +258,7 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
         var s = await StartAsync();
         var ok = await s.Venues.CreateAsync(new VenueForm { Name = " Silverstone ", Country = "gb" }, Ct);
         ok.IsSuccess.ShouldBeTrue();
-        (await s.Venues.GetAsync("Silverstone", Ct))!.Country.ShouldBe("GB");
+        (await s.Venues.GetAsync("Silverstone", Ct))!.Country.Value.ShouldBe("GB");
         (await s.Venues.GetAsync("Silverstone", Ct))!.CountryName.ShouldBe("United Kingdom");
 
         ShouldFailWith(
@@ -356,13 +356,15 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
         var sport = (await s.Sports.GetAsync("Racing", Ct))!;
         sport.LatestSeasonLabel.ShouldBe("2025");
         sport.WinningParticipants.ShouldHaveSingleItem().ShouldEndWith("Casey Racer");
-        (await s.Participants.GetAsync(1, Ct))?.Sports.ShouldBeSubsetOf(["Racing"]);
+        (await s.Participants.GetAsync(1, Ct))
+            ?.Sports.Select(sportName => sportName.Value)
+            .ShouldBeSubsetOf(["Racing"]);
         sport.WinningTeamName!.ShouldEndWith("Team 2025");
         sport.NextRoundDate.ShouldBe(new DateOnly(2026, 5, 2));
         sport.HasImage.ShouldBeTrue();
 
         var venue = (await s.Venues.GetAsync(venueName, Ct))!;
-        venue.Name.ShouldBe(venueName);
+        venue.Name.Value.ShouldBe(venueName);
         venue.RoundCount.ShouldBe(2);
         venue.Rounds[0].Name.ShouldBe("Next round");
         venue.Rounds[0].Label.ShouldBe("Round 1 - Next round");
@@ -375,10 +377,10 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
         venue.Rounds[1].WinningParticipants[0].ShouldNotBe("Casey Racer");
         venue.Rounds[1].WinningTeamName!.ShouldEndWith("Team 2025");
         venue.Rounds[1].WinningTeamName.ShouldNotBe("Team 2025");
-        venue.Rounds[1].Status.ShouldBe("Finished");
+        venue.Rounds[1].Status.Value.ShouldBe("Finished");
         venue.Rounds[1].Rating.ShouldBe(8m);
         venue.Rounds[1].Label.ShouldBe("Round 1 - Past round");
-        (await s.Teams.GetAsync(1, Ct))!.SeasonWins.Select(win => win.SeasonId).ShouldBe([2, 1]);
+        (await s.Teams.GetAsync(1, Ct))!.SeasonWins.Select(win => win.SeasonId.Value).ShouldBe([2, 1]);
         venue.Rounds[1].Rain.ShouldBe("Rain without impact");
     }
 
@@ -424,9 +426,9 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
             ErrorKind.Validation,
             nameof(TeamForm.Name)
         );
-        (await s.Teams.GetAsync((await s.Teams.CreateAsync(NewTeam("Canon", "f1"), Ct)).Value, Ct))!.Sport.ShouldBe(
-            "F1"
-        );
+        (
+            await s.Teams.GetAsync((await s.Teams.CreateAsync(NewTeam("Canon", "f1"), Ct)).Value, Ct)
+        )!.Sport.Value.ShouldBe("F1");
     }
 
     [Fact]
@@ -443,7 +445,7 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
         form.Name = "Scuderia";
         (await s.Teams.UpdateAsync(id, form, Ct)).IsSuccess.ShouldBeTrue();
         var info = (await s.Teams.GetAsync(id, Ct))!;
-        info.Country.ShouldBe("FR");
+        info.Country.Value.ShouldBe("FR");
         info.Name.ShouldBe("Scuderia");
 
         var changeSport = (await s.Teams.GetFormAsync(id, Ct))!;
@@ -536,7 +538,7 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
         );
         ok.IsSuccess.ShouldBeTrue();
         var info = (await s.Participants.GetAsync(ok.Value, Ct))!;
-        (info.Title, info.FirstName, info.LastName, info.Country).ShouldBe(("Sir", "Lewis", "Hamilton", "GB"));
+        (info.Title, info.FirstName, info.LastName, info.Country.Value).ShouldBe(("Sir", "Lewis", "Hamilton", "GB"));
         info.Sports.ShouldBeEmpty();
 
         var duplicate = await s.Participants.CreateAsync(
@@ -601,15 +603,15 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
         );
 
         var info = (await s.Participants.GetAsync(participantId, Ct))!;
-        info.Sports.ShouldBe(["F1", "MotoGP"]);
-        info.RoundWins.Select(win => win.RoundId).ShouldBe([1]);
-        info.RoundWins[0].Venue.ShouldBe("Silverstone");
-        info.RoundWins[0].VenueCountry.ShouldBe("GB");
+        info.Sports.Select(sportName => sportName.Value).ShouldBe(["F1", "MotoGP"]);
+        info.RoundWins.Select(win => win.RoundId.Value).ShouldBe([1]);
+        info.RoundWins[0].Venue.Value.ShouldBe("Silverstone");
+        info.RoundWins[0].VenueCountry.Value.ShouldBe("GB");
         info.RoundWins[0].Rating.ShouldBeNull();
-        info.SeasonWins.Select(win => win.SeasonId).ShouldBe([1, 3, 2]);
-        info.SeasonWins.Single(win => win.SeasonId == 1).StartDate.ShouldBe(new DateOnly(2025, 7, 1));
-        info.SeasonWins.Single(win => win.SeasonId == 1).EndDate.ShouldBe(new DateOnly(2025, 7, 1));
-        info.SeasonWins.Single(win => win.SeasonId == 2).StartDate.ShouldBeNull();
+        info.SeasonWins.Select(win => win.SeasonId.Value).ShouldBe([1, 3, 2]);
+        info.SeasonWins.Single(win => win.SeasonId.Value == 1).StartDate.ShouldBe(new DateOnly(2025, 7, 1));
+        info.SeasonWins.Single(win => win.SeasonId.Value == 1).EndDate.ShouldBe(new DateOnly(2025, 7, 1));
+        info.SeasonWins.Single(win => win.SeasonId.Value == 2).StartDate.ShouldBeNull();
     }
 
     [Fact]

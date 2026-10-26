@@ -21,7 +21,7 @@ else
                 <tr><th>Title</th><td>@_participant.Title</td></tr>
                 <tr><th>First name</th><td>@_participant.FirstName</td></tr>
                 <tr><th>Last name</th><td>@_participant.LastName</td></tr>
-                <tr><th>Country</th><td>@CountryFlag.WithName(_participant.Country, _participant.CountryName)</td></tr>
+                <tr><th>Country</th><td>@CountryFlag.WithName(_participant.Country.Value, _participant.CountryName)</td></tr>
                 <tr><th>Sports</th><td>@(_participant.Sports.Length == 0 ? "—" : string.Join(", ", _participant.Sports))</td></tr>
             </tbody>
         </MudSimpleTable>
@@ -33,7 +33,7 @@ else
     }
     else
     {
-        <MudDataGrid T="ParticipantRoundWin" RowClass="sport-accent-row" RowStyleFunc="@((item, _) => SportAccent.RowStyle(item.Sport))" Items="_participant.RoundWins" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1" Class="mb-2">
+        <MudDataGrid T="ParticipantRoundWin" RowClass="sport-accent-row" RowStyleFunc="@((item, _) => SportAccent.RowStyle(item.Sport.Value))" Items="_participant.RoundWins" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1" Class="mb-2">
             <Columns>
                 <TemplateColumn Title="Date">
                     <CellTemplate>@DateDisplay.Format(context.Item.Date)</CellTemplate>
@@ -41,7 +41,7 @@ else
                 <TemplateColumn Title="Sport / season">
                     <CellTemplate>
                         <MudStack Row="true" AlignItems="AlignItems.Center">
-                            <MudImage Src="@SportImage.Url(context.Item.Sport)" Alt="@($"{context.Item.Sport} logo")"
+                            <MudImage Src="@SportImage.Url(context.Item.Sport.Value)" Alt="@($"{context.Item.Sport} logo")"
                                       Width="28" Height="22" ObjectFit="ObjectFit.Contain" />
                             <span>@($"{context.Item.Sport} {context.Item.SeasonLabel}".Trim())</span>
                         </MudStack>
@@ -55,7 +55,7 @@ else
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Venue">
-                    <CellTemplate>@CountryFlag.WithName(context.Item.VenueCountry, context.Item.Venue)</CellTemplate>
+                    <CellTemplate>@CountryFlag.WithName(context.Item.VenueCountry.Value, context.Item.Venue.Value)</CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Rating">
                     <CellTemplate>@RatingDisplay.Format(context.Item.Rating)</CellTemplate>
@@ -70,12 +70,12 @@ else
     }
     else
     {
-        <MudDataGrid T="ParticipantSeasonWin" RowClass="sport-accent-row" RowStyleFunc="@((item, _) => SportAccent.RowStyle(item.Sport))" Items="_participant.SeasonWins" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1" Class="mb-2">
+        <MudDataGrid T="ParticipantSeasonWin" RowClass="sport-accent-row" RowStyleFunc="@((item, _) => SportAccent.RowStyle(item.Sport.Value))" Items="_participant.SeasonWins" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1" Class="mb-2">
             <Columns>
                 <TemplateColumn Title="Season">
                     <CellTemplate>
                         <MudStack Row="true" AlignItems="AlignItems.Center">
-                            <MudImage Src="@SportImage.Url(context.Item.Sport)" Alt="@($"{context.Item.Sport} logo")"
+                            <MudImage Src="@SportImage.Url(context.Item.Sport.Value)" Alt="@($"{context.Item.Sport} logo")"
                                       Width="28" Height="22" ObjectFit="ObjectFit.Contain" />
                             <MudLink Href="@($"/seasons/details/{context.Item.SeasonId}")">
                                 @($"{context.Item.Sport} {context.Item.Label} ({DateDisplay.Format(context.Item.StartDate)} – {DateDisplay.Format(context.Item.EndDate)})".Trim())

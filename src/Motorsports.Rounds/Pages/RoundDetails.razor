@@ -20,7 +20,7 @@ else
                 <tr><th>Season</th><td>@($"{_round.Sport} {_round.SeasonLabel}".Trim())</td></tr>
                 <tr><th>Date</th><td>@DateDisplay.Format(_round.Date)</td></tr>
                 <tr><th>Number</th><td>@(_round.Number == 0 ? "0 (non-championship)" : _round.Number)</td></tr>
-                <tr><th>Venue</th><td>@CountryFlag.WithName(_round.VenueCountry, _round.Venue)</td></tr>
+                <tr><th>Venue</th><td>@CountryFlag.WithName(_round.VenueCountry.Value, _round.Venue.Value)</td></tr>
                 <tr><th>Status</th><td>@_round.Status</td></tr>
                 <tr><th>Rating</th><td>@RatingDisplay.Format(_round.Rating)</td></tr>
                 <tr><th>Rain</th><td>@(RainLevelDisplay.Format(_round.Rain) ?? "—")</td></tr>
@@ -33,7 +33,7 @@ else
     <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2" Class="mb-2">
         <MudButton Href="@($"/rounds/edit/{Id}")" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
         <MudButton Href="@($"/rounds/delete/{Id}")" Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
-        <MudButton Href="@($"/seasons/{_round.SeasonId}/rounds")" Variant="Variant.Text">Back to rounds</MudButton>
+        <MudButton Href="@($"/seasons/{_round.SeasonId.Value}/rounds")" Variant="Variant.Text">Back to rounds</MudButton>
     </MudStack>
     <EventHistory RoundId="Id" />
 }

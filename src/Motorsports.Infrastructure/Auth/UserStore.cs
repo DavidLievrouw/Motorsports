@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Motorsports.Common;
 using Motorsports.Infrastructure.Entities;
 
 namespace Motorsports.Infrastructure.Auth;
@@ -12,7 +13,8 @@ public sealed class UserStore(IDbContextFactory<MotorsportsDbContext> factory)
     : IUserPasswordStore<User>,
         IUserSecurityStampStore<User>
 {
-    public Task<string> GetUserIdAsync(User user, CancellationToken cancellationToken) => Task.FromResult(user.Id);
+    public Task<string> GetUserIdAsync(User user, CancellationToken cancellationToken) =>
+        Task.FromResult(user.Id.Value);
 
     public Task<string?> GetUserNameAsync(User user, CancellationToken cancellationToken) =>
         Task.FromResult<string?>(user.Username);
@@ -67,7 +69,7 @@ public sealed class UserStore(IDbContextFactory<MotorsportsDbContext> factory)
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
         return await context
             .Users.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Id == UserId.From(userId) && !u.IsDeleted, cancellationToken);
     }
 
     public async Task<User?> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)

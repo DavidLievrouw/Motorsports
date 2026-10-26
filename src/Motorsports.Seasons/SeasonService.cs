@@ -28,7 +28,8 @@ internal sealed class SeasonService(
         var query = db.Seasons.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(sport))
         {
-            query = query.Where(season => season.Sport == sport);
+            var sportName = SportName.From(sport);
+            query = query.Where(season => season.Sport == sportName);
         }
 
         var rows = query.Select(season => new
@@ -66,10 +67,11 @@ internal sealed class SeasonService(
 
     public async Task<SeasonInfo?> GetAsync(int id, CancellationToken cancellationToken = default)
     {
+        var seasonId = SeasonId.From(id);
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         var season = await db
             .Seasons.AsNoTracking()
-            .Where(row => row.Id == id)
+            .Where(row => row.Id == seasonId)
             .Select(row => new
             {
                 row.Id,
@@ -99,7 +101,7 @@ internal sealed class SeasonService(
 
         var winners = await db
             .SeasonWinners.AsNoTracking()
-            .Where(winner => winner.Season == id)
+            .Where(winner => winner.Season == seasonId)
             .Join(
                 db.Participants.AsNoTracking(),
                 winner => winner.Participant,
@@ -117,7 +119,7 @@ internal sealed class SeasonService(
             .ToArrayAsync(cancellationToken);
         var winnerNames = winners
             .Select(participant =>
-                CountryFlag.WithName(participant.Country, participant.FirstName + " " + participant.LastName)
+                CountryFlag.WithName(participant.Country.Value, participant.FirstName + " " + participant.LastName)
             )
             .ToArray();
 
@@ -130,7 +132,7 @@ internal sealed class SeasonService(
             season.EndDate,
             season.WinningTeam,
             season.WinningTeamDetails is { } winningTeam
-                ? CountryFlag.WithName(winningTeam.Country, winningTeam.Name)
+                ? CountryFlag.WithName(winningTeam.Country.Value, winningTeam.Name)
                 : null,
             winnerNames,
             season.SeasonEntryCount,
@@ -140,10 +142,11 @@ internal sealed class SeasonService(
 
     public async Task<SeasonForm?> GetFormAsync(int id, CancellationToken cancellationToken = default)
     {
+        var seasonId = SeasonId.From(id);
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         var row = await db
             .Seasons.AsNoTracking()
-            .Where(season => season.Id == id)
+            .Where(season => season.Id == seasonId)
             .Select(season => new
             {
                 season.Sport,
@@ -158,16 +161,16 @@ internal sealed class SeasonService(
 
         var winners = await db
             .SeasonWinners.AsNoTracking()
-            .Where(winner => winner.Season == id)
+            .Where(winner => winner.Season == seasonId)
             .OrderBy(winner => winner.Participant)
             .Select(winner => winner.Participant)
             .ToListAsync(cancellationToken);
         return new SeasonForm
         {
-            Sport = row.Sport,
+            Sport = row.Sport.Value,
             Label = row.Label,
-            WinningTeam = row.WinningTeam,
-            Winners = winners,
+            WinningTeam = row.WinningTeam?.Value,
+            Winners = winners.Select(winner => winner.Value).ToList(),
             RowVersion = ComputeVersion(row.Sport, row.Label, row.WinningTeam, winners),
         };
     }
@@ -185,18 +188,18 @@ internal sealed class SeasonService(
             async (db, ct) =>
             {
                 var sport = await db
-                    .Sports.Where(row => row.Name == form.Sport!.Trim())
-                    .Select(row => row.Name)
+                    .Sports.Where(row => row.Name == SportName.From(form.Sport!.Trim()))
+                    .Select(row => (SportName?)row.Name)
                     .FirstOrDefaultAsync(ct);
                 if (sport is null)
                 {
                     return Error.Validation(nameof(SeasonForm.Sport), "Select a valid sport.");
                 }
 
-                var season = new Season { Sport = sport, Label = label };
+                var season = new Season { Sport = sport.Value, Label = label };
                 db.Seasons.Add(season);
                 await db.SaveChangesAsync(ct);
-                return Result<int>.Ok(season.Id);
+                return Result<int>.Ok(season.Id.Value);
             },
             cancellationToken: cancellationToken
         );
@@ -206,6 +209,7 @@ internal sealed class SeasonService(
 
     public async Task<Result<int>> UpdateAsync(int id, SeasonForm form, CancellationToken cancellationToken = default)
     {
+        var seasonId = SeasonId.From(id);
         var validation = await validator.ValidateAsync(form, cancellationToken);
         if (!validation.IsValid)
         {
@@ -217,12 +221,14 @@ internal sealed class SeasonService(
             return Error.Validation(nameof(SeasonForm.Winners), "Select each participant only once.");
         }
 
+        var participantIds = form.Winners.Select(ParticipantId.From).ToArray();
+        TeamId? winningTeamId = form.WinningTeam is { } formWinningTeam ? TeamId.From(formWinningTeam) : null;
         var label = form.Label!.Trim();
         var result = await factory.InTransactionAsync(
             async (db, ct) =>
             {
                 var rows = await db
-                    .Seasons.FromSql($"SELECT * FROM `Season` WHERE `Id` = {id} FOR UPDATE")
+                    .Seasons.FromSql($"SELECT * FROM `Season` WHERE `Id` = {seasonId.Value} FOR UPDATE")
                     .AsNoTracking()
                     .ToListAsync(ct);
                 if (rows.Count == 0)
@@ -232,7 +238,7 @@ internal sealed class SeasonService(
 
                 var current = rows[0];
                 var winnerIds = await db
-                    .SeasonWinners.Where(winner => winner.Season == id)
+                    .SeasonWinners.Where(winner => winner.Season == seasonId)
                     .OrderBy(winner => winner.Participant)
                     .Select(winner => winner.Participant)
                     .ToListAsync(ct);
@@ -247,22 +253,25 @@ internal sealed class SeasonService(
                 }
 
                 var sport = await db
-                    .Sports.Where(row => row.Name == form.Sport!.Trim())
-                    .Select(row => row.Name)
+                    .Sports.Where(row => row.Name == SportName.From(form.Sport!.Trim()))
+                    .Select(row => (SportName?)row.Name)
                     .FirstOrDefaultAsync(ct);
                 if (sport is null)
                 {
                     return Error.Validation(nameof(SeasonForm.Sport), "Select a valid sport.");
                 }
 
-                if (!string.Equals(sport, current.Sport, StringComparison.Ordinal))
+                if (sport.Value != current.Sport)
                 {
                     return Error.Validation(nameof(SeasonForm.Sport), "The sport of a season cannot be changed.");
                 }
 
                 if (
                     form.WinningTeam is { } teamId
-                    && !await db.SeasonEntries.AnyAsync(entry => entry.Season == id && entry.Team == teamId, ct)
+                    && !await db.SeasonEntries.AnyAsync(
+                        entry => entry.Season == seasonId && entry.Team == TeamId.From(teamId),
+                        ct
+                    )
                 )
                 {
                     return Error.Validation(nameof(SeasonForm.WinningTeam), "Select a team entered in this season.");
@@ -270,32 +279,36 @@ internal sealed class SeasonService(
 
                 if (
                     form.Winners.Count > 0
-                    && await db.Participants.CountAsync(participant => form.Winners.Contains(participant.Id), ct)
-                        != form.Winners.Count
+                    && await db.Participants.CountAsync(participant => participantIds.Contains(participant.Id), ct)
+                        != participantIds.Length
                 )
                 {
                     return Error.Validation(nameof(SeasonForm.Winners), "Select valid participants.");
                 }
 
                 await db
-                    .Seasons.Where(season => season.Id == id)
+                    .Seasons.Where(season => season.Id == seasonId)
                     .ExecuteUpdateAsync(
                         updates =>
                             updates
                                 .SetProperty(season => season.Label, label)
-                                .SetProperty(season => season.WinningTeam, form.WinningTeam),
+                                .SetProperty(season => season.WinningTeam, winningTeamId),
                         ct
                     );
-                await db.SeasonWinners.Where(winner => winner.Season == id).ExecuteDeleteAsync(ct);
-                if (form.Winners.Count > 0)
+                await db.SeasonWinners.Where(winner => winner.Season == seasonId).ExecuteDeleteAsync(ct);
+                if (participantIds.Length > 0)
                 {
                     db.SeasonWinners.AddRange(
-                        form.Winners.Select(participant => new SeasonWinner { Season = id, Participant = participant })
+                        participantIds.Select(participant => new SeasonWinner
+                        {
+                            Season = seasonId,
+                            Participant = participant,
+                        })
                     );
                     await db.SaveChangesAsync(ct);
                 }
 
-                return Result<int>.Ok(id);
+                return Result<int>.Ok(seasonId.Value);
             },
             IsolationLevel.Serializable,
             cancellationToken
@@ -306,27 +319,29 @@ internal sealed class SeasonService(
 
     public async Task<SeasonDeleteInfo?> GetDeleteInfoAsync(int id, CancellationToken cancellationToken = default)
     {
+        var seasonId = SeasonId.From(id);
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         return await db
             .Seasons.AsNoTracking()
-            .Where(season => season.Id == id)
+            .Where(season => season.Id == seasonId)
             .Select(season => new SeasonDeleteInfo(
                 season.Id,
                 season.Label,
-                db.Rounds.Count(round => round.Season == id),
-                db.SeasonEntries.Count(entry => entry.Season == id),
-                db.SeasonWinners.Count(winner => winner.Season == id)
+                db.Rounds.Count(round => round.Season == seasonId),
+                db.SeasonEntries.Count(entry => entry.Season == seasonId),
+                db.SeasonWinners.Count(winner => winner.Season == seasonId)
             ))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<Result<Unit>> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
+        var seasonId = SeasonId.From(id);
         var result = await factory.InTransactionAsync(
             async (db, ct) =>
             {
                 var rows = await db
-                    .Seasons.FromSql($"SELECT * FROM `Season` WHERE `Id` = {id} FOR UPDATE")
+                    .Seasons.FromSql($"SELECT * FROM `Season` WHERE `Id` = {seasonId.Value} FOR UPDATE")
                     .AsNoTracking()
                     .ToListAsync(ct);
                 if (rows.Count == 0)
@@ -334,14 +349,14 @@ internal sealed class SeasonService(
                     return Error.NotFound("Season not found.");
                 }
 
-                if (await db.Rounds.AnyAsync(round => round.Season == id, ct))
+                if (await db.Rounds.AnyAsync(round => round.Season == seasonId, ct))
                 {
                     return Error.Conflict(HasRoundsMessage);
                 }
 
-                await db.SeasonWinners.Where(winner => winner.Season == id).ExecuteDeleteAsync(ct);
-                await db.SeasonEntries.Where(entry => entry.Season == id).ExecuteDeleteAsync(ct);
-                await db.Seasons.Where(season => season.Id == id).ExecuteDeleteAsync(ct);
+                await db.SeasonWinners.Where(winner => winner.Season == seasonId).ExecuteDeleteAsync(ct);
+                await db.SeasonEntries.Where(entry => entry.Season == seasonId).ExecuteDeleteAsync(ct);
+                await db.Seasons.Where(season => season.Id == seasonId).ExecuteDeleteAsync(ct);
                 return Result.Ok();
             },
             IsolationLevel.Serializable,
@@ -360,6 +375,16 @@ internal sealed class SeasonService(
         }
     }
 
-    private static string ComputeVersion(string sport, string? label, int? winningTeam, IEnumerable<int> winners) =>
-        RowVersion.Compute(sport, label, winningTeam?.ToString(), string.Join(",", winners.Order()));
+    private static string ComputeVersion(
+        SportName sport,
+        string? label,
+        TeamId? winningTeam,
+        IEnumerable<ParticipantId> winners
+    ) =>
+        RowVersion.Compute(
+            sport.Value,
+            label,
+            winningTeam?.Value.ToString(),
+            string.Join(",", winners.Select(winner => winner.Value).Order())
+        );
 }

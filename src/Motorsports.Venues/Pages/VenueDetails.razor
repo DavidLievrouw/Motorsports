@@ -21,7 +21,7 @@ else
         <MudSimpleTable Dense="true" Style="overflow-x:auto">
             <tbody>
                 <tr><th>Name</th><td>@_venue.Name</td></tr>
-                <tr><th>Country</th><td>@CountryFlag.WithName(_venue.Country, _venue.CountryName)</td></tr>
+                <tr><th>Country</th><td>@CountryFlag.WithName(_venue.Country.Value, _venue.CountryName)</td></tr>
                 <tr><th>Rounds</th><td>@_venue.RoundCount</td></tr>
             </tbody>
         </MudSimpleTable>
@@ -33,7 +33,7 @@ else
     }
     else
     {
-        <MudDataGrid T="VenueRoundInfo" RowClass="sport-accent-row" RowStyleFunc="@((item, _) => SportAccent.RowStyle(item.Sport))" Items="_venue.Rounds" Dense="true" Hover="true" Striped="true"
+        <MudDataGrid T="VenueRoundInfo" RowClass="sport-accent-row" RowStyleFunc="@((item, _) => SportAccent.RowStyle(item.Sport.Value))" Items="_venue.Rounds" Dense="true" Hover="true" Striped="true"
                      Bordered="true" Elevation="1" Class="mb-4">
             <Columns>
                 <TemplateColumn Title="Date" Sortable="false">
@@ -44,7 +44,7 @@ else
                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                             @if (context.Item.SportHasImage)
                             {
-                                <MudImage Src="@SportImage.Url(context.Item.Sport)" Alt="@($"{context.Item.Sport} logo")" Width="40" Height="30" ObjectFit="ObjectFit.Contain" />
+                                <MudImage Src="@SportImage.Url(context.Item.Sport.Value)" Alt="@($"{context.Item.Sport} logo")" Width="40" Height="30" ObjectFit="ObjectFit.Contain" />
                             }
                             <MudText>@context.Item.Sport</MudText>
                         </MudStack>
@@ -71,7 +71,7 @@ else
         </MudDataGrid>
     }
     <MudStack Row="true" Spacing="2">
-        <MudButton Href="@($"/venues/edit/{Uri.EscapeDataString(_venue.Name)}")" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
+        <MudButton Href="@($"/venues/edit/{Uri.EscapeDataString(_venue.Name.Value)}")" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
         <MudButton Href="/venues" Variant="Variant.Text">Back to venues</MudButton>
     </MudStack>
 }

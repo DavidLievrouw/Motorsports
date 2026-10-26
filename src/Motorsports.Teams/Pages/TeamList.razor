@@ -19,19 +19,19 @@
 }
 else
 {
-    <MudDataGrid T="TeamRow" RowClass="sport-accent-row" RowStyleFunc="@((item, _) => SportAccent.RowStyle(item.Sport))" Items="_result.Items" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1">
+    <MudDataGrid T="TeamRow" RowClass="sport-accent-row" RowStyleFunc="@((item, _) => SportAccent.RowStyle(item.Sport.Value))" Items="_result.Items" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1">
         <Columns>
             <PropertyColumn Property="team => team.Name" Title="Name" />
             <TemplateColumn Title="Sport">
                 <CellTemplate>
                     <MudStack Row="true" AlignItems="AlignItems.Center">
-                        <MudImage Src="@SportImage.Url(context.Item.Sport)" Alt="@($"{context.Item.Sport} logo")"
+                        <MudImage Src="@SportImage.Url(context.Item.Sport.Value)" Alt="@($"{context.Item.Sport} logo")"
                                   Width="28" Height="22" ObjectFit="ObjectFit.Contain" />
                         <span>@context.Item.Sport</span>
                     </MudStack>
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="team => team.CountryName" Title="Country"><CellTemplate>@CountryFlag.WithName(context.Item.Country, context.Item.CountryName)</CellTemplate></PropertyColumn>
+            <PropertyColumn Property="team => team.CountryName" Title="Country"><CellTemplate>@CountryFlag.WithName(context.Item.Country.Value, context.Item.CountryName)</CellTemplate></PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudButton Href="@($"/teams/details/{context.Item.Id}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>

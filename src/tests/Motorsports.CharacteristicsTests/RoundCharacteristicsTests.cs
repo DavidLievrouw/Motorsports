@@ -150,7 +150,7 @@ public sealed class RoundCharacteristicsTests(MariaDbFixture fixture)
         tooEarly.Error.Kind.ShouldBe(ErrorKind.Validation);
 
         (await services.Rounds.MarkReadyToWatchAsync(roundId, Ct)).IsSuccess.ShouldBeTrue();
-        (await services.Rounds.GetAsync(roundId, Ct))!.Status.ShouldBe("ReadyToWatch");
+        (await services.Rounds.GetAsync(roundId, Ct))!.Status.Value.ShouldBe("ReadyToWatch");
         (await services.Rounds.MarkReadyToWatchAsync(roundId, Ct)).IsSuccess.ShouldBeTrue();
 
         var form = (await services.Rounds.GetFormAsync(roundId, Ct))!;
@@ -200,7 +200,7 @@ public sealed class RoundCharacteristicsTests(MariaDbFixture fixture)
         );
         var history = await services.Rounds.GetEventHistoryAsync(later.Value, Ct);
         history.Count.ShouldBe(50);
-        history.Select(item => item.Id).ShouldContain(roundId);
+        history.Select(item => item.Id.Value).ShouldContain(roundId);
 
         var cleared = (await services.Rounds.GetFormAsync(roundId, Ct))!;
         cleared.WinningTeam = null;
@@ -209,8 +209,8 @@ public sealed class RoundCharacteristicsTests(MariaDbFixture fixture)
         (await services.Rounds.DeleteAsync(roundId, Ct)).IsSuccess.ShouldBeTrue();
         (await services.Rounds.GetAsync(roundId, Ct)).ShouldBeNull();
 
-        (await services.Cache.GetVenuesAsync(Ct)).Select(venue => venue.Name).ShouldContain("Spa");
-        (await services.Cache.GetStatusesAsync(Ct)).Select(status => status.Name).ShouldContain("Finished");
+        (await services.Cache.GetVenuesAsync(Ct)).Select(venue => venue.Name.Value).ShouldContain("Spa");
+        (await services.Cache.GetStatusesAsync(Ct)).Select(status => status.Name.Value).ShouldContain("Finished");
     }
 
     [Fact]
@@ -249,6 +249,6 @@ public sealed class RoundCharacteristicsTests(MariaDbFixture fixture)
 
         var list = await services.Rounds.ListAsync(seasonId, Ct);
         list.Select(round => round.Date).ShouldBe([new DateOnly(2026, 3, 1), new DateOnly(2026, 6, 1)]);
-        list[0].VenueCountry.ShouldBe("GB");
+        list[0].VenueCountry.Value.ShouldBe("GB");
     }
 }

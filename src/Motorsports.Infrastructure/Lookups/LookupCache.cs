@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Motorsports.Common;
 
 namespace Motorsports.Infrastructure.Lookups;
 
@@ -24,19 +25,25 @@ public sealed class LookupCacheOptions
     public TimeSpan MaxAge { get; set; } = TimeSpan.FromSeconds(30);
 }
 
-public sealed record CountryOption(string Iso, string Name);
+public sealed record CountryOption(CountryIso Iso, string Name);
 
-public sealed record SportOption(string Name, string? FullName);
+public sealed record SportOption(SportName Name, string? FullName);
 
-public sealed record ParticipantOption(int Id, string FirstName, string LastName, string Country, string CountryName);
+public sealed record ParticipantOption(
+    ParticipantId Id,
+    string FirstName,
+    string LastName,
+    CountryIso Country,
+    string CountryName
+);
 
-public sealed record TeamHistoryOption(int SeasonId, string? SeasonLabel, string Name, DateOnly? StartDate);
+public sealed record TeamHistoryOption(SeasonId SeasonId, string? SeasonLabel, string Name, DateOnly? StartDate);
 
 public sealed record TeamOption(
-    int Id,
+    TeamId Id,
     string Name,
-    string Sport,
-    string Country,
+    SportName Sport,
+    CountryIso Country,
     string CountryName,
     TeamHistoryOption[] History
 )
@@ -45,19 +52,19 @@ public sealed record TeamOption(
 }
 
 public sealed record SeasonEntryOption(
-    int SeasonId,
-    int TeamId,
+    SeasonId SeasonId,
+    TeamId TeamId,
     string Name,
     string? SeasonLabel,
-    string Sport,
+    SportName Sport,
     string TeamName,
-    string Country,
+    CountryIso Country,
     string CountryName
 );
 
-public sealed record VenueOption(string Name, string Country, string CountryName);
+public sealed record VenueOption(VenueName Name, CountryIso Country, string CountryName);
 
-public sealed record StatusOption(string Name, sbyte Step);
+public sealed record StatusOption(StatusName Name, sbyte Step);
 
 /// <summary>
 /// Shared, immutable lookup lists (one query per kind). Writers call <see cref="Invalidate"/> after commit: the next read
@@ -90,10 +97,16 @@ public sealed class LookupCache
                 await using var context = await factory.CreateDbContextAsync(ct);
                 var rows = await context
                     .Countries.AsNoTracking()
-                    .Select(c => new CountryOption(c.Iso, c.NiceName ?? c.Name ?? c.Iso))
-                    .ToListAsync(ct);
-                rows.Sort(static (a, b) => string.CompareOrdinal(a.Name, b.Name));
-                return [.. rows];
+                    .Select(c => new
+                    {
+                        c.Iso,
+                        c.NiceName,
+                        c.Name,
+                    })
+                    .ToArrayAsync(ct);
+                return rows.Select(c => new CountryOption(c.Iso, c.NiceName ?? c.Name ?? c.Iso.Value))
+                    .OrderBy(static country => country.Name, StringComparer.Ordinal)
+                    .ToArray();
             },
             time,
             maxAge,
@@ -124,15 +137,23 @@ public sealed class LookupCache
                     .ThenBy(p => p.FirstName)
                     .ThenBy(p => p.Title)
                     .ThenBy(p => p.Country)
-                    .Select(p => new ParticipantOption(
+                    .Select(p => new
+                    {
                         p.Id,
                         p.FirstName,
                         p.LastName,
                         p.Country,
-                        p.CountryRef!.NiceName ?? p.CountryRef.Name ?? p.Country
-                    ))
+                        CountryName = p.CountryRef!.NiceName ?? p.CountryRef.Name,
+                    })
                     .ToArrayAsync(ct);
-                return rows;
+                return rows.Select(p => new ParticipantOption(
+                        p.Id,
+                        p.FirstName,
+                        p.LastName,
+                        p.Country,
+                        p.CountryName ?? p.Country.Value
+                    ))
+                    .ToArray();
             },
             time,
             maxAge,
@@ -152,8 +173,8 @@ public sealed class LookupCache
                         team.Name,
                         Sport = team.SportRef!.Name,
                         team.Country,
-                        CountryName = team.CountryRef!.NiceName ?? team.CountryRef.Name ?? team.Country,
-                        SeasonId = (int?)entry!.Season,
+                        CountryName = team.CountryRef!.NiceName ?? team.CountryRef.Name,
+                        SeasonId = (SeasonId?)entry!.Season,
                         SeasonLabel = entry.SeasonRef!.Label,
                         EntryName = entry.Name,
                         StartDate = context
@@ -179,7 +200,7 @@ public sealed class LookupCache
                         group.Key.Name,
                         group.Key.Sport,
                         group.Key.Country,
-                        group.Key.CountryName,
+                        group.Key.CountryName ?? group.Key.Country.Value,
                         group
                             .Where(row => row.SeasonId.HasValue)
                             .Select(row => new TeamHistoryOption(
@@ -206,20 +227,32 @@ public sealed class LookupCache
             async ct =>
             {
                 await using var context = await factory.CreateDbContextAsync(ct);
-                return await context
+                var rows = await context
                     .SeasonEntries.AsNoTracking()
                     .OrderBy(entry => entry.Name)
-                    .Select(entry => new SeasonEntryOption(
+                    .Select(entry => new
+                    {
                         entry.Season,
                         entry.Team,
                         entry.Name,
-                        entry.SeasonRef!.Label,
-                        entry.SeasonRef.Sport,
-                        entry.TeamRef!.Name,
-                        entry.TeamRef.Country,
-                        entry.TeamRef.CountryRef!.NiceName ?? entry.TeamRef.CountryRef.Name ?? entry.TeamRef.Country
-                    ))
+                        SeasonLabel = entry.SeasonRef!.Label,
+                        Sport = entry.SeasonRef.Sport,
+                        TeamName = entry.TeamRef!.Name,
+                        Country = entry.TeamRef.Country,
+                        CountryName = entry.TeamRef.CountryRef!.NiceName ?? entry.TeamRef.CountryRef.Name,
+                    })
                     .ToArrayAsync(ct);
+                return rows.Select(entry => new SeasonEntryOption(
+                        entry.Season,
+                        entry.Team,
+                        entry.Name,
+                        entry.SeasonLabel,
+                        entry.Sport,
+                        entry.TeamName,
+                        entry.Country,
+                        entry.CountryName ?? entry.Country.Value
+                    ))
+                    .ToArray();
             },
             time,
             maxAge,
@@ -229,15 +262,22 @@ public sealed class LookupCache
             async ct =>
             {
                 await using var context = await factory.CreateDbContextAsync(ct);
-                return await context
+                var rows = await context
                     .Venues.AsNoTracking()
                     .OrderBy(venue => venue.Name)
-                    .Select(venue => new VenueOption(
+                    .Select(venue => new
+                    {
                         venue.Name,
                         venue.Country,
-                        venue.CountryRef!.NiceName ?? venue.CountryRef.Name ?? venue.Country
-                    ))
+                        CountryName = venue.CountryRef!.NiceName ?? venue.CountryRef.Name,
+                    })
                     .ToArrayAsync(ct);
+                return rows.Select(venue => new VenueOption(
+                        venue.Name,
+                        venue.Country,
+                        venue.CountryName ?? venue.Country.Value
+                    ))
+                    .ToArray();
             },
             time,
             maxAge,

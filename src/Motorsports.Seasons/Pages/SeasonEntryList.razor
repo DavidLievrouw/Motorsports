@@ -29,13 +29,13 @@ else
                 <PropertyColumn Property="entry => entry.TeamName" Title="Team" />
                 <PropertyColumn Property="entry => entry.Name" Title="Name during season" />
                 <TemplateColumn Title="Country" Sortable="false">
-                    <CellTemplate>@CountryFlag.WithName(context.Item.Country, context.Item.CountryName)</CellTemplate>
+                    <CellTemplate>@CountryFlag.WithName(context.Item.Country.Value, context.Item.CountryName)</CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Actions" Sortable="false">
                     <CellTemplate>
-                        <MudButton Href="@($"/season-entries/details/{SeasonId}/{context.Item.TeamId}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>
-                        <MudButton Href="@($"/season-entries/edit/{SeasonId}/{context.Item.TeamId}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
-                        <MudButton Href="@($"/season-entries/delete/{SeasonId}/{context.Item.TeamId}")" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
+                        <MudButton Href="@($"/season-entries/details/{SeasonId}/{context.Item.TeamId.Value}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>
+                        <MudButton Href="@($"/season-entries/edit/{SeasonId}/{context.Item.TeamId.Value}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
+                        <MudButton Href="@($"/season-entries/delete/{SeasonId}/{context.Item.TeamId.Value}")" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
                     </CellTemplate>
                 </TemplateColumn>
             </Columns>

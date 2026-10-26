@@ -19,5 +19,10 @@ public static class DatabaseConfiguration
     public static IServiceCollection AddMotorsportsDatabase(
         this IServiceCollection services,
         string connectionString
-    ) => services.AddPooledDbContextFactory<MotorsportsDbContext>(o => Configure(o, connectionString));
+    ) =>
+        services
+            .AddPooledDbContextFactory<MotorsportsDbContext>(o => Configure(o, connectionString))
+            .AddScoped<MotorsportsDbContext>(sp =>
+                sp.GetRequiredService<IDbContextFactory<MotorsportsDbContext>>().CreateDbContext()
+            );
 }

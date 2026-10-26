@@ -1,10 +1,11 @@
 using FluentValidation;
+using Motorsports.Common;
 
 namespace Motorsports.Seasons;
 
 internal sealed record SeasonRow(
-    int Id,
-    string Sport,
+    SeasonId Id,
+    SportName Sport,
     string? SportFullName,
     bool SportHasImage,
     string? Label,
@@ -15,13 +16,13 @@ internal sealed record SeasonRow(
 );
 
 internal sealed record SeasonInfo(
-    int Id,
-    string Sport,
+    SeasonId Id,
+    SportName Sport,
     string? SportFullName,
     string? Label,
     DateOnly? StartDate,
     DateOnly? EndDate,
-    int? WinningTeam,
+    TeamId? WinningTeam,
     string? WinningTeamName,
     string[] WinningParticipants,
     int SeasonEntryCount,

@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Common;
+using Motorsports.Common.Fuzzy;
 using Motorsports.Infrastructure;
 using Motorsports.Infrastructure.Entities;
 using Motorsports.Infrastructure.Lookups;
@@ -28,32 +29,47 @@ internal sealed class VenueService(
         var query = db.Venues.AsNoTracking();
         if (search is not null)
         {
-            query = query.Where(v =>
-                v.Name.Contains(search) || (v.CountryRef!.NiceName ?? v.CountryRef.Name ?? v.Country).Contains(search)
-            );
+            var normalizedSearch = FuzzyMatcher.Normalize(search);
+            var matchingNames = (await cache.GetVenuesAsync(cancellationToken))
+                .Where(venue =>
+                    FuzzyMatcher.Normalize(venue.Name.Value).Contains(normalizedSearch, StringComparison.Ordinal)
+                    || FuzzyMatcher.Normalize(venue.CountryName).Contains(normalizedSearch, StringComparison.Ordinal)
+                    || FuzzyMatcher.Normalize(venue.Country.Value).Contains(normalizedSearch, StringComparison.Ordinal)
+                )
+                .Select(venue => venue.Name)
+                .Distinct()
+                .ToArray();
+            query = query.Where(venue => matchingNames.Contains(venue.Name));
         }
 
         var total = await query.CountAsync(cancellationToken);
-        var items = await query
+        var rows = await query
             .OrderBy(v => v.Name)
             .Skip((page - 1) * Paging.DefaultPageSize)
             .Take(Paging.DefaultPageSize)
-            .Select(v => new VenueRow(v.Name, v.Country, v.CountryRef!.NiceName ?? v.CountryRef.Name ?? v.Country))
-            .ToListAsync(cancellationToken);
+            .Select(v => new
+            {
+                v.Name,
+                v.Country,
+                CountryName = v.CountryRef!.NiceName ?? v.CountryRef.Name,
+            })
+            .ToArrayAsync(cancellationToken);
+        var items = rows.Select(v => new VenueRow(v.Name, v.Country, v.CountryName ?? v.Country.Value)).ToArray();
         return new PagedResult<VenueRow>(items, total, page, Paging.DefaultPageSize);
     }
 
     public async Task<VenueInfo?> GetAsync(string name, CancellationToken cancellationToken = default)
     {
+        var venueName = VenueName.From(name);
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         var venue = await db
             .Venues.AsNoTracking()
-            .Where(v => v.Name == name)
+            .Where(v => v.Name == venueName)
             .Select(v => new
             {
                 v.Name,
                 v.Country,
-                CountryName = v.CountryRef!.NiceName ?? v.CountryRef.Name ?? v.Country,
+                CountryName = v.CountryRef!.NiceName ?? v.CountryRef.Name,
             })
             .FirstOrDefaultAsync(cancellationToken);
         if (venue is null)
@@ -61,6 +77,7 @@ internal sealed class VenueService(
             return null;
         }
 
+        var countryName = venue.CountryName ?? venue.Country.Value;
         var roundRows = await db
             .Rounds.AsNoTracking()
             .Where(round => round.Venue == venue.Name)
@@ -78,10 +95,10 @@ internal sealed class VenueService(
                 round.Rating,
                 round.Rain,
                 TeamCountry = round.WinningTeam == null
-                    ? null
+                    ? (CountryIso?)null
                     : db
                         .Teams.Where(team => team.Id == round.WinningTeam.Value)
-                        .Select(team => team.Country)
+                        .Select(team => (CountryIso?)team.Country)
                         .FirstOrDefault(),
                 TeamName = round.WinningTeam == null
                     ? null
@@ -106,12 +123,12 @@ internal sealed class VenueService(
             round.Status,
             round.Rating,
             RainLevelDisplay.Format(round.Rain),
-            round.TeamName is null ? null : CountryFlag.WithName(round.TeamCountry, round.TeamName),
+            round.TeamName is null ? null : CountryFlag.WithName(round.TeamCountry?.Value, round.TeamName),
             Array.Empty<string>()
         ));
         if (rounds.Count == 0)
         {
-            return new VenueInfo(venue.Name, venue.Country, venue.CountryName, 0, rounds);
+            return new VenueInfo(venue.Name, venue.Country, countryName, 0, rounds);
         }
 
         var roundIds = rounds.Select(round => round.Id).ToArray();
@@ -139,7 +156,7 @@ internal sealed class VenueService(
             .ToDictionary(
                 group => group.Key,
                 IReadOnlyList<string> (group) =>
-                    [.. group.Select(w => CountryFlag.WithName(w.Country, $"{w.FirstName} {w.LastName}"))]
+                    [.. group.Select(w => CountryFlag.WithName(w.Country.Value, $"{w.FirstName} {w.LastName}"))]
             );
         var roundsWithWinners = rounds
             .Select(round =>
@@ -150,7 +167,7 @@ internal sealed class VenueService(
             )
             .ToArray();
 
-        return new VenueInfo(venue.Name, venue.Country, venue.CountryName, roundsWithWinners.Length, roundsWithWinners);
+        return new VenueInfo(venue.Name, venue.Country, countryName, roundsWithWinners.Length, roundsWithWinners);
     }
 
     public async Task<VenueForm?> GetFormAsync(string name, CancellationToken cancellationToken = default)
@@ -158,16 +175,16 @@ internal sealed class VenueService(
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         var row = await db
             .Venues.AsNoTracking()
-            .Where(v => v.Name == name)
+            .Where(v => v.Name == VenueName.From(name))
             .Select(v => new { v.Name, v.Country })
             .FirstOrDefaultAsync(cancellationToken);
         return row is null
             ? null
             : new VenueForm
             {
-                Name = row.Name,
-                Country = row.Country,
-                RowVersion = RowVersion.Compute(row.Name, row.Country),
+                Name = row.Name.Value,
+                Country = row.Country.Value,
+                RowVersion = RowVersion.Compute(row.Name.Value, row.Country.Value),
             };
     }
 
@@ -180,6 +197,7 @@ internal sealed class VenueService(
         }
 
         var name = form.Name!.Trim();
+        var venueName = VenueName.From(name);
         var result = await factory.InTransactionAsync<string>(
             async (db, ct) =>
             {
@@ -189,12 +207,12 @@ internal sealed class VenueService(
                     return Error.Validation(nameof(VenueForm.Country), "Select a valid country.");
                 }
 
-                if (await db.Venues.AnyAsync(v => v.Name == name, ct))
+                if (await db.Venues.AnyAsync(v => v.Name == venueName, ct))
                 {
                     return Error.Validation(nameof(VenueForm.Name), "A venue with this name already exists.");
                 }
 
-                db.Venues.Add(new Venue { Name = name, Country = country });
+                db.Venues.Add(new Venue { Name = venueName, Country = country.Value });
                 await db.SaveChangesAsync(ct);
                 return Result<string>.Ok(name);
             },
@@ -237,33 +255,36 @@ internal sealed class VenueService(
                 }
 
                 var current = rows[0];
-                if (!RowVersion.Matches(form.RowVersion, RowVersion.Compute(current.Name, current.Country)))
+                if (!RowVersion.Matches(form.RowVersion, RowVersion.Compute(current.Name.Value, current.Country.Value)))
                 {
                     return Error.Conflict(StaleMessage);
                 }
 
-                if (string.Equals(newName, current.Name, StringComparison.Ordinal))
+                if (string.Equals(newName, current.Name.Value, StringComparison.Ordinal))
                 {
-                    if (!string.Equals(country, current.Country, StringComparison.Ordinal))
+                    if (country.Value != current.Country)
                     {
                         await db
                             .Venues.Where(v => v.Name == current.Name)
-                            .ExecuteUpdateAsync(s => s.SetProperty(x => x.Country, country), ct);
+                            .ExecuteUpdateAsync(s => s.SetProperty(x => x.Country, country.Value), ct);
                     }
 
-                    return Result<string>.Ok(current.Name);
+                    return Result<string>.Ok(current.Name.Value);
                 }
 
                 // At most one row matches under the case/accent-insensitive collation: this venue (case/accent-only
                 // rename) or a different venue (duplicate).
-                var match = await db.Venues.Where(v => v.Name == newName).Select(v => v.Name).FirstOrDefaultAsync(ct);
-                var sameRow = match is not null && string.Equals(match, current.Name, StringComparison.Ordinal);
+                var match = await db
+                    .Venues.Where(v => v.Name == VenueName.From(newName))
+                    .Select(v => (VenueName?)v.Name)
+                    .FirstOrDefaultAsync(ct);
+                var sameRow = match is { } matchedName && matchedName == current.Name;
                 if (match is not null && !sameRow)
                 {
                     return Error.Validation(nameof(VenueForm.Name), "A venue with this name already exists.");
                 }
 
-                await RenameAsync(db, current.Name, newName, country, sameRow, ct);
+                await RenameAsync(db, current.Name.Value, newName, country.Value.Value, sameRow, ct);
                 return Result<string>.Ok(newName);
             },
             cancellationToken: cancellationToken
@@ -280,14 +301,17 @@ internal sealed class VenueService(
         }
     }
 
-    private static async Task<string?> CanonicalCountryAsync(
+    private static async Task<CountryIso?> CanonicalCountryAsync(
         MotorsportsDbContext db,
         string country,
         CancellationToken ct
     )
     {
         var key = country.Trim();
-        return await db.Countries.Where(c => c.Iso == key).Select(c => c.Iso).FirstOrDefaultAsync(ct);
+        return await db
+            .Countries.Where(c => c.Iso == CountryIso.From(key))
+            .Select(c => (CountryIso?)c.Iso)
+            .FirstOrDefaultAsync(ct);
     }
 
     // Name is the primary key, referenced by Round with RESTRICT: insert the new row, repoint, delete the old one.
@@ -302,21 +326,22 @@ internal sealed class VenueService(
     )
     {
         var interim = viaTemporaryKey ? $"~{Guid.NewGuid():N}" : newName;
-        db.Venues.Add(new Venue { Name = interim, Country = country });
+        var countryIso = CountryIso.From(country);
+        db.Venues.Add(new Venue { Name = VenueName.From(interim), Country = countryIso });
         await db.SaveChangesAsync(ct);
         await db
-            .Rounds.Where(r => r.Venue == oldName)
-            .ExecuteUpdateAsync(s => s.SetProperty(r => r.Venue, interim), ct);
-        await db.Venues.Where(v => v.Name == oldName).ExecuteDeleteAsync(ct);
+            .Rounds.Where(r => r.Venue == VenueName.From(oldName))
+            .ExecuteUpdateAsync(s => s.SetProperty(r => r.Venue, VenueName.From(interim)), ct);
+        await db.Venues.Where(v => v.Name == VenueName.From(oldName)).ExecuteDeleteAsync(ct);
 
         if (viaTemporaryKey)
         {
-            db.Venues.Add(new Venue { Name = newName, Country = country });
+            db.Venues.Add(new Venue { Name = VenueName.From(newName), Country = countryIso });
             await db.SaveChangesAsync(ct);
             await db
-                .Rounds.Where(r => r.Venue == interim)
-                .ExecuteUpdateAsync(s => s.SetProperty(r => r.Venue, newName), ct);
-            await db.Venues.Where(v => v.Name == interim).ExecuteDeleteAsync(ct);
+                .Rounds.Where(r => r.Venue == VenueName.From(interim))
+                .ExecuteUpdateAsync(s => s.SetProperty(r => r.Venue, VenueName.From(newName)), ct);
+            await db.Venues.Where(v => v.Name == VenueName.From(interim)).ExecuteDeleteAsync(ct);
         }
     }
 }

@@ -277,5 +277,33 @@ Add another phase to the plan. Ask any questions you might have.
 
 --------------------
 
+Vogen:
+- Use the EfCoreValueConverter in the vogen objects. Documented here https://stevedunn.github.io/Vogen/efcoreintegrationhowto.html. That might simplify the code.
+- SportName, StatusName: Create predefined values. It's a known list. As documented here: https://stevedunn.github.io/Vogen/instances.html. Avoid magic strings.
+- Make sure that the following behavioral configuration is applied to all Vogen value objects:
+    fromPrimitiveCasting: CastOperator.Explicit,
+    toPrimitiveCasting: CastOperator.Explicit,
+    parsableForStrings: ParsableForStrings.GenerateMethodsAndInterface,
+    parsableForPrimitives: ParsableForPrimitives.HoistMethodsAndInterfaces,
+    primitiveEqualityGeneration: PrimitiveEqualityGeneration.Omit,
+    isInitializedMethodGeneration: IsInitializedMethodGeneration.Generate,
+    stringComparers: StringComparersGeneration.Generate,
+    tryFromGeneration: TryFromGeneration.GenerateBoolAndErrorOrMethods,
+    deserializationStrictness: DeserializationStrictness.AllowValidAndKnownInstances,
+    comparison: ComparisonGeneration.Omit,
+    debuggerAttributes: DebuggerAttributeGeneration.Basic
+
+----------------------
+
 Future:
-- Security hardening
+- Switch from Pomelo to Microting.EntityFrameworkCore.MySql, that supports dotnet10 and dotnet11 in the near future.
+- Update dependencies and NuGet packages.
+- Update to dotnet 11. Target framework, NuGet references and docker image.
+- Links in dark mode are purple. Very hard to see. Make the color a bit lighter.
+- Motorsports Title in the header should be a link that navigates to the home page.
+- The legacy app does not exist anymore. Remove any backward compatibility, and legacy columns from the database.
+- Finish round form:
+    - When editing a round from the Home page, navigate to this specialized form to edit the round.
+    - Date, Number, Name, Venue are read-only.
+    - The status should be quickselect with only end states: Finished, Cancelled, Postponed, Stopped
+- Find a solution for the app being disabled that much, requiring a full page refresh

@@ -1,20 +1,27 @@
 using FluentValidation;
+using Motorsports.Common;
 
 namespace Motorsports.Teams;
 
-internal sealed record TeamRow(int Id, string Name, string Sport, string Country, string CountryName);
+internal sealed record TeamRow(TeamId Id, string Name, SportName Sport, CountryIso Country, string CountryName);
 
 internal sealed record TeamInfo(
-    int Id,
+    TeamId Id,
     string Name,
-    string Sport,
-    string Country,
+    SportName Sport,
+    CountryIso Country,
     string CountryName,
     int SeasonEntryCount,
     TeamSeasonWin[] SeasonWins
 );
 
-internal sealed record TeamSeasonWin(int SeasonId, string Sport, string? Label, DateOnly? StartDate, DateOnly? EndDate);
+internal sealed record TeamSeasonWin(
+    SeasonId SeasonId,
+    SportName Sport,
+    string? Label,
+    DateOnly? StartDate,
+    DateOnly? EndDate
+);
 
 /// <summary>Form model for create and edit. <see cref="RowVersion"/> is the optimistic concurrency token of an edit.</summary>
 public sealed class TeamForm

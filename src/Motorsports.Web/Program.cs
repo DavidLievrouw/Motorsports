@@ -1,8 +1,10 @@
 using System.Net;
 using System.Reflection;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -23,6 +25,34 @@ using Motorsports.Web;
 using Motorsports.Web.Components;
 using MudBlazor.Services;
 
+if (args is ["--health-check"])
+{
+    var configuredEndpoint = Environment.GetEnvironmentVariable("Kestrel__Endpoints__Http__Url");
+    var configuredPorts = Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORTS");
+    var healthPort =
+        configuredEndpoint is not null ? new Uri(configuredEndpoint).Port
+        : configuredPorts is not null && int.TryParse(configuredPorts, out var port) ? port
+        : 8080;
+    var healthHost = Environment.GetEnvironmentVariable("HEALTHCHECK_HOST") ?? "ms.dalion.eu";
+    using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+    using var request = new HttpRequestMessage(HttpMethod.Get, $"http://127.0.0.1:{healthPort}/health");
+    request.Headers.Host = healthHost;
+
+    try
+    {
+        using var response = await client.SendAsync(request);
+        return response.IsSuccessStatusCode ? 0 : 1;
+    }
+    catch (HttpRequestException)
+    {
+        return 1;
+    }
+    catch (TaskCanceledException)
+    {
+        return 1;
+    }
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder
@@ -37,6 +67,7 @@ var connectionString =
 
 builder.Services.AddMotorsportsDatabase(connectionString);
 builder.Services.AddHostedService<DatabaseMigrator>();
+builder.Services.AddDataProtection().SetApplicationName("Motorsports").PersistKeysToDbContext<MotorsportsDbContext>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped(sp => new UserClock(
     sp.GetRequiredService<TimeProvider>(),
@@ -92,10 +123,8 @@ builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingAuthStatePro
 
 // Configure trusted proxies explicitly so clients cannot spoof X-Forwarded-For to bypass login rate limits.
 var knownProxyAddresses = builder.Configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>() ?? [];
-builder.Services.Configure<ForwardedHeadersOptions>(o =>
-{
-    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    foreach (var proxyAddress in knownProxyAddresses)
+var knownProxies = knownProxyAddresses
+    .Select(proxyAddress =>
     {
         if (!IPAddress.TryParse(proxyAddress, out var address))
         {
@@ -104,6 +133,16 @@ builder.Services.Configure<ForwardedHeadersOptions>(o =>
             );
         }
 
+        return address;
+    })
+    .ToArray();
+builder.Services.PostConfigure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    o.KnownIPNetworks.Clear();
+    o.KnownProxies.Clear();
+    foreach (var address in knownProxies)
+    {
         o.KnownProxies.Add(address);
     }
 });
@@ -125,7 +164,10 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-app.UseForwardedHeaders();
+if (!app.Environment.IsDevelopment() && knownProxies.Length > 0)
+{
+    app.UseForwardedHeaders();
+}
 if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
@@ -134,7 +176,22 @@ if (!app.Environment.IsDevelopment())
 app.Use(
     async (context, next) =>
     {
+        var nonce = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
+        context.Items["CspNonce"] = nonce;
         context.Response.Headers["Content-Security-Policy"] = "frame-ancestors 'none'";
+        context.Response.Headers["Content-Security-Policy-Report-Only"] = string.Join(
+            "; ",
+            "default-src 'self'",
+            "base-uri 'self'",
+            "object-src 'none'",
+            "frame-ancestors 'none'",
+            "form-action 'self'",
+            $"script-src 'self' 'nonce-{nonce}'",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data:",
+            "font-src 'self' data:",
+            "connect-src 'self' ws: wss:"
+        );
         context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
         context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
         context.Response.Headers["X-Content-Type-Options"] = "nosniff";
@@ -143,6 +200,7 @@ app.Use(
     }
 );
 app.UseResponseCompression();
+app.UseRouting();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -181,5 +239,6 @@ app.MapRazorComponents<App>()
     });
 
 await app.RunAsync();
+return 0;
 
 public partial class Program;

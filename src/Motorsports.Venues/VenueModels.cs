@@ -1,18 +1,19 @@
 using FluentValidation;
+using Motorsports.Common;
 
 namespace Motorsports.Venues;
 
-internal sealed record VenueRow(string Name, string Country, string CountryName);
+internal sealed record VenueRow(VenueName Name, CountryIso Country, string CountryName);
 
 internal sealed record VenueRoundInfo(
-    int Id,
+    RoundId Id,
     DateOnly Date,
     short Number,
     string? Name,
     string Label,
-    string Sport,
+    SportName Sport,
     bool SportHasImage,
-    string Status,
+    StatusName Status,
     decimal? Rating,
     string? Rain,
     string? WinningTeamName,
@@ -20,8 +21,8 @@ internal sealed record VenueRoundInfo(
 );
 
 internal sealed record VenueInfo(
-    string Name,
-    string Country,
+    VenueName Name,
+    CountryIso Country,
     string CountryName,
     int RoundCount,
     IReadOnlyList<VenueRoundInfo> Rounds

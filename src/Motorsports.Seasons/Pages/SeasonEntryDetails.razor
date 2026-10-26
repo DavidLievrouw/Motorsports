@@ -21,7 +21,7 @@ else
                 <tr><th>Sport</th><td>@_entry.Sport</td></tr>
                 <tr><th>Team</th><td>@_entry.TeamName</td></tr>
                 <tr><th>Name during season</th><td>@_entry.Name</td></tr>
-                <tr><th>Country</th><td>@CountryFlag.WithName(_entry.Country, _entry.CountryName)</td></tr>
+                <tr><th>Country</th><td>@CountryFlag.WithName(_entry.Country.Value, _entry.CountryName)</td></tr>
                 <tr><th>Season winner</th><td>@(_entry.IsSeasonWinner ? "Yes" : "No")</td></tr>
                 <tr><th>Round winner</th><td>@(_entry.IsRoundWinner ? "Yes" : "No")</td></tr>
             </tbody>

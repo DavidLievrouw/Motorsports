@@ -131,7 +131,7 @@ public sealed class SeasonCharacteristicsTests(MariaDbFixture fixture)
         );
         createdEntry.IsSuccess.ShouldBeTrue();
         (await services.Cache.GetTeamsAsync(Ct))
-            .Single(team => team.Id == carId)
+            .Single(team => team.Id == TeamId.From(carId))
             .History.Single()
             .Name.ShouldBe("Scuderia");
         (await services.Cache.GetSeasonEntriesAsync(Ct)).Single().Name.ShouldBe("Scuderia");

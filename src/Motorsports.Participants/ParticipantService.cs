@@ -31,15 +31,22 @@ internal sealed class ParticipantService(
         var query = db.Participants.AsNoTracking();
         if (search is not null)
         {
-            query = query.Where(p =>
+            var matchingNames = query.Where(p =>
                 p.FirstName.Contains(search)
                 || p.LastName.Contains(search)
-                || (p.CountryRef!.NiceName ?? p.CountryRef.Name ?? p.Country).Contains(search)
+                || (p.CountryRef!.NiceName != null && p.CountryRef.NiceName.Contains(search))
+                || (p.CountryRef.Name != null && p.CountryRef.Name.Contains(search))
             );
+            query =
+                search.Length == 2
+                    ? matchingNames.Union(
+                        db.Participants.AsNoTracking().Where(p => p.Country == CountryIso.From(search))
+                    )
+                    : matchingNames;
         }
 
         var total = await query.CountAsync(cancellationToken);
-        var items = await query
+        var rows = await query
             .OrderBy(p => p.LastName)
             .ThenBy(p => p.FirstName)
             .ThenBy(p => p.Title)
@@ -47,58 +54,78 @@ internal sealed class ParticipantService(
             .ThenBy(p => p.Id)
             .Skip((page - 1) * Paging.DefaultPageSize)
             .Take(Paging.DefaultPageSize)
-            .Select(p => new ParticipantRow(
+            .Select(p => new
+            {
                 p.Id,
                 p.Title,
                 p.FirstName,
                 p.LastName,
                 p.Country,
-                p.CountryRef!.NiceName ?? p.CountryRef.Name ?? p.Country
+                CountryName = p.CountryRef!.NiceName ?? p.CountryRef.Name,
+            })
+            .ToArrayAsync(cancellationToken);
+        var items = rows.Select(p => new ParticipantRow(
+                p.Id,
+                p.Title,
+                p.FirstName,
+                p.LastName,
+                p.Country,
+                p.CountryName ?? p.Country.Value
             ))
-            .ToListAsync(cancellationToken);
+            .ToArray();
         return new PagedResult<ParticipantRow>(items, total, page, Paging.DefaultPageSize);
     }
 
     public async Task<ParticipantInfo?> GetAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
-        var row = await db
+        var projection = await db
             .Participants.AsNoTracking()
-            .Where(p => p.Id == id)
-            .Select(p => new ParticipantInfo(
+            .Where(p => p.Id == ParticipantId.From(id))
+            .Select(p => new
+            {
                 p.Id,
                 p.Title,
                 p.FirstName,
                 p.LastName,
                 p.Country,
-                p.CountryRef!.NiceName ?? p.CountryRef.Name ?? p.Country,
-                Array.Empty<string>(),
-                Array.Empty<ParticipantRoundWin>(),
-                Array.Empty<ParticipantSeasonWin>()
-            ))
+                CountryName = p.CountryRef!.NiceName ?? p.CountryRef.Name,
+            })
             .FirstOrDefaultAsync(cancellationToken);
-        if (row is null)
+        if (projection is null)
         {
             return null;
         }
 
+        var row = new ParticipantInfo(
+            projection.Id,
+            projection.Title,
+            projection.FirstName,
+            projection.LastName,
+            projection.Country,
+            projection.CountryName ?? projection.Country.Value,
+            Array.Empty<SportName>(),
+            Array.Empty<ParticipantRoundWin>(),
+            Array.Empty<ParticipantSeasonWin>()
+        );
         var roundSports =
             from winner in db.RoundWinners.AsNoTracking()
-            where winner.Participant == id
+            where winner.Participant == ParticipantId.From(id)
             join round in db.Rounds.AsNoTracking() on winner.Round equals round.Id
             select round.SeasonRef!.Sport;
         var seasonSports =
             from winner in db.SeasonWinners.AsNoTracking()
-            where winner.Participant == id
+            where winner.Participant == ParticipantId.From(id)
             join season in db.Seasons.AsNoTracking() on winner.Season equals season.Id
             select season.Sport;
         var sports = await roundSports.Union(seasonSports).OrderBy(sport => sport).ToArrayAsync(cancellationToken);
 
         var roundWins = await (
             from winner in db.RoundWinners.AsNoTracking()
-            where winner.Participant == id
+            where winner.Participant == ParticipantId.From(id)
             join round in db.Rounds.AsNoTracking() on winner.Round equals round.Id
             join season in db.Seasons.AsNoTracking() on round.Season equals season.Id
+            join venue in db.Venues.AsNoTracking() on round.Venue equals venue.Name
             select new
             {
                 RoundId = round.Id,
@@ -108,10 +135,7 @@ internal sealed class ParticipantService(
                 round.Number,
                 round.Name,
                 round.Venue,
-                VenueCountry = db
-                    .Venues.Where(venue => venue.Name == round.Venue)
-                    .Select(venue => venue.Country)
-                    .FirstOrDefault(),
+                VenueCountry = venue.Country,
                 round.Rating,
             }
         )
@@ -126,14 +150,18 @@ internal sealed class ParticipantService(
                 round.Number,
                 round.Name,
                 round.Venue,
-                round.VenueCountry ?? "",
+                round.VenueCountry,
                 round.Rating
             ))
             .ToArrayAsync(cancellationToken);
 
         var seasonWins = await db
             .Seasons.AsNoTracking()
-            .Where(season => db.SeasonWinners.Any(winner => winner.Season == season.Id && winner.Participant == id))
+            .Where(season =>
+                db.SeasonWinners.Any(winner =>
+                    winner.Season == season.Id && winner.Participant == ParticipantId.From(id)
+                )
+            )
             .Select(season => new ParticipantSeasonWin(
                 season.Id,
                 season.Sport,
@@ -147,7 +175,7 @@ internal sealed class ParticipantService(
             static (left, right) =>
             {
                 var endDateComparison = Comparer<DateOnly?>.Default.Compare(right.EndDate, left.EndDate);
-                return endDateComparison != 0 ? endDateComparison : right.SeasonId.CompareTo(left.SeasonId);
+                return endDateComparison != 0 ? endDateComparison : right.SeasonId.Value.CompareTo(left.SeasonId.Value);
             }
         );
 
@@ -164,7 +192,7 @@ internal sealed class ParticipantService(
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         var row = await db
             .Participants.AsNoTracking()
-            .Where(p => p.Id == id)
+            .Where(p => p.Id == ParticipantId.From(id))
             .Select(p => new
             {
                 p.Title,
@@ -180,8 +208,8 @@ internal sealed class ParticipantService(
                 Title = row.Title,
                 FirstName = row.FirstName,
                 LastName = row.LastName,
-                Country = row.Country,
-                RowVersion = RowVersion.Compute(row.Title, row.FirstName, row.LastName, row.Country),
+                Country = row.Country.Value,
+                RowVersion = RowVersion.Compute(row.Title, row.FirstName, row.LastName, row.Country.Value),
             };
     }
 
@@ -221,11 +249,11 @@ internal sealed class ParticipantService(
                     Title = title,
                     FirstName = first,
                     LastName = last,
-                    Country = country,
+                    Country = country.Value,
                 };
                 db.Participants.Add(participant);
                 await db.SaveChangesAsync(ct);
-                return Result<int>.Ok(participant.Id);
+                return Result<int>.Ok(participant.Id.Value);
             },
             IsolationLevel.Serializable,
             cancellationToken
@@ -272,7 +300,12 @@ internal sealed class ParticipantService(
                 }
 
                 var current = rows[0];
-                var version = RowVersion.Compute(current.Title, current.FirstName, current.LastName, current.Country);
+                var version = RowVersion.Compute(
+                    current.Title,
+                    current.FirstName,
+                    current.LastName,
+                    current.Country.Value
+                );
                 if (!RowVersion.Matches(form.RowVersion, version))
                 {
                     return Error.Conflict(StaleMessage);
@@ -281,7 +314,7 @@ internal sealed class ParticipantService(
                 if (
                     await db.Participants.AnyAsync(
                         p =>
-                            p.Id != id
+                            p.Id != ParticipantId.From(id)
                             && p.Title == title
                             && p.FirstName == first
                             && p.LastName == last
@@ -294,13 +327,13 @@ internal sealed class ParticipantService(
                 }
 
                 await db
-                    .Participants.Where(p => p.Id == id)
+                    .Participants.Where(p => p.Id == ParticipantId.From(id))
                     .ExecuteUpdateAsync(
                         s =>
                             s.SetProperty(p => p.Title, title)
                                 .SetProperty(p => p.FirstName, first)
                                 .SetProperty(p => p.LastName, last)
-                                .SetProperty(p => p.Country, country),
+                                .SetProperty(p => p.Country, country.Value),
                         ct
                     );
                 return Result<int>.Ok(id);
@@ -316,13 +349,16 @@ internal sealed class ParticipantService(
         return result;
     }
 
-    private static async Task<string?> CanonicalCountryAsync(
+    private static async Task<CountryIso?> CanonicalCountryAsync(
         MotorsportsDbContext db,
         string country,
         CancellationToken ct
     )
     {
         var key = country.Trim();
-        return await db.Countries.Where(c => c.Iso == key).Select(c => c.Iso).FirstOrDefaultAsync(ct);
+        return await db
+            .Countries.Where(c => c.Iso == CountryIso.From(key))
+            .Select(c => (CountryIso?)c.Iso)
+            .FirstOrDefaultAsync(ct);
     }
 }

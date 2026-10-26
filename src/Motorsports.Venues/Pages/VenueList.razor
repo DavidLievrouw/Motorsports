@@ -22,11 +22,11 @@ else
     <MudDataGrid T="VenueRow" Items="_result.Items" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1">
         <Columns>
             <PropertyColumn Property="venue => venue.Name" Title="Name" />
-            <PropertyColumn Property="venue => venue.CountryName" Title="Country"><CellTemplate>@CountryFlag.WithName(context.Item.Country, context.Item.CountryName)</CellTemplate></PropertyColumn>
+            <PropertyColumn Property="venue => venue.CountryName" Title="Country"><CellTemplate>@CountryFlag.WithName(context.Item.Country.Value, context.Item.CountryName)</CellTemplate></PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
-                    <MudButton Href="@($"/venues/details/{Uri.EscapeDataString(context.Item.Name)}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>
-                    <MudButton Href="@($"/venues/edit/{Uri.EscapeDataString(context.Item.Name)}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
+                    <MudButton Href="@($"/venues/details/{Uri.EscapeDataString(context.Item.Name.Value)}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>
+                    <MudButton Href="@($"/venues/edit/{Uri.EscapeDataString(context.Item.Name.Value)}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>

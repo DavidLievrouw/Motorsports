@@ -42,7 +42,7 @@ public static class SportsModule
                     await using var db = await factory.CreateDbContextAsync(http.RequestAborted);
                     var image = await db
                         .Sports.AsNoTracking()
-                        .Where(s => s.Name == name)
+                        .Where(s => s.Name == SportName.From(name))
                         .Select(s => s.Image)
                         .FirstOrDefaultAsync(http.RequestAborted);
                     if (image is null || SportImage.ContentType(image) is not { } contentType)

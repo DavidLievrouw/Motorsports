@@ -10,36 +10,49 @@ internal sealed class HomeService(IDbContextFactory<MotorsportsDbContext> factor
     {
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
 
-        var nextUp = await db
+        var nextUpDates = db
             .Rounds.AsNoTracking()
             .Where(round => round.StatusRef!.Step < 2)
-            .Where(round =>
-                !db.Rounds.Any(other =>
-                    other.StatusRef!.Step < 2
-                    && other.SeasonRef!.Sport == round.SeasonRef!.Sport
-                    && (other.Date < round.Date || (other.Date == round.Date && other.Id < round.Id))
-                )
+            .GroupBy(round => round.SeasonRef!.Sport)
+            .Select(group => new { Sport = group.Key, Date = group.Min(round => round.Date) });
+        var nextUpCandidates = await nextUpDates
+            .Join(
+                db.Rounds.AsNoTracking(),
+                earliest => new { earliest.Sport, earliest.Date },
+                round => new { Sport = round.SeasonRef!.Sport, round.Date },
+                (_, round) => round
             )
-            .OrderBy(round => round.Date)
-            .ThenBy(round => round.SeasonRef!.Sport)
-            .Select(round => new HomeRound(
-                round.Id,
-                round.SeasonRef!.Sport,
-                round.Season,
-                round.Date,
-                round.Number,
-                round.Name,
-                round.Venue,
-                db.Venues.Where(venue => venue.Name == round.Venue).Select(venue => venue.Country).FirstOrDefault()!,
+            .Join(
+                db.Venues.AsNoTracking(),
+                round => round.Venue,
+                venue => venue.Name,
+                (round, venue) => new { Round = round, VenueCountry = venue.Country }
+            )
+            .OrderBy(row => row.Round.Date)
+            .ThenBy(row => row.Round.SeasonRef!.Sport)
+            .ThenBy(row => row.Round.Id)
+            .Select(row => new HomeRound(
+                row.Round.Id,
+                row.Round.SeasonRef!.Sport,
+                row.Round.Season,
+                row.Round.Date,
+                row.Round.Number,
+                row.Round.Name,
+                row.Round.Venue,
+                row.VenueCountry,
                 Array.Empty<HomeHistoryItem>()
             ))
             .ToArrayAsync(cancellationToken);
+        var nextUp = nextUpCandidates
+            .GroupBy(round => round.Sport)
+            .Select(group => group.OrderBy(round => round.Id.Value).First())
+            .ToArray();
 
         var veryNextUp = nextUp
             .Where(round => round.Date <= today)
             .OrderBy(round => round.Date)
-            .ThenBy(round => round.Sport, StringComparer.Ordinal)
-            .ThenBy(round => round.Id)
+            .ThenBy(round => round.Sport.Value, StringComparer.Ordinal)
+            .ThenBy(round => round.Id.Value)
             .FirstOrDefault();
 
         var nextUpBySport = nextUp.Where(round => round.Id != veryNextUp?.Id).ToArray();
@@ -47,25 +60,31 @@ internal sealed class HomeService(IDbContextFactory<MotorsportsDbContext> factor
         var roundsToAcquire = await db
             .Rounds.AsNoTracking()
             .Where(round => round.StatusRef!.Step == 0 && round.Date <= today)
-            .OrderBy(round => round.Date)
-            .ThenBy(round => round.SeasonRef!.Sport)
-            .ThenBy(round => round.Id)
-            .Select(round => new HomeRound(
-                round.Id,
-                round.SeasonRef!.Sport,
-                round.Season,
-                round.Date,
-                round.Number,
-                round.Name,
-                round.Venue,
-                db.Venues.Where(venue => venue.Name == round.Venue).Select(venue => venue.Country).FirstOrDefault()!,
+            .Join(
+                db.Venues.AsNoTracking(),
+                round => round.Venue,
+                venue => venue.Name,
+                (round, venue) => new { Round = round, VenueCountry = venue.Country }
+            )
+            .OrderBy(row => row.Round.Date)
+            .ThenBy(row => row.Round.SeasonRef!.Sport)
+            .ThenBy(row => row.Round.Id)
+            .Select(row => new HomeRound(
+                row.Round.Id,
+                row.Round.SeasonRef!.Sport,
+                row.Round.Season,
+                row.Round.Date,
+                row.Round.Number,
+                row.Round.Name,
+                row.Round.Venue,
+                row.VenueCountry,
                 Array.Empty<HomeHistoryItem>()
             ))
             .ToArrayAsync(cancellationToken);
 
         var histories =
             nextUpBySport.Length == 0
-                ? new Dictionary<int, HomeHistoryItem[]>()
+                ? new Dictionary<RoundId, HomeHistoryItem[]>()
                 : await GetEventHistoryAsync(db, nextUpBySport, cancellationToken);
 
         nextUpBySport = nextUpBySport
@@ -74,7 +93,7 @@ internal sealed class HomeService(IDbContextFactory<MotorsportsDbContext> factor
         return new HomeOverview(veryNextUp, nextUpBySport, roundsToAcquire);
     }
 
-    private static async Task<Dictionary<int, HomeHistoryItem[]>> GetEventHistoryAsync(
+    private static async Task<Dictionary<RoundId, HomeHistoryItem[]>> GetEventHistoryAsync(
         MotorsportsDbContext db,
         HomeRound[] selectedRounds,
         CancellationToken cancellationToken
@@ -117,7 +136,7 @@ internal sealed class HomeService(IDbContextFactory<MotorsportsDbContext> factor
                             .FirstOrDefault(),
                 WinningTeamCountry = db
                     .Teams.Where(team => team.Id == round.WinningTeam)
-                    .Select(team => team.Country)
+                    .Select(team => (CountryIso?)team.Country)
                     .FirstOrDefault(),
             })
             .ToArrayAsync(cancellationToken);
@@ -159,7 +178,7 @@ internal sealed class HomeService(IDbContextFactory<MotorsportsDbContext> factor
             .Select(winner => new
             {
                 winner.Round,
-                Label = CountryFlag.WithName(winner.Country, winner.FirstName + " " + winner.LastName),
+                Label = CountryFlag.WithName(winner.Country.Value, winner.FirstName + " " + winner.LastName),
             })
             .ToArrayAsync(cancellationToken);
         var winnersByRound = winners
@@ -178,7 +197,7 @@ internal sealed class HomeService(IDbContextFactory<MotorsportsDbContext> factor
                         && (selected.Number == 0 ? row.Number == 0 : row.Number > 0)
                     )
                     .OrderByDescending(row => row.Date)
-                    .ThenByDescending(row => row.Id)
+                    .ThenByDescending(row => row.Id.Value)
                     .Take(50)
                     .Select(row => new HomeHistoryItem(
                         row.Id,
@@ -187,9 +206,10 @@ internal sealed class HomeService(IDbContextFactory<MotorsportsDbContext> factor
                         row.Name,
                         row.Rating,
                         row.Rain,
-                        row.WinningTeamName is null
-                            ? null
-                            : CountryFlag.WithName(row.WinningTeamCountry, row.WinningTeamName),
+                        row.WinningTeamName is null ? null
+                            : row.WinningTeamCountry is { } country
+                                ? CountryFlag.WithName(country.Value, row.WinningTeamName)
+                            : row.WinningTeamName,
                         winnersByRound.GetValueOrDefault(row.Id) ?? []
                     ))
                     .ToArray()

@@ -29,10 +29,11 @@ internal sealed class SportService(
 
     public async Task<SportInfo?> GetAsync(string name, CancellationToken cancellationToken = default)
     {
+        var sportName = SportName.From(name);
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         var sport = await db
             .Sports.AsNoTracking()
-            .Where(s => s.Name == name)
+            .Where(s => s.Name == sportName)
             .Select(s => new SportInfo(
                 s.Name,
                 s.FullName,
@@ -53,7 +54,7 @@ internal sealed class SportService(
         var latestSeason = await db
             .Seasons.AsNoTracking()
             .Where(s =>
-                s.Sport == name
+                s.Sport == sportName
                 && db.Rounds.Any(round => round.Season == s.Id)
                 && !db.Rounds.Any(round => round.Season == s.Id && round.StatusRef!.Step < 2)
             )
@@ -79,7 +80,7 @@ internal sealed class SportService(
                 var teamCountry = await db
                     .Teams.AsNoTracking()
                     .Where(team => team.Id == teamId)
-                    .Select(team => team.Country)
+                    .Select(team => (CountryIso?)team.Country)
                     .FirstOrDefaultAsync(cancellationToken);
                 var plainName =
                     await db
@@ -92,10 +93,13 @@ internal sealed class SportService(
                         .Where(team => team.Id == teamId)
                         .Select(team => team.Name)
                         .FirstOrDefaultAsync(cancellationToken);
-                winningTeamName = plainName is null ? null : CountryFlag.WithName(teamCountry, plainName);
+                winningTeamName =
+                    plainName is null ? null
+                    : teamCountry is { } country ? CountryFlag.WithName(country.Value, plainName)
+                    : plainName;
             }
 
-            winningParticipants = await db
+            var winnerRows = await db
                 .SeasonWinners.AsNoTracking()
                 .Where(winner => winner.Season == latestSeason.Id)
                 .Join(
@@ -112,18 +116,15 @@ internal sealed class SportService(
                 )
                 .OrderBy(participant => participant.LastName)
                 .ThenBy(participant => participant.FirstName)
-                .ToListAsync(cancellationToken)
-                .ContinueWith(
-                    task =>
-                        task.Result.Select(p => CountryFlag.WithName(p.Country, p.FirstName + " " + p.LastName))
-                            .ToArray(),
-                    cancellationToken
-                );
+                .ToListAsync(cancellationToken);
+            winningParticipants = winnerRows
+                .Select(p => CountryFlag.WithName(p.Country.Value, p.FirstName + " " + p.LastName))
+                .ToArray();
         }
 
         var nextRoundDate = await db
             .Rounds.AsNoTracking()
-            .Where(round => round.SeasonRef!.Sport == name && round.StatusRef!.Step < 2)
+            .Where(round => round.SeasonRef!.Sport == sportName && round.StatusRef!.Step < 2)
             .OrderBy(round => round.Date)
             .Select(round => (DateOnly?)round.Date)
             .FirstOrDefaultAsync(cancellationToken);
@@ -143,10 +144,11 @@ internal sealed class SportService(
 
     public async Task<SportForm?> GetFormAsync(string name, CancellationToken cancellationToken = default)
     {
+        var sportName = SportName.From(name);
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         var row = await db
             .Sports.AsNoTracking()
-            .Where(s => s.Name == name)
+            .Where(s => s.Name == sportName)
             .Select(s => new
             {
                 s.Name,
@@ -158,11 +160,11 @@ internal sealed class SportService(
             ? null
             : new SportForm
             {
-                Name = row.Name,
+                Name = row.Name.Value,
                 FullName = row.FullName,
                 Image = row.Image,
-                StoredImageName = row.Image is null ? null : row.Name,
-                RowVersion = ComputeVersion(row.Name, row.FullName, row.Image),
+                StoredImageName = row.Image is null ? null : row.Name.Value,
+                RowVersion = ComputeVersion(row.Name.Value, row.FullName, row.Image),
             };
     }
 
@@ -179,7 +181,7 @@ internal sealed class SportService(
         var result = await factory.InTransactionAsync<string>(
             async (db, ct) =>
             {
-                if (await db.Sports.AnyAsync(s => s.Name == name, ct))
+                if (await db.Sports.AnyAsync(s => s.Name == SportName.From(name), ct))
                 {
                     return Error.Validation(nameof(SportForm.Name), "A sport with this name already exists.");
                 }
@@ -187,7 +189,7 @@ internal sealed class SportService(
                 db.Sports.Add(
                     new Sport
                     {
-                        Name = name,
+                        Name = SportName.From(name),
                         FullName = fullName,
                         Image = form.Image,
                     }
@@ -230,12 +232,17 @@ internal sealed class SportService(
                 }
 
                 var current = rows[0];
-                if (!RowVersion.Matches(form.RowVersion, ComputeVersion(current.Name, current.FullName, current.Image)))
+                if (
+                    !RowVersion.Matches(
+                        form.RowVersion,
+                        ComputeVersion(current.Name.Value, current.FullName, current.Image)
+                    )
+                )
                 {
                     return Error.Conflict(StaleMessage);
                 }
 
-                if (string.Equals(newName, current.Name, StringComparison.Ordinal))
+                if (string.Equals(newName, current.Name.Value, StringComparison.Ordinal))
                 {
                     if (
                         !string.Equals(fullName, current.FullName, StringComparison.Ordinal)
@@ -250,19 +257,22 @@ internal sealed class SportService(
                             );
                     }
 
-                    return Result<string>.Ok(current.Name);
+                    return Result<string>.Ok(current.Name.Value);
                 }
 
                 // At most one row matches under the case/accent-insensitive collation: the current row itself
                 // (a case/accent-only rename) or a different sport (duplicate).
-                var match = await db.Sports.Where(s => s.Name == newName).Select(s => s.Name).FirstOrDefaultAsync(ct);
-                var sameRow = match is not null && string.Equals(match, current.Name, StringComparison.Ordinal);
+                var match = await db
+                    .Sports.Where(s => s.Name == SportName.From(newName))
+                    .Select(s => (SportName?)s.Name)
+                    .FirstOrDefaultAsync(ct);
+                var sameRow = match is { } matchedName && matchedName == current.Name;
                 if (match is not null && !sameRow)
                 {
                     return Error.Validation(nameof(SportForm.Name), "A sport with this name already exists.");
                 }
 
-                await RenameAsync(db, current.Name, newName, fullName, form.Image, sameRow, ct);
+                await RenameAsync(db, current.Name.Value, newName, fullName, form.Image, sameRow, ct);
                 return Result<string>.Ok(newName);
             },
             cancellationToken: cancellationToken
@@ -286,35 +296,39 @@ internal sealed class SportService(
         db.Sports.Add(
             new Sport
             {
-                Name = interim,
+                Name = SportName.From(interim),
                 FullName = fullName,
                 Image = image,
             }
         );
         await db.SaveChangesAsync(ct);
         await Repoint(db, oldName, interim, ct);
-        await db.Sports.Where(s => s.Name == oldName).ExecuteDeleteAsync(ct);
+        await db.Sports.Where(s => s.Name == SportName.From(oldName)).ExecuteDeleteAsync(ct);
 
         if (viaTemporaryKey)
         {
             db.Sports.Add(
                 new Sport
                 {
-                    Name = newName,
+                    Name = SportName.From(newName),
                     FullName = fullName,
                     Image = image,
                 }
             );
             await db.SaveChangesAsync(ct);
             await Repoint(db, interim, newName, ct);
-            await db.Sports.Where(s => s.Name == interim).ExecuteDeleteAsync(ct);
+            await db.Sports.Where(s => s.Name == SportName.From(interim)).ExecuteDeleteAsync(ct);
         }
     }
 
     private static async Task Repoint(MotorsportsDbContext db, string from, string to, CancellationToken ct)
     {
-        await db.Teams.Where(t => t.Sport == from).ExecuteUpdateAsync(s => s.SetProperty(t => t.Sport, to), ct);
-        await db.Seasons.Where(x => x.Sport == from).ExecuteUpdateAsync(s => s.SetProperty(x => x.Sport, to), ct);
+        var fromName = SportName.From(from);
+        var toName = SportName.From(to);
+        await db.Teams.Where(t => t.Sport == fromName).ExecuteUpdateAsync(s => s.SetProperty(t => t.Sport, toName), ct);
+        await db
+            .Seasons.Where(x => x.Sport == fromName)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.Sport, toName), ct);
     }
 
     private Result<string> Published(Result<string> result)

@@ -79,12 +79,26 @@ docker build -f src/Motorsports.Web/Dockerfile -t motorsports-web:2.0.0 .
 ```
 
 `docker-compose/motorsports-web/docker-compose.yml` requires `MOTORSPORTS_CONNECTION_STRING` and
-`FORWARDED_HEADERS_KNOWN_PROXY_0` from the deployment environment. Back up the database before the first deployment
-that applies migrations. Configure HTTPS at the trusted proxy and keep Secure cookies enabled. The app currently uses
-container-local ASP.NET Data Protection keys; configure durable, access-controlled key storage before production
-deployment so authentication and antiforgery cookies remain valid when containers are replaced. The app container
-listens on port 8080 and exposes `/health` as its health check.
+`FORWARDED_HEADERS_KNOWN_PROXY_0` from the deployment environment. Production runs behind nginx-proxy-manager at
+`ms.dalion.eu`; only the trusted proxy at `172.18.0.3` should reach the app container, which listens on port 80 in that
+deployment. Keep Secure cookies enabled and back up the database before the first deployment that applies migrations.
+The Data Protection key ring is stored in the `DataProtectionKeys` table in the configured database and is included in
+normal database backups. Database access exposes the unencrypted key XML, so restrict database credentials and backup
+access accordingly.
 
+Restore the database and its Data Protection key table from the same backup point. If the key table is missing,
+inconsistent with the restored application data, or the application discriminator changes, existing authentication and
+antiforgery tokens may become unreadable and users will need to sign in again. ASP.NET Data Protection creates new
+keys automatically (90-day default lifetime); retain older keys so still-valid cookies and tokens can be decrypted.
+For a compromised key, revoke it through the Data Protection `IKeyManager` API using an authorized maintenance
+procedure; revocation invalidates tokens protected by that key. The app container exposes `/health` as its health check.
+The runtime uses the .NET 10 `noble-chiseled-extra` image with IANA time-zone data. Its exec-form health probe calls
+`/health` through `dotnet` without a shell or `curl`; set `HEALTHCHECK_HOST` if the host allowed by `AllowedHosts`
+differs from `ms.dalion.eu`.
+
+The expanded Content Security Policy is currently sent in report-only mode for browser verification. The existing
+`frame-ancestors 'none'` restriction remains enforced. Promote the report-only policy to enforcement only after
+verifying login, authenticated pages, Blazor reconnects, MudBlazor controls, images, and static assets in a browser.
 ## Database migrations
 
 Migrations run automatically at startup under a MariaDB named lock and are designed to be idempotent across

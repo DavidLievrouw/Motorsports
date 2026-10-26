@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Motorsports.CharacteristicsTests.Fixtures;
+using Motorsports.Common;
 using Motorsports.Infrastructure;
 using Motorsports.Infrastructure.Entities;
 using Shouldly;
@@ -34,8 +35,37 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
             "20261024151224_AddUserAuthColumns",
             "20261024163411_AddSportImages",
             "20261025083000_ParticipantUniqueIdentity",
+            "20261026081111_PersistDataProtectionKeys",
         ]);
         (await context.Users.CountAsync(cancellationToken)).ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Data_protection_key_migration_persists_keys_in_the_application_database()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await fixture.ResetSchemaAsync();
+        var factory = fixture.CreateContextFactory();
+        await CreateMigrator(factory).MigrateAsync(cancellationToken);
+
+        await using (var context = await factory.CreateDbContextAsync(cancellationToken))
+        {
+            context.DataProtectionKeys.Add(
+                new Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey
+                {
+                    FriendlyName = "synthetic-key",
+                    Xml = "<key />",
+                }
+            );
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        await CreateMigrator(factory).MigrateAsync(cancellationToken);
+
+        await using var verified = await factory.CreateDbContextAsync(cancellationToken);
+        var key = await verified.DataProtectionKeys.AsNoTracking().SingleAsync(cancellationToken);
+        key.FriendlyName.ShouldBe("synthetic-key");
+        key.Xml.ShouldBe("<key />");
     }
 
     [Fact]
@@ -66,18 +96,18 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
         var participants = await context.Participants.AsNoTracking().ToArrayAsync(cancellationToken);
         participants
-            .Select(participant => (participant.Id, participant.FirstName))
+            .Select(participant => (participant.Id.Value, participant.FirstName))
             .ShouldBe([(1, " Alex "), (2, "Sam")]);
         var roundWinners = await context
             .RoundWinners.AsNoTracking()
             .OrderBy(winner => winner.Round)
-            .Select(winner => new { winner.Round, winner.Participant })
+            .Select(winner => new { Round = winner.Round.Value, Participant = winner.Participant.Value })
             .ToArrayAsync(cancellationToken);
         roundWinners.Select(winner => (winner.Round, winner.Participant)).ShouldBe([(1, 1), (2, 2)]);
         var seasonWinners = await context
             .SeasonWinners.AsNoTracking()
             .OrderBy(winner => winner.Season)
-            .Select(winner => new { winner.Season, winner.Participant })
+            .Select(winner => new { Season = winner.Season.Value, Participant = winner.Participant.Value })
             .ToArrayAsync(cancellationToken);
         seasonWinners.Select(winner => (winner.Season, winner.Participant)).ShouldBe([(1, 1), (2, 2)]);
         (
@@ -114,7 +144,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
             )!;
             using var expected = new MemoryStream();
             await stream.CopyToAsync(expected, cancellationToken);
-            images[name].ShouldBe(expected.ToArray());
+            images[SportName.From(name)].ShouldBe(expected.ToArray());
         }
     }
 
@@ -154,7 +184,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
         var user = new User
         {
-            Id = "test",
+            Id = UserId.From("test"),
             Username = "test",
             PasswordHash = [1],
             Salt = [2],
@@ -162,7 +192,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
         };
         context.Users.Add(user);
         await context.SaveChangesAsync(cancellationToken);
-        (await context.Users.Select(x => x.Id).SingleAsync(cancellationToken)).ShouldBe("test");
+        (await context.Users.Select(x => x.Id.Value).SingleAsync(cancellationToken)).ShouldBe("test");
     }
 
     [Fact]
@@ -177,7 +207,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
         await Task.WhenAll(first, second);
 
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
-        (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).Count().ShouldBe(4);
+        (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).Count().ShouldBe(5);
     }
 
     [Fact]
@@ -215,8 +245,8 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
         round.Date.ShouldBe(new DateOnly(2026, 4, 5));
         round.Rating.ShouldBe(8.0m);
         round.Rain.ShouldBe(2m);
-        round.Venue.ShouldBe("Test Circuit");
-        country.Iso.ShouldBe("BE");
+        round.Venue.Value.ShouldBe("Test Circuit");
+        country.Iso.Value.ShouldBe("BE");
         country.NumCode.ShouldBe((short)56);
         status.Step.ShouldBe((sbyte)0);
         user.PasswordHash.ShouldBe([1, 2]);

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
+using Motorsports.Common;
 using Motorsports.Infrastructure.Auth;
 using Motorsports.Infrastructure.Entities;
 using Shouldly;
@@ -16,7 +17,7 @@ public class LegacyPasswordHasherTests
         var salt = RandomNumberGenerator.GetBytes(16);
         return new User
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = UserId.From(Guid.NewGuid().ToString()),
             Username = "legacy",
             Prf = prf,
             Iterations = iterations,

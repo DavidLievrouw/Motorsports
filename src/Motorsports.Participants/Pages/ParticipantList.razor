@@ -24,7 +24,7 @@ else
             <PropertyColumn Property="participant => participant.LastName" Title="Last name" />
             <PropertyColumn Property="participant => participant.FirstName" Title="First name" />
             <PropertyColumn Property="participant => participant.Title" Title="Title" />
-            <PropertyColumn Property="participant => participant.CountryName" Title="Country"><CellTemplate>@CountryFlag.WithName(context.Item.Country, context.Item.CountryName)</CellTemplate></PropertyColumn>
+            <PropertyColumn Property="participant => participant.CountryName" Title="Country"><CellTemplate>@CountryFlag.WithName(context.Item.Country.Value, context.Item.CountryName)</CellTemplate></PropertyColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudButton Href="@($"/participants/details/{context.Item.Id}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>

@@ -2,8 +2,12 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Motorsports.Auth;
 using Motorsports.CharacteristicsTests.Fixtures;
 using Shouldly;
 
@@ -14,11 +18,16 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
 {
     private const string Password = "S3cret pässword!";
 
-    private sealed class AuthApp(string connectionString, int loginLimit, bool secureCookies)
-        : WebApplicationFactory<Program>
+    private sealed class AuthApp(
+        string connectionString,
+        int loginLimit,
+        bool secureCookies,
+        string environment = "Development"
+    ) : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
         {
+            builder.UseEnvironment(environment);
             builder.UseSetting("ConnectionStrings:Motorsports", connectionString);
             builder.UseSetting("Auth:SecureCookies", secureCookies.ToString());
             builder.UseSetting("Auth:LoginPermitLimit", loginLimit.ToString());
@@ -150,12 +159,95 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         await using var app = await StartAsync();
         var client = app.NewClient();
         var response = await client.GetAsync("/health", TestContext.Current.CancellationToken);
-
         response.Headers.GetValues("Content-Security-Policy").ShouldContain("frame-ancestors 'none'");
+        var contentSecurityPolicy = response.Headers.GetValues("Content-Security-Policy-Report-Only").Single();
+
+        contentSecurityPolicy.ShouldContain("default-src 'self'");
+        contentSecurityPolicy.ShouldContain("base-uri 'self'");
+        contentSecurityPolicy.ShouldContain("object-src 'none'");
+        contentSecurityPolicy.ShouldContain("frame-ancestors 'none'");
+        contentSecurityPolicy.ShouldContain("form-action 'self'");
+        contentSecurityPolicy.ShouldContain("script-src 'self' 'nonce-");
+        contentSecurityPolicy.ShouldContain("style-src 'self' 'unsafe-inline'");
+        contentSecurityPolicy.ShouldContain("connect-src 'self' ws: wss:");
+        contentSecurityPolicy.ShouldNotContain("unsafe-eval");
         response.Headers.GetValues("Permissions-Policy").ShouldContain("camera=(), microphone=(), geolocation=()");
         response.Headers.GetValues("Referrer-Policy").ShouldContain("strict-origin-when-cross-origin");
         response.Headers.GetValues("X-Content-Type-Options").ShouldContain("nosniff");
         response.Headers.GetValues("X-Frame-Options").ShouldContain("DENY");
+
+        var loginPage = await client.GetAsync("/login", TestContext.Current.CancellationToken);
+        var page = await loginPage.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        var loginCsp = loginPage.Headers.GetValues("Content-Security-Policy-Report-Only").Single();
+        var nonce = Regex.Match(loginCsp, "'nonce-([^']+)'").Groups[1].Value;
+        nonce.ShouldNotBeEmpty();
+        page.ShouldContain($"<script type=\"importmap\" nonce=\"{nonce}\">");
+        page.ShouldContain($"<script nonce=\"{nonce}\" src=");
+    }
+
+    [Fact]
+    public async Task Production_host_filter_rejects_unexpected_host_headers()
+    {
+        await using var app = new AuthApp(fixture.ConnectionString, 1000, false, "Production");
+        var client = app.NewClient();
+
+        using var allowedRequest = new HttpRequestMessage(HttpMethod.Get, "/health");
+        allowedRequest.Headers.Host = "ms.dalion.eu";
+        using var rejectedRequest = new HttpRequestMessage(HttpMethod.Get, "/health");
+        rejectedRequest.Headers.Host = "evil.example";
+        var allowed = await client.SendAsync(allowedRequest, TestContext.Current.CancellationToken);
+        var rejected = await client.SendAsync(rejectedRequest, TestContext.Current.CancellationToken);
+
+        allowed.StatusCode.ShouldBe(HttpStatusCode.OK);
+        rejected.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Data_protection_cookies_survive_another_application_instance()
+    {
+        await fixture.ResetSchemaAsync();
+        await SeedUserAsync("shared-keys");
+        await using var first = new AuthApp(fixture.ConnectionString, 1000, false);
+        await using var second = new AuthApp(fixture.ConnectionString, 1000, false);
+        var firstClient = first.NewClient();
+        var login = await LoginAsync(firstClient, "shared-keys", Password);
+        var authCookie = login
+            .Headers.GetValues("Set-Cookie")
+            .Single(cookie => cookie.StartsWith("ms.auth=", StringComparison.Ordinal))
+            .Split(';', 2)[0];
+
+        var secondClient = second.NewClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/");
+        request.Headers.Add("Cookie", authCookie);
+        var response = await secondClient.SendAsync(request, TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        await using var context = await fixture
+            .CreateContextFactory()
+            .CreateDbContextAsync(TestContext.Current.CancellationToken);
+        (await context.DataProtectionKeys.CountAsync(TestContext.Current.CancellationToken)).ShouldBeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task Untrusted_forwarded_for_headers_do_not_bypass_login_rate_limiting()
+    {
+        await using var app = await StartAsync(loginLimit: 2);
+        app.Services.GetRequiredService<IOptions<AuthOptions>>().Value.LoginPermitLimit.ShouldBe(2);
+        var client = app.NewClient();
+        var token = await TokenAsync(client, "/login");
+
+        for (var index = 0; index < 2; index++)
+        {
+            using var request = LoginRequest(token, $"203.0.113.{index + 1}");
+            (await client.SendAsync(request, TestContext.Current.CancellationToken)).StatusCode.ShouldBe(
+                HttpStatusCode.Redirect
+            );
+        }
+
+        using var limited = LoginRequest(token, "203.0.113.200");
+        (await client.SendAsync(limited, TestContext.Current.CancellationToken)).StatusCode.ShouldBe(
+            HttpStatusCode.TooManyRequests
+        );
     }
 
     [Fact]
@@ -416,4 +508,22 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
             ),
             TestContext.Current.CancellationToken
         );
+
+    private static HttpRequestMessage LoginRequest(string token, string forwardedFor)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "/login")
+        {
+            Content = new FormUrlEncodedContent(
+                new Dictionary<string, string>
+                {
+                    ["Username"] = "nobody",
+                    ["Password"] = "x",
+                    ["ReturnUrl"] = "",
+                    ["__RequestVerificationToken"] = token,
+                }
+            ),
+        };
+        request.Headers.Add("X-Forwarded-For", forwardedFor);
+        return request;
+    }
 }

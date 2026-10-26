@@ -11,11 +11,8 @@ RUN dotnet restore src/Motorsports.Web/Motorsports.Web.csproj \
     -p:SourceRevisionId=${SOURCE_REVISION_ID} -p:UseAppHost=false \
     && test -s /out/wwwroot/_framework/blazor.web.js
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra
 
-# tzdata is required: user time zones are IANA ids and the image runs with InvariantGlobalization.
-RUN apt-get update && apt-get install -y --no-install-recommends tzdata curl \
-    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /out .
 ENV ASPNETCORE_HTTP_PORTS=8080 \
@@ -24,5 +21,5 @@ ENV ASPNETCORE_HTTP_PORTS=8080 \
     DOTNET_TieredPGO=1
 USER $APP_UID
 EXPOSE 8080
-HEALTHCHECK --interval=30s --timeout=3s --start-period=30s CMD curl -fs http://localhost:8080/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s CMD ["dotnet", "Motorsports.Web.dll", "--health-check"]
 ENTRYPOINT ["dotnet", "Motorsports.Web.dll"]

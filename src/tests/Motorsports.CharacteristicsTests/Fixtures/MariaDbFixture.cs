@@ -30,6 +30,7 @@ public sealed class MariaDbFixture : IAsyncLifetime
         await connection.OpenAsync();
 
         await ExecuteAsync(connection, "SET FOREIGN_KEY_CHECKS = 0");
+        await ExecuteAsync(connection, "DROP TABLE IF EXISTS `DataProtectionKeys`");
         await ExecuteAsync(connection, "DROP TABLE IF EXISTS `__EFMigrationsHistory`");
         await ExecuteBatchAsync(connection, schema);
         await ExecuteAsync(connection, "SET FOREIGN_KEY_CHECKS = 1");

@@ -1,43 +1,44 @@
 using FluentValidation;
+using Motorsports.Common;
 
 namespace Motorsports.Participants;
 
 internal sealed record ParticipantRow(
-    int Id,
+    ParticipantId Id,
     string Title,
     string FirstName,
     string LastName,
-    string Country,
+    CountryIso Country,
     string CountryName
 );
 
 internal sealed record ParticipantInfo(
-    int Id,
+    ParticipantId Id,
     string Title,
     string FirstName,
     string LastName,
-    string Country,
+    CountryIso Country,
     string CountryName,
-    string[] Sports,
+    SportName[] Sports,
     ParticipantRoundWin[] RoundWins,
     ParticipantSeasonWin[] SeasonWins
 );
 
 internal sealed record ParticipantRoundWin(
-    int RoundId,
+    RoundId RoundId,
     DateOnly Date,
-    string Sport,
+    SportName Sport,
     string? SeasonLabel,
     short Number,
     string? Name,
-    string Venue,
-    string VenueCountry,
+    VenueName Venue,
+    CountryIso VenueCountry,
     decimal? Rating
 );
 
 internal sealed record ParticipantSeasonWin(
-    int SeasonId,
-    string Sport,
+    SeasonId SeasonId,
+    SportName Sport,
     string? Label,
     DateOnly? StartDate,
     DateOnly? EndDate

@@ -16,14 +16,14 @@
 }
 else
 {
-    <MudDataGrid T="SportRow" RowClass="sport-accent-row" RowStyleFunc="@((item, _) => SportAccent.RowStyle(item.Name))" Items="_items" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1">
+    <MudDataGrid T="SportRow" RowClass="sport-accent-row" RowStyleFunc="@((item, _) => SportAccent.RowStyle(item.Name.Value))" Items="_items" Dense="true" Hover="true" Striped="true" Bordered="true" Elevation="1">
         <Columns>
             <TemplateColumn Title="Logo" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" AlignItems="AlignItems.Center">
                         @if (context.Item.HasImage)
                         {
-                            <MudImage Src="@SportImage.Url(context.Item.Name)" Alt="@($"{context.Item.Name} logo")"
+                            <MudImage Src="@SportImage.Url(context.Item.Name.Value)" Alt="@($"{context.Item.Name} logo")"
                                       Width="48" Height="36" ObjectFit="ObjectFit.Contain" />
                         }
                         <span>@context.Item.Name</span>
@@ -34,8 +34,8 @@ else
             <PropertyColumn Property="sport => sport.FullName" Title="Full name" />
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
-                    <MudButton Href="@($"/sports/details/{Uri.EscapeDataString(context.Item.Name)}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>
-                    <MudButton Href="@($"/sports/edit/{Uri.EscapeDataString(context.Item.Name)}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
+                    <MudButton Href="@($"/sports/details/{Uri.EscapeDataString(context.Item.Name.Value)}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>
+                    <MudButton Href="@($"/sports/edit/{Uri.EscapeDataString(context.Item.Name.Value)}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>

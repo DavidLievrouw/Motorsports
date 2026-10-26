@@ -23,10 +23,10 @@ else
 {
     @foreach (var group in _items.GroupBy(season => season.Sport))
     {
-        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-4 mb-1 pl-2" Style="@SportAccent.Style(group.Key)">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-4 mb-1 pl-2" Style="@SportAccent.Style(group.Key.Value)">
             @if (group.First().SportHasImage)
             {
-                <MudImage Src="@SportImage.Url(group.Key)" Alt="@($"{group.Key} logo")" Width="40" Height="30" ObjectFit="ObjectFit.Contain" />
+                <MudImage Src="@SportImage.Url(group.Key.Value)" Alt="@($"{group.Key} logo")" Width="40" Height="30" ObjectFit="ObjectFit.Contain" />
             }
             <MudText Typo="Typo.h5">@group.Key</MudText>
         </MudStack>
@@ -39,10 +39,10 @@ else
                 <PropertyColumn Property="season => season.RoundCount" Title="Rounds" />
                 <TemplateColumn Title="Actions" Sortable="false">
                     <CellTemplate>
-                        <MudButton Href="@($"/seasons/details/{context.Item.Id}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>
-                        <MudButton Href="@($"/seasons/edit/{context.Item.Id}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
-                        <MudButton Href="@($"/seasons/delete/{context.Item.Id}")" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
-                        <MudButton Href="@($"/seasons/{context.Item.Id}/entries")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Groups">Teams</MudButton>
+                        <MudButton Href="@($"/seasons/details/{context.Item.Id.Value}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility">Details</MudButton>
+                        <MudButton Href="@($"/seasons/edit/{context.Item.Id.Value}")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit">Edit</MudButton>
+                        <MudButton Href="@($"/seasons/delete/{context.Item.Id.Value}")" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
+                        <MudButton Href="@($"/seasons/{context.Item.Id.Value}/entries")" Size="Size.Small" StartIcon="@Icons.Material.Filled.Groups">Teams</MudButton>
                     </CellTemplate>
                 </TemplateColumn>
             </Columns>

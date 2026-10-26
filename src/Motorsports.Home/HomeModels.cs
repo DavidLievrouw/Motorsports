@@ -1,19 +1,21 @@
+using Motorsports.Common;
+
 namespace Motorsports.Home;
 
 internal sealed record HomeRound(
-    int Id,
-    string Sport,
-    int SeasonId,
+    RoundId Id,
+    SportName Sport,
+    SeasonId SeasonId,
     DateOnly Date,
     short Number,
     string? Name,
-    string Venue,
-    string VenueCountry,
+    VenueName Venue,
+    CountryIso VenueCountry,
     HomeHistoryItem[] EventHistory
 );
 
 internal sealed record HomeHistoryItem(
-    int Id,
+    RoundId Id,
     DateOnly Date,
     short Number,
     string? Name,

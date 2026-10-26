@@ -1,11 +1,12 @@
 using FluentValidation;
+using Motorsports.Common;
 
 namespace Motorsports.Sports;
 
-internal sealed record SportRow(string Name, string? FullName, bool HasImage);
+internal sealed record SportRow(SportName Name, string? FullName, bool HasImage);
 
 internal sealed record SportInfo(
-    string Name,
+    SportName Name,
     string? FullName,
     int TeamCount,
     int SeasonCount,

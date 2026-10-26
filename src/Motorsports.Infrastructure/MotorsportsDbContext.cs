@@ -1,9 +1,14 @@
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Motorsports.Common;
 using Motorsports.Infrastructure.Entities;
+using Vogen;
 
 namespace Motorsports.Infrastructure;
 
-public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> options) : DbContext(options)
+public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> options)
+    : DbContext(options),
+        IDataProtectionKeyContext
 {
     public DbSet<Country> Countries => Set<Country>();
     public DbSet<Participant> Participants => Set<Participant>();
@@ -17,6 +22,12 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Venue> Venues => Set<Venue>();
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.RegisterAllInVogenEfCoreConverters();
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -61,6 +72,7 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
         modelBuilder.Entity<Participant>(e =>
         {
             e.ToTable("Participant");
+            e.Property(x => x.Id).ValueGeneratedOnAdd();
             e.Property(x => x.Title).HasMaxLength(10);
             e.Property(x => x.FirstName).HasMaxLength(100);
             e.Property(x => x.LastName).HasMaxLength(100);
@@ -79,6 +91,7 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
         modelBuilder.Entity<Team>(e =>
         {
             e.ToTable("Team");
+            e.Property(x => x.Id).ValueGeneratedOnAdd();
             e.Property(x => x.Name).HasMaxLength(50);
             e.Property(x => x.Sport).HasMaxLength(50);
             e.Property(x => x.Country).HasColumnType("char(2)");
@@ -89,6 +102,7 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
         modelBuilder.Entity<Season>(e =>
         {
             e.ToTable("Season");
+            e.Property(x => x.Id).ValueGeneratedOnAdd();
             e.Property(x => x.Sport).HasMaxLength(50);
             e.Property(x => x.Label).HasMaxLength(100);
             e.HasOne(x => x.SportRef).WithMany().HasForeignKey(x => x.Sport).OnDelete(DeleteBehavior.Restrict);
@@ -107,6 +121,7 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
         modelBuilder.Entity<SeasonWinner>(e =>
         {
             e.ToTable("SeasonWinner");
+            e.Property(x => x.Id).ValueGeneratedOnAdd();
             e.HasOne<Season>().WithMany().HasForeignKey(x => x.Season).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Participant>().WithMany().HasForeignKey(x => x.Participant).OnDelete(DeleteBehavior.Restrict);
         });
@@ -114,11 +129,12 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
         modelBuilder.Entity<Round>(e =>
         {
             e.ToTable("Round");
+            e.Property(x => x.Id).ValueGeneratedOnAdd();
             e.Property(x => x.Date).HasColumnType("date");
             e.Property(x => x.Number).HasColumnType("smallint");
             e.Property(x => x.Name).HasMaxLength(100);
             e.Property(x => x.Venue).HasMaxLength(100);
-            e.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("Scheduled");
+            e.Property(x => x.Status).HasMaxLength(20).HasDefaultValue(StatusName.Scheduled);
             e.Property(x => x.Rating).HasColumnType("decimal(3,1)");
             e.Property(x => x.Rain).HasColumnType("decimal(1,0)");
             e.Property(x => x.Note).HasColumnType("text");
@@ -131,6 +147,7 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
         modelBuilder.Entity<RoundWinner>(e =>
         {
             e.ToTable("RoundWinner");
+            e.Property(x => x.Id).ValueGeneratedOnAdd();
             e.HasOne<Round>().WithMany().HasForeignKey(x => x.Round).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Participant>().WithMany().HasForeignKey(x => x.Participant).OnDelete(DeleteBehavior.Restrict);
         });
@@ -152,5 +169,26 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
             e.Property(x => x.SecurityStamp).HasMaxLength(64);
             e.Property(x => x.ConcurrencyStamp).HasMaxLength(64);
         });
+
+        modelBuilder.Entity<DataProtectionKey>(e =>
+        {
+            e.ToTable("DataProtectionKeys");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.FriendlyName).HasMaxLength(255);
+            e.Property(x => x.Xml).HasColumnType("longtext");
+        });
     }
 }
+
+[EfCoreConverter<CountryIso>]
+[EfCoreConverter<ParticipantId>]
+[EfCoreConverter<RoundId>]
+[EfCoreConverter<RoundWinnerId>]
+[EfCoreConverter<SeasonId>]
+[EfCoreConverter<SeasonWinnerId>]
+[EfCoreConverter<SportName>]
+[EfCoreConverter<StatusName>]
+[EfCoreConverter<TeamId>]
+[EfCoreConverter<UserId>]
+[EfCoreConverter<VenueName>]
+internal sealed partial class VogenEfCoreConverters;

@@ -31,55 +31,76 @@ internal sealed class TeamService(
         var query = db.Teams.AsNoTracking();
         if (search is not null)
         {
-            query = query.Where(t =>
+            var matchingSports = db
+                .Sports.AsNoTracking()
+                .Where(s => s.Name == SportName.From(search) || (s.FullName != null && s.FullName.Contains(search)))
+                .Select(s => s.Name);
+            var matchingNames = query.Where(t =>
                 t.Name.Contains(search)
-                || t.Sport.Contains(search)
-                || (t.CountryRef!.NiceName ?? t.CountryRef.Name ?? t.Country).Contains(search)
+                || matchingSports.Contains(t.Sport)
+                || (t.CountryRef!.NiceName != null && t.CountryRef.NiceName.Contains(search))
+                || (t.CountryRef.Name != null && t.CountryRef.Name.Contains(search))
             );
+            query =
+                search.Length == 2
+                    ? matchingNames.Union(db.Teams.AsNoTracking().Where(t => t.Country == CountryIso.From(search)))
+                    : matchingNames;
         }
 
         var total = await query.CountAsync(cancellationToken);
-        var items = await query
+        var rows = await query
             .OrderBy(t => t.Name)
             .ThenBy(t => t.Sport)
             .ThenBy(t => t.Id)
             .Skip((page - 1) * Paging.DefaultPageSize)
             .Take(Paging.DefaultPageSize)
-            .Select(t => new TeamRow(
+            .Select(t => new
+            {
                 t.Id,
                 t.Name,
                 t.Sport,
                 t.Country,
-                t.CountryRef!.NiceName ?? t.CountryRef.Name ?? t.Country
-            ))
-            .ToListAsync(cancellationToken);
+                CountryName = t.CountryRef!.NiceName ?? t.CountryRef.Name,
+            })
+            .ToArrayAsync(cancellationToken);
+        var items = rows.Select(t => new TeamRow(t.Id, t.Name, t.Sport, t.Country, t.CountryName ?? t.Country.Value))
+            .ToArray();
         return new PagedResult<TeamRow>(items, total, page, Paging.DefaultPageSize);
     }
 
     public async Task<TeamInfo?> GetAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
-        var team = await db
+        var projection = await db
             .Teams.AsNoTracking()
-            .Where(t => t.Id == id)
-            .Select(t => new TeamInfo(
+            .Where(t => t.Id == TeamId.From(id))
+            .Select(t => new
+            {
                 t.Id,
                 t.Name,
                 t.Sport,
                 t.Country,
-                t.CountryRef!.NiceName ?? t.CountryRef.Name ?? t.Country,
-                db.SeasonEntries.Count(e => e.Team == t.Id),
-                Array.Empty<TeamSeasonWin>()
-            ))
+                CountryName = t.CountryRef!.NiceName ?? t.CountryRef.Name,
+                SeasonEntryCount = db.SeasonEntries.Count(e => e.Team == t.Id),
+            })
             .FirstOrDefaultAsync(cancellationToken);
-        if (team is null)
+        if (projection is null)
         {
             return null;
         }
 
+        var team = new TeamInfo(
+            projection.Id,
+            projection.Name,
+            projection.Sport,
+            projection.Country,
+            projection.CountryName ?? projection.Country.Value,
+            projection.SeasonEntryCount,
+            Array.Empty<TeamSeasonWin>()
+        );
         var seasonWins = await db
             .Seasons.AsNoTracking()
-            .Where(season => season.WinningTeam == id)
+            .Where(season => season.WinningTeam == TeamId.From(id))
             .Select(season => new TeamSeasonWin(
                 season.Id,
                 season.Sport,
@@ -93,7 +114,7 @@ internal sealed class TeamService(
             static (left, right) =>
             {
                 var endDateComparison = Comparer<DateOnly?>.Default.Compare(right.EndDate, left.EndDate);
-                return endDateComparison != 0 ? endDateComparison : right.SeasonId.CompareTo(left.SeasonId);
+                return endDateComparison != 0 ? endDateComparison : right.SeasonId.Value.CompareTo(left.SeasonId.Value);
             }
         );
         return team with { SeasonWins = seasonWins };
@@ -104,7 +125,7 @@ internal sealed class TeamService(
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         var row = await db
             .Teams.AsNoTracking()
-            .Where(t => t.Id == id)
+            .Where(t => t.Id == TeamId.From(id))
             .Select(t => new
             {
                 t.Name,
@@ -117,9 +138,9 @@ internal sealed class TeamService(
             : new TeamForm
             {
                 Name = row.Name,
-                Sport = row.Sport,
-                Country = row.Country,
-                RowVersion = RowVersion.Compute(row.Name, row.Sport, row.Country),
+                Sport = row.Sport.Value,
+                Country = row.Country.Value,
+                RowVersion = RowVersion.Compute(row.Name, row.Sport.Value, row.Country.Value),
             };
     }
 
@@ -153,12 +174,12 @@ internal sealed class TeamService(
                 var team = new Team
                 {
                     Name = name,
-                    Sport = lookups.Sport!,
-                    Country = lookups.Country!,
+                    Sport = lookups.Sport!.Value,
+                    Country = lookups.Country!.Value,
                 };
                 db.Teams.Add(team);
                 await db.SaveChangesAsync(ct);
-                return Result<int>.Ok(team.Id);
+                return Result<int>.Ok(team.Id.Value);
             },
             IsolationLevel.Serializable,
             cancellationToken
@@ -203,19 +224,24 @@ internal sealed class TeamService(
                 if (
                     !RowVersion.Matches(
                         form.RowVersion,
-                        RowVersion.Compute(current.Name, current.Sport, current.Country)
+                        RowVersion.Compute(current.Name, current.Sport.Value, current.Country.Value)
                     )
                 )
                 {
                     return Error.Conflict(StaleMessage);
                 }
 
-                if (!string.Equals(lookups.Sport, current.Sport, StringComparison.Ordinal))
+                if (lookups.Sport != current.Sport)
                 {
                     return Error.Validation(nameof(TeamForm.Sport), "The sport of a team cannot be changed.");
                 }
 
-                if (await db.Teams.AnyAsync(t => t.Id != id && t.Name == name && t.Sport == current.Sport, ct))
+                if (
+                    await db.Teams.AnyAsync(
+                        t => t.Id != TeamId.From(id) && t.Name == name && t.Sport == current.Sport,
+                        ct
+                    )
+                )
                 {
                     return Error.Validation(
                         nameof(TeamForm.Name),
@@ -223,9 +249,9 @@ internal sealed class TeamService(
                     );
                 }
 
-                var country = lookups.Country!;
+                var country = lookups.Country!.Value;
                 await db
-                    .Teams.Where(t => t.Id == id)
+                    .Teams.Where(t => t.Id == TeamId.From(id))
                     .ExecuteUpdateAsync(s => s.SetProperty(t => t.Name, name).SetProperty(t => t.Country, country), ct);
                 return Result<int>.Ok(id);
             },
@@ -255,12 +281,12 @@ internal sealed class TeamService(
                     return Error.NotFound("Team not found.");
                 }
 
-                if (await db.SeasonEntries.AnyAsync(e => e.Team == id, ct))
+                if (await db.SeasonEntries.AnyAsync(e => e.Team == TeamId.From(id), ct))
                 {
                     return Error.Conflict(InUseMessage);
                 }
 
-                await db.Teams.Where(t => t.Id == id).ExecuteDeleteAsync(ct);
+                await db.Teams.Where(t => t.Id == TeamId.From(id)).ExecuteDeleteAsync(ct);
                 return Result.Ok();
             },
             IsolationLevel.Serializable,
@@ -275,7 +301,7 @@ internal sealed class TeamService(
         return result;
     }
 
-    private static async Task<(string? Sport, string? Country, Error? Failure)> ResolveAsync(
+    private static async Task<(SportName? Sport, CountryIso? Country, Error? Failure)> ResolveAsync(
         MotorsportsDbContext db,
         string sport,
         string country,
@@ -284,15 +310,18 @@ internal sealed class TeamService(
     {
         var sportKey = sport.Trim();
         var countryKey = country.Trim();
-        var canonicalSport = await db.Sports.Where(s => s.Name == sportKey).Select(s => s.Name).FirstOrDefaultAsync(ct);
+        var canonicalSport = await db
+            .Sports.Where(s => s.Name == SportName.From(sportKey))
+            .Select(s => (SportName?)s.Name)
+            .FirstOrDefaultAsync(ct);
         if (canonicalSport is null)
         {
             return (null, null, Error.Validation(nameof(TeamForm.Sport), "Select a valid sport."));
         }
 
         var canonicalCountry = await db
-            .Countries.Where(c => c.Iso == countryKey)
-            .Select(c => c.Iso)
+            .Countries.Where(c => c.Iso == CountryIso.From(countryKey))
+            .Select(c => (CountryIso?)c.Iso)
             .FirstOrDefaultAsync(ct);
         return canonicalCountry is null
             ? (null, null, Error.Validation(nameof(TeamForm.Country), "Select a valid country."))
