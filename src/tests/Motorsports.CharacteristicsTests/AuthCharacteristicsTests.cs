@@ -159,8 +159,8 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         await using var app = await StartAsync();
         var client = app.NewClient();
         var response = await client.GetAsync("/health", TestContext.Current.CancellationToken);
-        response.Headers.GetValues("Content-Security-Policy").ShouldContain("frame-ancestors 'none'");
-        var contentSecurityPolicy = response.Headers.GetValues("Content-Security-Policy-Report-Only").Single();
+        response.Headers.Contains("Content-Security-Policy-Report-Only").ShouldBeFalse();
+        var contentSecurityPolicy = response.Headers.GetValues("Content-Security-Policy").Single();
 
         contentSecurityPolicy.ShouldContain("default-src 'self'");
         contentSecurityPolicy.ShouldContain("base-uri 'self'");
@@ -178,7 +178,10 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
 
         var loginPage = await client.GetAsync("/login", TestContext.Current.CancellationToken);
         var page = await loginPage.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        var loginCsp = loginPage.Headers.GetValues("Content-Security-Policy-Report-Only").Single();
+        loginPage.Headers.Contains("Content-Security-Policy-Report-Only").ShouldBeFalse();
+        var loginCsp = loginPage
+            .Headers.GetValues("Content-Security-Policy")
+            .Single(policy => policy.Contains("default-src 'self'", StringComparison.Ordinal));
         var nonce = Regex.Match(loginCsp, "'nonce-([^']+)'").Groups[1].Value;
         nonce.ShouldNotBeEmpty();
         page.ShouldContain($"<script type=\"importmap\" nonce=\"{nonce}\">");

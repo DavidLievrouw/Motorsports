@@ -96,9 +96,9 @@ The runtime uses the .NET 10 `noble-chiseled-extra` image with IANA time-zone da
 `/health` through `dotnet` without a shell or `curl`; set `HEALTHCHECK_HOST` if the host allowed by `AllowedHosts`
 differs from `ms.dalion.eu`.
 
-The expanded Content Security Policy is currently sent in report-only mode for browser verification. The existing
-`frame-ancestors 'none'` restriction remains enforced. Promote the report-only policy to enforcement only after
-verifying login, authenticated pages, Blazor reconnects, MudBlazor controls, images, and static assets in a browser.
+The Content Security Policy is enforced after browser verification of the report-only policy. Scripts are restricted
+to same-origin resources and a per-response nonce; inline styles remain allowed for MudBlazor. Framing is prohibited
+with `frame-ancestors 'none'`. Browser-extension script injection is not a reason to weaken the application policy.
 ## Database migrations
 
 Migrations run automatically at startup under a MariaDB named lock and are designed to be idempotent across

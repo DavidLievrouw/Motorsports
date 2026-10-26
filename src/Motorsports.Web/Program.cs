@@ -178,8 +178,7 @@ app.Use(
     {
         var nonce = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
         context.Items["CspNonce"] = nonce;
-        context.Response.Headers["Content-Security-Policy"] = "frame-ancestors 'none'";
-        context.Response.Headers["Content-Security-Policy-Report-Only"] = string.Join(
+        context.Response.Headers["Content-Security-Policy"] = string.Join(
             "; ",
             "default-src 'self'",
             "base-uri 'self'",
