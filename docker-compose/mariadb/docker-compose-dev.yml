@@ -5,10 +5,10 @@ services:
     container_name: mariadb
     restart: always
     environment:
-      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD:?Set MARIADB_ROOT_PASSWORD in your environment}
-      - MARIADB_USER=${MARIADB_USER:-motorsports}
-      - MARIADB_PASSWORD=${MARIADB_PASSWORD:?Set MARIADB_PASSWORD in your environment}
-      - MARIADB_DATABASE=${MARIADB_DATABASE:-motorsports}
+      - MARIADB_ROOT_PASSWORD=S3cr37_4321
+      - MARIADB_USER=motorsports
+      - MARIADB_PASSWORD=S3cr37_1234
+      - MARIADB_DATABASE=motorsports
     volumes:
       - ./motorsports_db:/var/lib/mysql
     ports:
