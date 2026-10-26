@@ -68,9 +68,11 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
     private async Task<long> CountAsync(string sql)
     {
         await using var db = await fixture.CreateContextFactory().CreateDbContextAsync(Ct);
+#pragma warning disable EF1003 // Callers supply test-authored SQL fragments, not user input.
         return await db
             .Database.SqlQueryRaw<long>("SELECT CAST(COUNT(*) AS SIGNED) AS `Value` FROM (" + sql + ") x")
             .SingleAsync(Ct);
+#pragma warning restore EF1003
     }
 
     // ---------- Sports ----------

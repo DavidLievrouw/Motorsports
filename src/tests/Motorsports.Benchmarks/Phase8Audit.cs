@@ -326,9 +326,11 @@ internal static class Phase8Audit
         await using var db = await factory.CreateDbContextAsync();
         foreach (var query in queries)
         {
+#pragma warning disable EF1003 // query.Sql is EF-generated query text; its values are bound separately.
             var plan = await db
                 .Database.SqlQueryRaw<string>("ANALYZE FORMAT=JSON " + query.Sql, query.Parameters)
                 .ToArrayAsync();
+#pragma warning restore EF1003
             using var json = JsonDocument.Parse(plan.Single());
             plans.Add(json.RootElement.Clone());
         }

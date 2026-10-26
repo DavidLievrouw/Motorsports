@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microting.EntityFrameworkCore.MySql.Infrastructure;
 using MySqlConnector;
-using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 
 namespace Motorsports.Infrastructure;
 

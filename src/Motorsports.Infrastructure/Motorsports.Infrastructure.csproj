@@ -7,7 +7,7 @@
     <PackageReference Include="Vogen" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
+    <PackageReference Include="Microting.EntityFrameworkCore.MySql" />
     <PackageReference Include="Microsoft.Extensions.Identity.Core" />
     <ProjectReference Include="..\Motorsports.Common\Motorsports.Common.csproj" />
   </ItemGroup>
