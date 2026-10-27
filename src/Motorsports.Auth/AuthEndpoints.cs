@@ -23,9 +23,17 @@ public static class AuthEndpoints
 
     // Verified for unknown users so response time does not reveal whether a user name exists.
     private static readonly User DummyUser = new();
+
     private static readonly string DummyPasswordHash = new PasswordHasher<User>().HashPassword(
         DummyUser,
         Guid.NewGuid().ToString()
+    );
+
+    private sealed record EndpointServices(
+        AuthProtection Protection,
+        AuthThrottleStore Throttle,
+        SignInManager<User> SignInManager,
+        ILoggerFactory LoggerFactory
     );
 
     extension(IServiceCollection services)
@@ -82,29 +90,153 @@ public static class AuthEndpoints
         [FromForm] LoginForm form,
         HttpContext context,
         IAntiforgery antiforgery,
-        AuthProtection protection,
-        AuthThrottleStore throttle,
-        SignInManager<User> signInManager,
+        [AsParameters] EndpointServices services,
         IValidator<LoginForm> validator,
         IPasswordHasher<User> passwordHasher,
-        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken
     )
     {
-        // Explicit login-CSRF defence: reject cross-site credential posts before any credential check or sign-in.
+        // Reject cross-site credential posts before any credential check or sign-in.
         if (!await antiforgery.IsRequestValidAsync(context))
         {
             return Results.BadRequest();
         }
 
-        var logger = loggerFactory.CreateLogger("Motorsports.Auth.Login");
+        var protection = services.Protection;
+        var signInManager = services.SignInManager;
+        var logger = services.LoggerFactory.CreateLogger("Motorsports.Auth.Login");
         using var lease = protection.TryEnter();
         if (!lease.IsAcquired)
         {
             return protection.Reject(context, 1);
         }
-        var admission = await throttle.ReserveAsync(
+
+        var (reservation, rejection) = await ReserveAttemptAsync(
+            context,
+            services,
             signInManager.UserManager.NormalizeName(form.Username is { Length: <= 255 } ? form.Username : ""),
+            logger,
+            cancellationToken
+        );
+        if (rejection is not null)
+        {
+            return rejection;
+        }
+        if (reservation is null)
+        {
+            return protection.Reject(context, 60, unavailable: true);
+        }
+
+        if (!(await validator.ValidateAsync(form, cancellationToken)).IsValid)
+        {
+            var completionFailure = await CompleteAttemptAsync(
+                reservation,
+                AuthAttemptOutcome.InvalidInput,
+                context,
+                services,
+                logger
+            );
+            if (completionFailure is not null)
+            {
+                return completionFailure;
+            }
+
+            return Results.Redirect(LoginFailedUrl(form.ReturnUrl));
+        }
+
+        return await AuthenticateLoginAsync(form, context, services, passwordHasher, reservation, logger);
+    }
+
+    private static async Task<IResult> AuthenticateLoginAsync(
+        LoginForm form,
+        HttpContext context,
+        EndpointServices services,
+        IPasswordHasher<User> passwordHasher,
+        AuthReservation reservation,
+        ILogger logger
+    )
+    {
+        var signInManager = services.SignInManager;
+        var user = await signInManager.UserManager.FindByNameAsync(form.Username!);
+        if (user is null)
+        {
+            passwordHasher.VerifyHashedPassword(DummyUser, DummyPasswordHash, form.Password!);
+            return await FailedLoginAsync(form, reservation, context, services, logger);
+        }
+
+        var result = await signInManager.CheckPasswordSignInAsync(user, form.Password!, lockoutOnFailure: false);
+        if (!result.Succeeded)
+        {
+            return await FailedLoginAsync(form, reservation, context, services, logger);
+        }
+
+        return await CompleteLoginAsync(user, form, reservation, context, services, logger);
+    }
+
+    private static async Task<IResult> CompleteLoginAsync(
+        User user,
+        LoginForm form,
+        AuthReservation reservation,
+        HttpContext context,
+        EndpointServices services,
+        ILogger logger
+    )
+    {
+        var completionFailure = await CompleteAttemptAsync(
+            reservation,
+            AuthAttemptOutcome.Succeeded,
+            context,
+            services,
+            logger
+        );
+        if (completionFailure is not null)
+        {
+            return completionFailure;
+        }
+
+        await services.SignInManager.SignInAsync(user, isPersistent: false);
+        var returnUrl = LocalUrl.OrDefault(form.ReturnUrl);
+        var target = user.ForceChangePassword
+            ? $"{ChangePasswordPath}?returnUrl={Uri.EscapeDataString(returnUrl)}"
+            : returnUrl;
+        return Results.Redirect(target);
+    }
+
+    private static async Task<IResult> FailedLoginAsync(
+        LoginForm form,
+        AuthReservation reservation,
+        HttpContext context,
+        EndpointServices services,
+        ILogger logger
+    )
+    {
+        var completionFailure = await CompleteAttemptAsync(
+            reservation,
+            AuthAttemptOutcome.Failed,
+            context,
+            services,
+            logger
+        );
+        if (completionFailure is not null)
+        {
+            return completionFailure;
+        }
+
+        logger.LogInformation("Failed login attempt.");
+        return Results.Redirect(LoginFailedUrl(form.ReturnUrl));
+    }
+
+    private static async Task<(AuthReservation? Reservation, IResult? Rejection)> ReserveAttemptAsync(
+        HttpContext context,
+        EndpointServices services,
+        string normalizedUsername,
+        ILogger logger,
+        CancellationToken cancellationToken
+    )
+    {
+        var protection = services.Protection;
+        var admission = await services.Throttle.ReserveAsync(
+            normalizedUsername,
             ClientAddress(context),
             protection.Device(context),
             cancellationToken
@@ -115,70 +247,36 @@ public static class AuthEndpoints
                 "Authentication protection could not reserve an attempt: {Reason}",
                 admission.Error.Message
             );
-            return protection.Reject(context, 60, unavailable: true);
-        }
-        if (admission.Value.Reservation is not { } reservation)
-        {
-            return protection.Reject(context, admission.Value.RetryAfterSeconds);
-        }
-        if (!(await validator.ValidateAsync(form, cancellationToken)).IsValid)
-        {
-            var invalid = await throttle.CompleteAsync(
-                reservation,
-                AuthAttemptOutcome.InvalidInput,
-                CancellationToken.None
-            );
-            if (!invalid.IsSuccess)
-            {
-                logger.LogWarning("Authentication protection completion failed: {Reason}", invalid.Error.Message);
-                return protection.Reject(context, 60, unavailable: true);
-            }
-            return Results.Redirect(LoginFailedUrl(form.ReturnUrl));
+            return (null, protection.Reject(context, 60, unavailable: true));
         }
 
-        var user = await signInManager.UserManager.FindByNameAsync(form.Username!);
-        if (user is null)
+        if (admission.Value.Reservation is { } reservation)
         {
-            passwordHasher.VerifyHashedPassword(DummyUser, DummyPasswordHash, form.Password!);
-        }
-        else
-        {
-            var result = await signInManager.CheckPasswordSignInAsync(user, form.Password!, lockoutOnFailure: false);
-            if (result.Succeeded)
-            {
-                var completion = await throttle.CompleteAsync(
-                    reservation,
-                    AuthAttemptOutcome.Succeeded,
-                    CancellationToken.None
-                );
-                if (!completion.IsSuccess)
-                {
-                    logger.LogWarning(
-                        "Authentication protection completion failed: {Reason}",
-                        completion.Error.Message
-                    );
-                    return protection.Reject(context, 60, unavailable: true);
-                }
-                await signInManager.SignInAsync(user, isPersistent: false);
-                return Results.Redirect(
-                    user.ForceChangePassword
-                        ? $"{ChangePasswordPath}?returnUrl={Uri.EscapeDataString(LocalUrl.OrDefault(form.ReturnUrl))}"
-                        : LocalUrl.OrDefault(form.ReturnUrl)
-                );
-            }
+            return (reservation, null);
         }
 
-        var failure = await throttle.CompleteAsync(reservation, AuthAttemptOutcome.Failed, CancellationToken.None);
-        if (!failure.IsSuccess)
-        {
-            logger.LogWarning("Authentication protection completion failed: {Reason}", failure.Error.Message);
-            return protection.Reject(context, 60, unavailable: true);
-        }
-        logger.LogInformation("Failed login attempt.");
-        return Results.Redirect(LoginFailedUrl(form.ReturnUrl));
+        return (null, protection.Reject(context, admission.Value.RetryAfterSeconds));
     }
 
-    private static async Task<IResult> LogoutAsync(SignInManager<User> signInManager, IFormCollection _)
+    private static async Task<IResult?> CompleteAttemptAsync(
+        AuthReservation reservation,
+        AuthAttemptOutcome outcome,
+        HttpContext context,
+        EndpointServices services,
+        ILogger logger
+    )
+    {
+        var completed = await services.Throttle.CompleteAsync(reservation, outcome, CancellationToken.None);
+        if (completed.IsSuccess)
+        {
+            return null;
+        }
+
+        logger.LogWarning("Authentication protection completion failed: {Reason}", completed.Error.Message);
+        return services.Protection.Reject(context, 60, unavailable: true);
+    }
+
+    private static async Task<IResult> LogoutAsync(SignInManager<User> signInManager)
     {
         await signInManager.SignOutAsync();
         return Results.Redirect(LoginPath);
@@ -187,22 +285,14 @@ public static class AuthEndpoints
     private static async Task<IResult> ChangePasswordAsync(
         [FromForm] ChangePasswordModel form,
         HttpContext context,
-        AuthProtection protection,
-        AuthThrottleStore throttle,
-        SignInManager<User> signInManager,
+        [AsParameters] EndpointServices services,
         IValidator<ChangePasswordModel> validator,
-        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken
     )
     {
-        var logger = loggerFactory.CreateLogger("Motorsports.Auth.ChangePassword");
-        var redirectUrl = (string? error) =>
-        {
-            var url = $"{ChangePasswordPath}?returnUrl={Uri.EscapeDataString(LocalUrl.OrDefault(form.ReturnUrl))}";
-            return error is null ? url : $"{url}&error={Uri.EscapeDataString(error)}";
-        };
-
-        var userManager = signInManager.UserManager;
+        var protection = services.Protection;
+        var logger = services.LoggerFactory.CreateLogger("Motorsports.Auth.ChangePassword");
+        var userManager = services.SignInManager.UserManager;
         var user = await userManager.GetUserAsync(context.User);
         if (user is null)
         {
@@ -214,57 +304,64 @@ public static class AuthEndpoints
         {
             return protection.Reject(context, 1);
         }
-        var admission = await throttle.ReserveAsync(
+
+        var (reservation, rejection) = await ReserveAttemptAsync(
+            context,
+            services,
             userManager.NormalizeName(user.Username),
-            ClientAddress(context),
-            protection.Device(context),
+            logger,
             cancellationToken
         );
-        if (!admission.IsSuccess)
+        if (rejection is not null)
         {
-            logger.LogWarning(
-                "Authentication protection could not reserve an attempt: {Reason}",
-                admission.Error.Message
-            );
+            return rejection;
+        }
+        if (reservation is null)
+        {
             return protection.Reject(context, 60, unavailable: true);
         }
-        if (admission.Value.Reservation is not { } reservation)
-        {
-            return protection.Reject(context, admission.Value.RetryAfterSeconds);
-        }
+
         if (!(await validator.ValidateAsync(form, cancellationToken)).IsValid)
         {
-            var invalid = await throttle.CompleteAsync(
+            var completionFailure = await CompleteAttemptAsync(
                 reservation,
                 AuthAttemptOutcome.InvalidInput,
-                CancellationToken.None
+                context,
+                services,
+                logger
             );
-            if (!invalid.IsSuccess)
+            if (completionFailure is not null)
             {
-                logger.LogWarning("Authentication protection completion failed: {Reason}", invalid.Error.Message);
-                return protection.Reject(context, 60, unavailable: true);
+                return completionFailure;
             }
-            return Results.Redirect(redirectUrl("invalid"));
+
+            return Results.Redirect(ChangePasswordUrl(form, "invalid"));
         }
 
+        return await ProcessPasswordChangeAsync(form, user, context, services, logger, reservation);
+    }
+
+    private static async Task<IResult> ProcessPasswordChangeAsync(
+        ChangePasswordModel form,
+        User user,
+        HttpContext context,
+        EndpointServices services,
+        ILogger logger,
+        AuthReservation reservation
+    )
+    {
+        var userManager = services.SignInManager.UserManager;
         var result = await userManager.ChangePasswordAsync(user, form.CurrentPassword!, form.NewPassword!);
-
-        var authAttemptOutcome = result.Errors.Any(error => error.Code == "PasswordMismatch")
-            ? AuthAttemptOutcome.Failed
-            : AuthAttemptOutcome.InvalidInput;
-        var outcome = result.Succeeded ? AuthAttemptOutcome.Succeeded : authAttemptOutcome;
-        var completed = await throttle.CompleteAsync(reservation, outcome, CancellationToken.None);
-        if (!completed.IsSuccess)
+        var outcome = GetPasswordChangeOutcome(result);
+        var completionFailure = await CompleteAttemptAsync(reservation, outcome, context, services, logger);
+        if (completionFailure is not null)
         {
-            logger.LogWarning("Authentication protection completion failed: {Reason}", completed.Error.Message);
-            return protection.Reject(context, 60, unavailable: true);
+            return completionFailure;
         }
+
         if (!result.Succeeded)
         {
-            var error = result.Errors.Any(identityError => identityError.Code == "PasswordMismatch")
-                ? "current"
-                : "failed";
-            return Results.Redirect(redirectUrl(error));
+            return Results.Redirect(ChangePasswordUrl(form, IsPasswordMismatch(result) ? "current" : "failed"));
         }
 
         if (user.ForceChangePassword)
@@ -278,8 +375,25 @@ public static class AuthEndpoints
             }
         }
 
-        await signInManager.RefreshSignInAsync(user);
+        await services.SignInManager.RefreshSignInAsync(user);
         return Results.Redirect(LocalUrl.OrDefault(form.ReturnUrl));
+    }
+
+    private static AuthAttemptOutcome GetPasswordChangeOutcome(IdentityResult result)
+    {
+        var passwordChangeOutcome = IsPasswordMismatch(result)
+            ? AuthAttemptOutcome.Failed
+            : AuthAttemptOutcome.InvalidInput;
+        return result.Succeeded ? AuthAttemptOutcome.Succeeded : passwordChangeOutcome;
+    }
+
+    private static bool IsPasswordMismatch(IdentityResult result) =>
+        result.Errors.Any(identityError => identityError.Code == "PasswordMismatch");
+
+    private static string ChangePasswordUrl(ChangePasswordModel form, string? error)
+    {
+        var url = $"{ChangePasswordPath}?returnUrl={Uri.EscapeDataString(LocalUrl.OrDefault(form.ReturnUrl))}";
+        return error is null ? url : $"{url}&error={Uri.EscapeDataString(error)}";
     }
 
     private static string ClientAddress(HttpContext context)

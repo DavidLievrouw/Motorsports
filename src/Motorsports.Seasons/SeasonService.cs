@@ -223,98 +223,118 @@ internal sealed class SeasonService(
 
         var participantIds = form.Winners.Select(ParticipantId.From).ToArray();
         TeamId? winningTeamId = form.WinningTeam is { } formWinningTeam ? TeamId.From(formWinningTeam) : null;
-        var label = form.Label!.Trim();
         var result = await factory.InTransactionAsync(
-            async (db, ct) =>
-            {
-                var rows = await db
-                    .Seasons.FromSql($"SELECT * FROM `Season` WHERE `Id` = {seasonId.Value} FOR UPDATE")
-                    .AsNoTracking()
-                    .ToListAsync(ct);
-                if (rows.Count == 0)
-                {
-                    return Error.NotFound("Season not found.");
-                }
-
-                var current = rows[0];
-                var winnerIds = await db
-                    .SeasonWinners.Where(winner => winner.Season == seasonId)
-                    .OrderBy(winner => winner.Participant)
-                    .Select(winner => winner.Participant)
-                    .ToListAsync(ct);
-                if (
-                    !RowVersion.Matches(
-                        form.RowVersion,
-                        ComputeVersion(current.Sport, current.Label, current.WinningTeam, winnerIds)
-                    )
-                )
-                {
-                    return Error.Conflict(StaleMessage);
-                }
-
-                var sport = await db
-                    .Sports.Where(row => row.Name == SportName.From(form.Sport!.Trim()))
-                    .Select(row => (SportName?)row.Name)
-                    .FirstOrDefaultAsync(ct);
-                if (sport is null)
-                {
-                    return Error.Validation(nameof(SeasonForm.Sport), "Select a valid sport.");
-                }
-
-                if (sport.Value != current.Sport)
-                {
-                    return Error.Validation(nameof(SeasonForm.Sport), "The sport of a season cannot be changed.");
-                }
-
-                if (
-                    form.WinningTeam is { } teamId
-                    && !await db.SeasonEntries.AnyAsync(
-                        entry => entry.Season == seasonId && entry.Team == TeamId.From(teamId),
-                        ct
-                    )
-                )
-                {
-                    return Error.Validation(nameof(SeasonForm.WinningTeam), "Select a team entered in this season.");
-                }
-
-                if (
-                    form.Winners.Count > 0
-                    && await db.Participants.CountAsync(participant => participantIds.Contains(participant.Id), ct)
-                        != participantIds.Length
-                )
-                {
-                    return Error.Validation(nameof(SeasonForm.Winners), "Select valid participants.");
-                }
-
-                await db
-                    .Seasons.Where(season => season.Id == seasonId)
-                    .ExecuteUpdateAsync(
-                        updates =>
-                            updates
-                                .SetProperty(season => season.Label, label)
-                                .SetProperty(season => season.WinningTeam, winningTeamId),
-                        ct
-                    );
-                await db.SeasonWinners.Where(winner => winner.Season == seasonId).ExecuteDeleteAsync(ct);
-                if (participantIds.Length > 0)
-                {
-                    db.SeasonWinners.AddRange(
-                        participantIds.Select(participant => new SeasonWinner
-                        {
-                            Season = seasonId,
-                            Participant = participant,
-                        })
-                    );
-                    await db.SaveChangesAsync(ct);
-                }
-
-                return Result<int>.Ok(seasonId.Value);
-            },
+            (db, ct) => UpdateInTransactionAsync(db, seasonId, form, participantIds, winningTeamId, ct),
             IsolationLevel.Serializable,
             cancellationToken
         );
         InvalidateAfterWrite(result);
         return result;
+    }
+
+    private static async Task<Result<int>> UpdateInTransactionAsync(
+        MotorsportsDbContext db,
+        SeasonId seasonId,
+        SeasonForm form,
+        ParticipantId[] participantIds,
+        TeamId? winningTeamId,
+        CancellationToken ct
+    )
+    {
+        var rows = await db
+            .Seasons.FromSql($"SELECT * FROM `Season` WHERE `Id` = {seasonId.Value} FOR UPDATE")
+            .AsNoTracking()
+            .ToListAsync(ct);
+        if (rows.Count == 0)
+        {
+            return Error.NotFound("Season not found.");
+        }
+
+        var current = rows[0];
+        var winnerIds = await db
+            .SeasonWinners.Where(winner => winner.Season == seasonId)
+            .OrderBy(winner => winner.Participant)
+            .Select(winner => winner.Participant)
+            .ToListAsync(ct);
+        if (
+            !RowVersion.Matches(
+                form.RowVersion,
+                ComputeVersion(current.Sport, current.Label, current.WinningTeam, winnerIds)
+            )
+        )
+        {
+            return Error.Conflict(StaleMessage);
+        }
+
+        var validation = await ValidateUpdateReferencesAsync(db, current, form, participantIds, winningTeamId, ct);
+        if (!validation.IsSuccess)
+        {
+            return validation.Error;
+        }
+
+        var label = form.Label!.Trim();
+        await db
+            .Seasons.Where(season => season.Id == seasonId)
+            .ExecuteUpdateAsync(
+                updates =>
+                    updates
+                        .SetProperty(season => season.Label, label)
+                        .SetProperty(season => season.WinningTeam, winningTeamId),
+                ct
+            );
+        await db.SeasonWinners.Where(winner => winner.Season == seasonId).ExecuteDeleteAsync(ct);
+        if (participantIds.Length > 0)
+        {
+            db.SeasonWinners.AddRange(
+                participantIds.Select(participant => new SeasonWinner { Season = seasonId, Participant = participant })
+            );
+            await db.SaveChangesAsync(ct);
+        }
+
+        return Result<int>.Ok(seasonId.Value);
+    }
+
+    private static async Task<Result<Unit>> ValidateUpdateReferencesAsync(
+        MotorsportsDbContext db,
+        Season current,
+        SeasonForm form,
+        ParticipantId[] participantIds,
+        TeamId? winningTeamId,
+        CancellationToken ct
+    )
+    {
+        var sport = await db
+            .Sports.Where(row => row.Name == SportName.From(form.Sport!.Trim()))
+            .Select(row => (SportName?)row.Name)
+            .FirstOrDefaultAsync(ct);
+        if (sport is null)
+        {
+            return Error.Validation(nameof(SeasonForm.Sport), "Select a valid sport.");
+        }
+
+        if (sport.Value != current.Sport)
+        {
+            return Error.Validation(nameof(SeasonForm.Sport), "The sport of a season cannot be changed.");
+        }
+
+        if (
+            winningTeamId is { } teamId
+            && !await db.SeasonEntries.AnyAsync(entry => entry.Season == current.Id && entry.Team == teamId, ct)
+        )
+        {
+            return Error.Validation(nameof(SeasonForm.WinningTeam), "Select a team entered in this season.");
+        }
+
+        if (
+            participantIds.Length > 0
+            && await db.Participants.CountAsync(participant => participantIds.Contains(participant.Id), ct)
+                != participantIds.Length
+        )
+        {
+            return Error.Validation(nameof(SeasonForm.Winners), "Select valid participants.");
+        }
+
+        return Result.Ok();
     }
 
     public async Task<SeasonDeleteInfo?> GetDeleteInfoAsync(int id, CancellationToken cancellationToken = default)

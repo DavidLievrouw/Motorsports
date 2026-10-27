@@ -38,169 +38,256 @@ public sealed class AuthThrottleStore(
         CancellationToken cancellationToken
     ) =>
         await RunAsync<AuthAdmission>(
-            async (db, ct) =>
-            {
-                var global = await LockGlobalAsync(db, ct);
-                var now = UtcNow();
-                ResetWindow(global, now, _limits.GlobalWindowSeconds);
-                if (global.Attempts >= _limits.GlobalAttempts)
-                {
-                    return Result<AuthAdmission>.Ok(
-                        new AuthAdmission(SecondsUntil(global.WindowStart.AddSeconds(_limits.GlobalWindowSeconds), now))
-                    );
-                }
-
-                // Charge the global budget even when an account/source is already blocked. This bounds DB work
-                // and key creation during floods; only the singleton row is read once that budget is exhausted.
-                global.Attempts++;
-                await CleanupExpiredAsync(db, global, now, ct);
-
-                // MariaDB's username collation also equates accents and trailing spaces. Key existing accounts
-                // by their immutable ID, not merely by an uppercased spelling of the submitted username.
-                var userIds = await db
-                    .Users.AsNoTracking()
-                    .Where(user => user.Username == normalizedUsername && !user.IsDeleted)
-                    .Select(user => user.Id)
-                    .Take(1)
-                    .ToArrayAsync(ct);
-                var accountKey =
-                    userIds.Length == 0
-                        ? Key("account", $"name:{normalizedUsername}")
-                        : Key("account", $"id:{userIds[0].Value}");
-                string[] keys = [accountKey, Key("ip", address), Key("device", device)];
-                var stored = await db
-                    .AuthThrottleStates.Where(row => Enumerable.Contains(keys, row.Key))
-                    .ToArrayAsync(ct);
-                var states = new AuthThrottleState[keys.Length];
-                var retry = 0;
-                for (var index = 0; index < keys.Length; index++)
-                {
-                    var state = Array.Find(stored, row => row.Key == keys[index]);
-                    if (state is null)
-                    {
-                        state = new AuthThrottleState { Key = keys[index], WindowStart = now };
-                    }
-                    else if (state.ExpiresAt <= now)
-                    {
-                        state.Attempts = 0;
-                        state.Failures = 0;
-                        state.AccountChanges = 0;
-                        state.LastAccount = null;
-                        state.LastSuccess = null;
-                        state.BlockedUntil = DateTime.UnixEpoch;
-                        state.WindowStart = now;
-                    }
-                    if (state.LastFailure.AddSeconds(_limits.AccountWindowSeconds) <= now)
-                    {
-                        state.Failures = 0;
-                    }
-                    var window = index == 0 ? _limits.AccountWindowSeconds : _limits.SourceWindowSeconds;
-                    ResetWindow(state, now, window);
-                    var permits = index switch
-                    {
-                        0 => _limits.AccountFailures,
-                        1 => _limits.IpAttempts,
-                        _ => _limits.DeviceAttempts,
-                    };
-                    if (state.Attempts >= permits)
-                    {
-                        retry = Math.Max(retry, SecondsUntil(state.WindowStart.AddSeconds(window), now));
-                    }
-                    retry = Math.Max(retry, SecondsUntil(state.BlockedUntil, now));
-                    states[index] = state;
-                }
-
-                if (retry == 0)
-                {
-                    for (var index = 0; index < states.Length; index++)
-                    {
-                        var state = states[index];
-                        if (db.Entry(state).State == EntityState.Detached)
-                        {
-                            db.AuthThrottleStates.Add(state);
-                        }
-                        state.Attempts++;
-                        state.ExpiresAt = now.AddHours(_limits.ReputationHours);
-                        if (index > 0)
-                        {
-                            if (state.LastAccount is not null && state.LastAccount != accountKey)
-                            {
-                                state.AccountChanges = Math.Min(100, state.AccountChanges + 1);
-                            }
-                            state.LastAccount = accountKey;
-                        }
-                    }
-                }
-
-                await db.SaveChangesAsync(ct);
-                return Result<AuthAdmission>.Ok(
-                    new AuthAdmission(retry, retry == 0 ? new AuthReservation(keys, states[0].WindowStart) : null)
-                );
-            },
+            (db, ct) => ReserveInTransactionAsync(db, normalizedUsername, address, device, ct),
             cancellationToken
         );
+
+    private async Task<Result<AuthAdmission>> ReserveInTransactionAsync(
+        MotorsportsDbContext db,
+        string normalizedUsername,
+        string address,
+        string device,
+        CancellationToken ct
+    )
+    {
+        var global = await LockGlobalAsync(db, ct);
+        var now = UtcNow();
+        ResetWindow(global, now, _limits.GlobalWindowSeconds);
+        if (global.Attempts >= _limits.GlobalAttempts)
+        {
+            return Result<AuthAdmission>.Ok(
+                new AuthAdmission(SecondsUntil(global.WindowStart.AddSeconds(_limits.GlobalWindowSeconds), now))
+            );
+        }
+
+        // Charge the global budget even when an account/source is already blocked. This bounds DB work
+        // and key creation during floods; only the singleton row is read once that budget is exhausted.
+        global.Attempts++;
+        await CleanupExpiredAsync(db, global, now, ct);
+        var accountKey = await GetAccountKeyAsync(db, normalizedUsername, ct);
+        string[] keys = [accountKey, Key("ip", address), Key("device", device)];
+        var stored = await db.AuthThrottleStates.Where(row => Enumerable.Contains(keys, row.Key)).ToArrayAsync(ct);
+        var states = CreateStates(keys, stored, now);
+        var retry = GetRetryAfter(states, now);
+        if (retry == 0)
+        {
+            RecordReservation(db, states, accountKey, now);
+        }
+
+        await db.SaveChangesAsync(ct);
+        return Result<AuthAdmission>.Ok(
+            new AuthAdmission(retry, retry == 0 ? new AuthReservation(keys, states[0].WindowStart) : null)
+        );
+    }
+
+    private static async Task<string> GetAccountKeyAsync(
+        MotorsportsDbContext db,
+        string normalizedUsername,
+        CancellationToken ct
+    )
+    {
+        // MariaDB's username collation also equates accents and trailing spaces. Key existing accounts
+        // by their immutable ID, not merely by an uppercased spelling of the submitted username.
+        var userIds = await db
+            .Users.AsNoTracking()
+            .Where(user => user.Username == normalizedUsername && !user.IsDeleted)
+            .Select(user => user.Id)
+            .Take(1)
+            .ToArrayAsync(ct);
+        return userIds.Length == 0
+            ? Key("account", $"name:{normalizedUsername}")
+            : Key("account", $"id:{userIds[0].Value}");
+    }
+
+    private AuthThrottleState[] CreateStates(string[] keys, AuthThrottleState[] stored, DateTime now)
+    {
+        var states = new AuthThrottleState[keys.Length];
+        for (var index = 0; index < keys.Length; index++)
+        {
+            var state = Array.Find(stored, row => row.Key == keys[index]);
+            states[index] = PrepareState(state, keys[index], index, now);
+        }
+
+        return states;
+    }
+
+    private AuthThrottleState PrepareState(AuthThrottleState? state, string key, int index, DateTime now)
+    {
+        if (state is null)
+        {
+            state = new AuthThrottleState { Key = key, WindowStart = now };
+        }
+        else if (state.ExpiresAt <= now)
+        {
+            ResetExpiredState(state, now);
+        }
+
+        if (state.LastFailure.AddSeconds(_limits.AccountWindowSeconds) <= now)
+        {
+            state.Failures = 0;
+        }
+
+        ResetWindow(state, now, index == 0 ? _limits.AccountWindowSeconds : _limits.SourceWindowSeconds);
+        return state;
+    }
+
+    private static void ResetExpiredState(AuthThrottleState state, DateTime now)
+    {
+        state.Attempts = 0;
+        state.Failures = 0;
+        state.AccountChanges = 0;
+        state.LastAccount = null;
+        state.LastSuccess = null;
+        state.BlockedUntil = DateTime.UnixEpoch;
+        state.WindowStart = now;
+    }
+
+    private int GetRetryAfter(AuthThrottleState[] states, DateTime now)
+    {
+        var retry = 0;
+        for (var index = 0; index < states.Length; index++)
+        {
+            var state = states[index];
+            var window = index == 0 ? _limits.AccountWindowSeconds : _limits.SourceWindowSeconds;
+            if (state.Attempts >= GetPermits(index))
+            {
+                retry = Math.Max(retry, SecondsUntil(state.WindowStart.AddSeconds(window), now));
+            }
+
+            retry = Math.Max(retry, SecondsUntil(state.BlockedUntil, now));
+        }
+
+        return retry;
+    }
+
+    private int GetPermits(int index) =>
+        index switch
+        {
+            0 => _limits.AccountFailures,
+            1 => _limits.IpAttempts,
+            _ => _limits.DeviceAttempts,
+        };
+
+    private void RecordReservation(MotorsportsDbContext db, AuthThrottleState[] states, string accountKey, DateTime now)
+    {
+        foreach (var state in states)
+        {
+            if (db.Entry(state).State == EntityState.Detached)
+            {
+                db.AuthThrottleStates.Add(state);
+            }
+
+            state.Attempts++;
+            state.ExpiresAt = now.AddHours(_limits.ReputationHours);
+        }
+
+        for (var index = 1; index < states.Length; index++)
+        {
+            RecordSourceAccount(states[index], accountKey);
+        }
+    }
+
+    private static void RecordSourceAccount(AuthThrottleState state, string accountKey)
+    {
+        if (state.LastAccount is not null && state.LastAccount != accountKey)
+        {
+            state.AccountChanges = Math.Min(100, state.AccountChanges + 1);
+        }
+
+        state.LastAccount = accountKey;
+    }
 
     public async Task<Result<Unit>> CompleteAsync(
         AuthReservation reservation,
         AuthAttemptOutcome outcome,
         CancellationToken cancellationToken
-    ) =>
-        await RunAsync(
-            async (db, ct) =>
-            {
-                await LockGlobalAsync(db, ct);
-                var now = UtcNow();
-                var states = await db
-                    .AuthThrottleStates.Where(row => Enumerable.Contains(reservation.Keys, row.Key))
-                    .ToArrayAsync(ct);
-                foreach (var state in states)
-                {
-                    var account = state.Key == reservation.Keys[0];
-                    if (outcome == AuthAttemptOutcome.Succeeded)
-                    {
-                        state.LastSuccess = now;
-                        // Successful logins consume source/global permits, not the failed-account budget.
-                        // Do not wipe other concurrent failures or cooldowns on a successful request.
-                        if (account && state.WindowStart == reservation.AccountWindow)
-                        {
-                            state.Attempts = Math.Max(0, state.Attempts - 1);
-                        }
-                    }
-                    else if (outcome == AuthAttemptOutcome.Failed)
-                    {
-                        if (state.LastFailure.AddSeconds(_limits.AccountWindowSeconds) <= now)
-                        {
-                            state.Failures = 0;
-                        }
-                        state.LastFailure = now;
-                        state.Failures = Math.Min(100, state.Failures + 1);
-                        var suspiciousSource = !account && state.AccountChanges >= 4 && state.Failures >= 3;
-                        var unprovenSource =
-                            !account
-                            && (
-                                state.LastSuccess is null
-                                || state.LastSuccess.Value.AddHours(_limits.ReputationHours) <= now
-                            );
-                        var exponent =
-                            state.Failures - (account || unprovenSource ? 3 : 4) + (suspiciousSource ? 2 : 0);
-                        if (exponent >= 0)
-                        {
-                            var seconds = Math.Min(_limits.MaximumCooldownSeconds, 1 << Math.Min(16, exponent));
-                            state.BlockedUntil = now.AddSeconds(seconds);
-                        }
-                    }
-                    state.ExpiresAt = now.AddHours(_limits.ReputationHours);
-                }
-                if (states.Length != reservation.Keys.Length)
-                {
-                    logger.LogWarning("Authentication protection reservation was removed before completion.");
-                    return Error.Conflict("Authentication protection state changed. Retry later.");
-                }
-                await db.SaveChangesAsync(ct);
-                return Result.Ok();
-            },
-            cancellationToken
-        );
+    ) => await RunAsync((db, ct) => CompleteInTransactionAsync(db, reservation, outcome, ct), cancellationToken);
+
+    private async Task<Result<Unit>> CompleteInTransactionAsync(
+        MotorsportsDbContext db,
+        AuthReservation reservation,
+        AuthAttemptOutcome outcome,
+        CancellationToken ct
+    )
+    {
+        await LockGlobalAsync(db, ct);
+        var now = UtcNow();
+        var states = await db
+            .AuthThrottleStates.Where(row => Enumerable.Contains(reservation.Keys, row.Key))
+            .ToArrayAsync(ct);
+        foreach (var state in states)
+        {
+            CompleteState(state, state.Key == reservation.Keys[0], reservation, outcome, now);
+        }
+
+        if (states.Length != reservation.Keys.Length)
+        {
+            logger.LogWarning("Authentication protection reservation was removed before completion.");
+            return Error.Conflict("Authentication protection state changed. Retry later.");
+        }
+
+        await db.SaveChangesAsync(ct);
+        return Result.Ok();
+    }
+
+    private void CompleteState(
+        AuthThrottleState state,
+        bool account,
+        AuthReservation reservation,
+        AuthAttemptOutcome outcome,
+        DateTime now
+    )
+    {
+        switch (outcome)
+        {
+            case AuthAttemptOutcome.Succeeded:
+                RecordSuccess(state, account, reservation, now);
+                break;
+            case AuthAttemptOutcome.Failed:
+                RecordFailure(state, account, now);
+                break;
+            case AuthAttemptOutcome.InvalidInput:
+                break;
+        }
+
+        state.ExpiresAt = now.AddHours(_limits.ReputationHours);
+    }
+
+    private static void RecordSuccess(AuthThrottleState state, bool account, AuthReservation reservation, DateTime now)
+    {
+        state.LastSuccess = now;
+        // Successful logins consume source/global permits, not the failed-account budget.
+        // Do not wipe other concurrent failures or cooldowns on a successful request.
+        if (account && state.WindowStart == reservation.AccountWindow)
+        {
+            state.Attempts = Math.Max(0, state.Attempts - 1);
+        }
+    }
+
+    private void RecordFailure(AuthThrottleState state, bool account, DateTime now)
+    {
+        if (state.LastFailure.AddSeconds(_limits.AccountWindowSeconds) <= now)
+        {
+            state.Failures = 0;
+        }
+
+        state.LastFailure = now;
+        state.Failures = Math.Min(100, state.Failures + 1);
+        var exponent = GetCooldownExponent(state, account, now);
+        if (exponent >= 0)
+        {
+            var seconds = Math.Min(_limits.MaximumCooldownSeconds, 1 << Math.Min(16, exponent));
+            state.BlockedUntil = now.AddSeconds(seconds);
+        }
+    }
+
+    private int GetCooldownExponent(AuthThrottleState state, bool account, DateTime now)
+    {
+        var suspiciousSource = !account && state.AccountChanges >= 4 && state.Failures >= 3;
+        var unprovenSource =
+            !account && (state.LastSuccess is null || state.LastSuccess.Value.AddHours(_limits.ReputationHours) <= now);
+        return state.Failures - (account || unprovenSource ? 3 : 4) + (suspiciousSource ? 2 : 0);
+    }
 
     public Task<Result<Unit>> CleanupAsync(CancellationToken cancellationToken) =>
         RunAsync(
@@ -225,6 +312,7 @@ public sealed class AuthThrottleStore(
         {
             return;
         }
+
         var expiredKeys = await db
             .AuthThrottleStates.Where(row => row.Key != "global" && row.ExpiresAt <= now)
             .OrderBy(row => row.ExpiresAt)
@@ -235,6 +323,7 @@ public sealed class AuthThrottleStore(
         {
             await db.AuthThrottleStates.Where(row => Enumerable.Contains(expiredKeys, row.Key)).ExecuteDeleteAsync(ct);
         }
+
         global.ExpiresAt = now.AddMinutes(1);
     }
 
