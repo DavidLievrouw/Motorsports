@@ -121,8 +121,9 @@ publishes no host port, and listens on port 80 via
 `Kestrel__Endpoints__Http__Url` (use the double-underscore spelling: the health probe reads that variable). Production runs behind nginx-proxy-manager at
 `ms.dalion.eu`; only the trusted proxy at `172.18.0.3` should reach the app container, which listens on port 80 in that
 deployment. Keep Secure cookies enabled and back up the database before the first deployment that applies migrations.
-The Data Protection key ring is stored in the `DataProtectionKeys` table in the configured database and is included in
-normal database backups. Outside Development the key XML is encrypted with an X.509 certificate kept outside the
+The Data Protection key ring is stored in the `DataProtectionKeys` table in the configured database. `backup.ps1`
+excludes its rows but includes its schema: a clean restore creates new keys and requires every user to sign in again.
+Outside Development the key XML is encrypted with an X.509 certificate kept outside the
 database and its backups. The application refuses to start without a valid RSA certificate containing its private key.
 Compose sets `DataProtection__CertificatePath` to `/run/secrets/dataprotection.pfx` and requires
 `DATAPROTECTION_CERTIFICATE_PASSWORD` for `DataProtection__CertificatePassword`. The host PFX is bind-mounted
@@ -211,10 +212,14 @@ GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, REFERENCES ON `motor
 
 Rolling back a migration (`Down`) needs `DROP`; run it with an admin account, not the application user.
 
-Restore the database and its Data Protection key table from the same backup point. If the key table is missing,
-inconsistent with the restored application data, or the application discriminator changes, existing authentication and
-antiforgery tokens may become unreadable and users will need to sign in again. ASP.NET Data Protection creates new
-keys automatically (90-day default lifetime); retain older keys so still-valid cookies and tokens can be decrypted.
+Stop all app instances before a clean restore of a `backup.ps1` dump, then restart them. The restored key table is
+empty even though migration history is preserved. ASP.NET Data Protection automatically persists a fresh key ring;
+old authentication and antiforgery tokens are invalid, but users can sign in again with their restored credentials.
+The configured certificate is still required outside Development. If restoring another backup format with key rows,
+use only encrypted keys from the same backup point and retain the matching certificate separately. A physically
+missing table with an already-applied migration is not an empty ring: restore its schema too.
+ASP.NET Data Protection rotates keys automatically (90-day default lifetime); during normal operation retain older
+keys so still-valid cookies and tokens can be decrypted.
 For a compromised key, revoke it through the Data Protection `IKeyManager` API using an authorized maintenance
 procedure; revocation invalidates tokens protected by that key. The app container exposes `/health` as its health check.
 The runtime uses the .NET 10 `noble-chiseled-extra` image with IANA time-zone data. Its exec-form health probe calls

@@ -3,7 +3,15 @@ $date = Get-Date -Format "yyyyMMdd"
 
 # Backup
 $password = "S3cr37_4321"
-docker exec mariadb sh -c "exec mariadb-dump --user root --password=$password --single-transaction --routines --triggers --hex-blob --default-character-set=utf8mb4 motorsports" > "$PWD/backup/Backup$($date)_MariaDB.sql"
+
+# Exclude ASP.NET Data Protection key rows: Development and historical deployments may store them unencrypted,
+# allowing cookie forgery when combined with the Identity data in a dump. Production now encrypts keys with an
+# external certificate; omitting them also prevents restoring historical plaintext keys. Only the table structure
+# is dumped (second command); the application generates a new key ring after a clean restore (users log in again).
+$dumpOptions = "--user root --password=$password --single-transaction --default-character-set=utf8mb4"
+$dataDump = "mariadb-dump $dumpOptions --routines --triggers --hex-blob --ignore-table=motorsports.DataProtectionKeys motorsports"
+$keyTableSchemaDump = "mariadb-dump $dumpOptions --no-data motorsports DataProtectionKeys"
+docker exec mariadb sh -c "$dataDump && $keyTableSchemaDump" > "$PWD/backup/Backup$($date)_MariaDB.sql"
 
 # Restore - option 1:
 # - Run MariaDB stack

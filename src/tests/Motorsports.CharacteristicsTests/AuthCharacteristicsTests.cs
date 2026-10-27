@@ -26,7 +26,8 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         int loginLimit,
         bool secureCookies,
         string environment = "Development",
-        bool configureKeyRingCertificate = true
+        bool configureKeyRingCertificate = true,
+        TestDataProtectionCertificate? keyRingCertificate = null
     ) : WebApplicationFactory<Program>
     {
         private TestDataProtectionCertificate? _keyRingCertificate;
@@ -46,8 +47,13 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
             if (environment != "Development" && configureKeyRingCertificate)
             {
                 // Outside Development the key ring must be encrypted with a certificate held outside the database.
-                _keyRingCertificate = TestDataProtectionCertificate.Create();
-                _keyRingCertificate.Configure(builder);
+                var certificate = keyRingCertificate;
+                if (certificate is null)
+                {
+                    certificate = TestDataProtectionCertificate.Create();
+                    _keyRingCertificate = certificate;
+                }
+                certificate.Configure(builder);
             }
 
             builder.UseSetting("ConnectionStrings:Motorsports", connectionString);
@@ -339,6 +345,91 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
             .CreateContextFactory()
             .CreateDbContextAsync(TestContext.Current.CancellationToken);
         (await context.DataProtectionKeys.CountAsync(TestContext.Current.CancellationToken)).ShouldBeGreaterThan(0);
+    }
+
+    [Theory]
+    [InlineData("Development")]
+    [InlineData("Production")]
+    public async Task Restoring_a_backup_without_key_rows_repopulates_the_ring_and_requires_a_new_login(
+        string environment
+    )
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await fixture.ResetSchemaAsync();
+        await SeedUserAsync("restored-user");
+        using var certificate = environment == "Production" ? TestDataProtectionCertificate.Create() : null;
+        var factory = fixture.CreateContextFactory();
+        var host = environment == "Production" ? "ms.dalion.eu" : "localhost";
+        string oldCookie;
+        string[] oldKeyNames;
+        string[] migrationHistory;
+        await using (
+            var original = new AuthApp(
+                fixture.ConnectionString,
+                1000,
+                false,
+                environment,
+                keyRingCertificate: certificate
+            )
+        )
+        {
+            using var client = original.NewClient();
+            client.DefaultRequestHeaders.Host = host;
+            using var login = await LoginAsync(client, "restored-user", Password);
+            login.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+            oldCookie = login
+                .Headers.GetValues("Set-Cookie")
+                .Single(cookie => cookie.StartsWith("ms.auth=", StringComparison.Ordinal))
+                .Split(';', 2)[0];
+            using var authenticated = await client.GetAsync("/", cancellationToken);
+            authenticated.StatusCode.ShouldBe(HttpStatusCode.OK);
+            await using var context = await factory.CreateDbContextAsync(cancellationToken);
+            oldKeyNames = await context
+                .DataProtectionKeys.Select(key => key.FriendlyName!)
+                .ToArrayAsync(cancellationToken);
+            oldKeyNames.ShouldNotBeEmpty();
+            migrationHistory = [.. await context.Database.GetAppliedMigrationsAsync(cancellationToken)];
+        }
+
+        await fixture.RestoreBackupWithoutKeyRingAsync(cancellationToken);
+
+        await using (var context = await factory.CreateDbContextAsync(cancellationToken))
+        {
+            (await context.DataProtectionKeys.CountAsync(cancellationToken)).ShouldBe(0);
+            (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).ShouldBe(migrationHistory);
+            (await context.Users.CountAsync(user => user.Username == "restored-user", cancellationToken)).ShouldBe(1);
+        }
+
+        await using var restored = new AuthApp(
+            fixture.ConnectionString,
+            1000,
+            false,
+            environment,
+            keyRingCertificate: certificate
+        );
+        using var restoredClient = restored.NewClient();
+        restoredClient.DefaultRequestHeaders.Host = host;
+        using var oldSession = new HttpRequestMessage(HttpMethod.Get, "/");
+        oldSession.Headers.Add("Cookie", oldCookie);
+        using var rejected = await restoredClient.SendAsync(oldSession, cancellationToken);
+        rejected.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+        LocationPathOf(rejected).ShouldBe("/login?returnUrl=%2F");
+
+        using var newLogin = await LoginAsync(restoredClient, "restored-user", Password);
+        newLogin.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+        using var home = await restoredClient.GetAsync("/", cancellationToken);
+        home.StatusCode.ShouldBe(HttpStatusCode.OK);
+        await using var restoredContext = await factory.CreateDbContextAsync(cancellationToken);
+        var newKeys = await restoredContext
+            .DataProtectionKeys.AsNoTracking()
+            .Select(key => new { key.FriendlyName, key.Xml })
+            .ToArrayAsync(cancellationToken);
+        newKeys.ShouldNotBeEmpty();
+        newKeys.All(key => !oldKeyNames.Contains(key.FriendlyName)).ShouldBeTrue();
+        if (environment == "Production")
+        {
+            newKeys.All(key => key.Xml?.Contains("encryptedSecret", StringComparison.Ordinal) == true).ShouldBeTrue();
+        }
     }
 
     [Fact]

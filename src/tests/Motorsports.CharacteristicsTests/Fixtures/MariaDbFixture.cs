@@ -43,6 +43,34 @@ public sealed class MariaDbFixture : IAsyncLifetime
         await ExecuteBatchAsync(connection, sql);
     }
 
+    public async Task RestoreBackupWithoutKeyRingAsync(CancellationToken cancellationToken)
+    {
+        var result = await container.ExecAsync(
+            [
+                "sh",
+                "-c",
+                """
+                set -eu
+                backup=$(mktemp)
+                trap 'rm -f "$backup"' EXIT
+                export MYSQL_PWD="$MARIADB_PASSWORD"
+                mariadb-dump --user="$MARIADB_USER" --single-transaction --routines --triggers --hex-blob \
+                    --default-character-set=utf8mb4 --ignore-table="$MARIADB_DATABASE.DataProtectionKeys" \
+                    "$MARIADB_DATABASE" > "$backup"
+                mariadb-dump --user="$MARIADB_USER" --single-transaction --default-character-set=utf8mb4 \
+                    --no-data "$MARIADB_DATABASE" DataProtectionKeys >> "$backup"
+                mariadb --user="$MARIADB_USER" --execute="DROP DATABASE \`$MARIADB_DATABASE\`; CREATE DATABASE \`$MARIADB_DATABASE\`;"
+                mariadb --user="$MARIADB_USER" --default-character-set=utf8mb4 "$MARIADB_DATABASE" < "$backup"
+                """,
+            ],
+            cancellationToken
+        );
+        if (result.ExitCode != 0)
+        {
+            throw new InvalidOperationException($"Synthetic database backup/restore failed: {result.Stderr}");
+        }
+    }
+
     public IDbContextFactory<MotorsportsDbContext> CreateContextFactory()
     {
         var options = new DbContextOptionsBuilder<MotorsportsDbContext>();

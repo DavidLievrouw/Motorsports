@@ -428,6 +428,8 @@ Resolved:
 
 ## 9. Issues encountered and corrections (keep updated every phase)
 
+- Backup follow-up (2026-10-27): `backup.ps1` excludes key rows and appends their schema. Its plaintext-only explanation was stale: production now requires certificate encryption, while Development/historical keys can be plaintext. A missing table is not an empty ring when migration history already marks its migration applied; restore the schema as the script does. Restore all data only while app instances are stopped, then restart to discard cached old keys.
+- Backup validation encountered an unrelated intermittent failure in `Responses_include_security_headers`: its raw import-map nonce assertion failed for a nonce containing `+`. No unrelated assertion/runtime changes were made; the final full-suite rerun passed all 175 tests.
 Corrections to earlier assumptions (verified against the real MariaDB dump and the running app):
 - 2026-10-27 Finish Round correction: the initial status-only form omitted result entry and event history. It now has four dedicated outcome commands with separate FluentValidation rule sets; rating remains nullable until supplied. The phone-friendly 0–10 slider matches Edit Round. Winning participant options and chips in both round forms include country flags; fuzzy search keys remain flag-free names. Characteristics cover required/optional fields, bounds, season membership, winner existence/limits, read-only tampering, concurrency, missing status configuration, and authenticated page content. Debug output was locked by the user's running app; validation uses Release without stopping that process.
 - 2026-10-27 legacy retirement: removed the PBKDF2 verifier, old User mappings, legacy MSBuild conditions, and formatter/Docker exclusions. The new guarded migration drops only the four obsolete password fields; backup files and applied migrations are unchanged. Current password hashes, account metadata, and Data Protection keys are retained.
@@ -491,6 +493,8 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 
 ## 10. Handover (rewrite at the end of every phase)
 
+- Backup/key-ring follow-up (2026-10-27): added real MariaDB dump/drop/recreate/restore regression coverage for Development and certificate-protected Production. It preserves users and migration history, restores an empty key table, checks fresh persisted keys, rejects old cookies, and verifies a fresh login; production keys must remain encrypted. No runtime change is needed for empty-ring regeneration. The supplied backup change was unstaged (the index was empty), not staged. Existing unrelated solution changes are untouched.
+- Follow-up validation: warning-as-error solution build and CSharpier format/check pass; final solution run passes 175/175 tests, including both restore scenarios. The intermittent pre-existing nonce assertion is recorded above.
 Date: 2026-10-27. Phases 0–8 are complete; mobile connection recovery follow-up implemented.
 
 State:

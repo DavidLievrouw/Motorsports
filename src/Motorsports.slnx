@@ -2,6 +2,7 @@
   <Folder Name="/Assets/">
     <File Path="../.editorconfig" />
     <File Path="../AGENTS.md" />
+    <File Path="../backup.ps1" />
     <File Path="../prompt_history_v2.txt" />
     <File Path="../README.md" />
     <File Path="../version.txt" />
