@@ -288,7 +288,7 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
             .Select(key => key.Xml)
             .SingleAsync(TestContext.Current.CancellationToken);
         keyXml.ShouldNotBeNull();
-        keyXml!.ShouldContain("encryptedSecret");
+        keyXml.ShouldContain("encryptedSecret");
     }
 
     [Fact]
@@ -304,7 +304,7 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
 
         var exception = Should.Throw<InvalidOperationException>(() => app.NewClient());
 
-        exception.ToString()!.ShouldContain("DataProtection:CertificatePath must be configured");
+        exception.ToString().ShouldContain("DataProtection:CertificatePath must be configured");
     }
 
     [Fact]
@@ -567,14 +567,14 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         await SeedUserAsync("gone", deleted: true);
         await SeedUserAsync("later");
 
-        LocationPathOf((await LoginAsync(app.NewClient(), "gone", Password))).ShouldBe("/login?error=1");
+        LocationPathOf(await LoginAsync(app.NewClient(), "gone", Password)).ShouldBe("/login?error=1");
 
         var client = app.NewClient();
         await LoginAsync(client, "later", Password);
         (await client.GetAsync("/", TestContext.Current.CancellationToken)).StatusCode.ShouldBe(HttpStatusCode.OK);
         await fixture.ExecuteSqlAsync("UPDATE `User` SET IsDeleted = 1 WHERE Username = 'later'");
         // The cookie is validated against the store every few minutes at most; a fresh login is refused at once.
-        LocationPathOf((await LoginAsync(app.NewClient(), "later", Password))).ShouldBe("/login?error=1");
+        LocationPathOf(await LoginAsync(app.NewClient(), "later", Password)).ShouldBe("/login?error=1");
     }
 
     [Theory]
@@ -802,8 +802,8 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         ).ForceChangePassword.ShouldBeFalse();
 
         // Old password no longer works, the new one does.
-        LocationPathOf((await LoginAsync(app.NewClient(), "forced", Password))).ShouldBe("/login?error=1");
-        LocationPathOf((await LoginAsync(app.NewClient(), "forced", "brand new password"))).ShouldBe("/");
+        LocationPathOf(await LoginAsync(app.NewClient(), "forced", Password)).ShouldBe("/login?error=1");
+        LocationPathOf(await LoginAsync(app.NewClient(), "forced", "brand new password")).ShouldBe("/");
     }
 
     private static async Task<HttpResponseMessage> PostChangeAsync(

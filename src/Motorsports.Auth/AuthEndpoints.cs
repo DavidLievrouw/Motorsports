@@ -248,10 +248,11 @@ public static class AuthEndpoints
         }
 
         var result = await userManager.ChangePasswordAsync(user, form.CurrentPassword!, form.NewPassword!);
-        var outcome =
-            result.Succeeded ? AuthAttemptOutcome.Succeeded
-            : result.Errors.Any(error => error.Code == "PasswordMismatch") ? AuthAttemptOutcome.Failed
+
+        var authAttemptOutcome = result.Errors.Any(error => error.Code == "PasswordMismatch")
+            ? AuthAttemptOutcome.Failed
             : AuthAttemptOutcome.InvalidInput;
+        var outcome = result.Succeeded ? AuthAttemptOutcome.Succeeded : authAttemptOutcome;
         var completed = await throttle.CompleteAsync(reservation, outcome, CancellationToken.None);
         if (!completed.IsSuccess)
         {
@@ -284,6 +285,7 @@ public static class AuthEndpoints
     private static string ClientAddress(HttpContext context)
     {
         var address = context.Connection.RemoteIpAddress;
-        return address is null ? "unknown" : (address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address).ToString();
+        var mapToIPv4 = address?.IsIPv4MappedToIPv6 ?? false ? address.MapToIPv4() : address;
+        return address is null ? "unknown" : mapToIPv4?.ToString() ?? string.Empty;
     }
 }

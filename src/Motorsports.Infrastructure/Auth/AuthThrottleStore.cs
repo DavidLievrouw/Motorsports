@@ -278,6 +278,6 @@ public sealed class AuthThrottleStore(
     {
         var ticks = clock.GetUtcNow().UtcTicks;
         // MariaDB datetime(6) persists microseconds, not .NET's 100 ns ticks.
-        return new DateTime(ticks - (ticks % 10), DateTimeKind.Utc);
+        return new DateTime(ticks - ticks % 10, DateTimeKind.Utc);
     }
 }

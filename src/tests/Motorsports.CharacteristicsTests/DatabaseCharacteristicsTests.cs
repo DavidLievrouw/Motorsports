@@ -78,7 +78,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
         saved.ForceChangePassword.ShouldBeTrue();
         saved.IsDeleted.ShouldBeFalse();
         new PasswordHasher<User>()
-            .VerifyHashedPassword(saved, saved.PasswordHashV3!, "Synthetic password!")
+            .VerifyHashedPassword(saved, saved.PasswordHashV3, "Synthetic password!")
             .ShouldBe(PasswordVerificationResult.Success);
 
         await migrator.MigrateAsync("20261026133143_AddRoundSeasonDateNumberIndex", cancellationToken);

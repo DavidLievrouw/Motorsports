@@ -122,7 +122,7 @@ internal static class Phase8Audit
                     }
                     finally
                     {
-                        await db.Database.ExecuteSqlRawAsync($"DROP INDEX `IX_Phase8_Audit` ON `{candidate.Table}`");
+                        await DropAuditIndexAsync(db, candidate.Table);
                     }
 #pragma warning restore EF1002
 
@@ -226,6 +226,15 @@ internal static class Phase8Audit
             "CREATE INDEX IF NOT EXISTS `IX_Round_Season_Date_Number` ON `Round` (`Season`, `Date`, `Number`)"
         );
     }
+
+    private static Task<int> DropAuditIndexAsync(MotorsportsDbContext db, string table) =>
+        table switch
+        {
+            "Round" => db.Database.ExecuteSqlRawAsync("DROP INDEX `IX_Phase8_Audit` ON `Round`"),
+            "Participant" => db.Database.ExecuteSqlRawAsync("DROP INDEX `IX_Phase8_Audit` ON `Participant`"),
+            "Team" => db.Database.ExecuteSqlRawAsync("DROP INDEX `IX_Phase8_Audit` ON `Team`"),
+            _ => throw new InvalidOperationException($"Unsupported audit table: {table}"),
+        };
 
     private static async Task SeedAsync(IDbContextFactory<MotorsportsDbContext> factory, int scale)
     {

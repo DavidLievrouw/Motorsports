@@ -37,7 +37,7 @@ internal sealed class SeasonService(
             season.Id,
             season.Sport,
             SportFullName = season.SportRef!.FullName,
-            SportHasImage = season.SportRef!.Image != null,
+            SportHasImage = season.SportRef.Image != null,
             season.Label,
             StartDate = db
                 .Rounds.Where(round => round.Season == season.Id)

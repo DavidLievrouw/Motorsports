@@ -16,15 +16,7 @@ public static class LocalUrl
             return false;
         }
 
-        foreach (var c in url)
-        {
-            if (char.IsControl(c) || c == '\\')
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return url.All(c => !char.IsControl(c) && c != '\\');
     }
 
     public static string OrDefault(string? url, string fallback = "/") => IsLocal(url) ? url! : fallback;

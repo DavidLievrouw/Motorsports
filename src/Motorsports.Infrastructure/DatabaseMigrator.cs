@@ -54,7 +54,17 @@ public sealed class DatabaseMigrator(IDbContextFactory<MotorsportsDbContext> fac
     private static async Task<bool> TryLockAsync(DbConnection connection, CancellationToken cancellationToken)
     {
         await using var command = connection.CreateCommand();
-        command.CommandText = $"SELECT GET_LOCK('{LockName}', {LockTimeoutSeconds})";
+        command.CommandText = "SELECT GET_LOCK(@lockName, @timeoutSeconds)";
+        var lockName = command.CreateParameter();
+        lockName.ParameterName = "@lockName";
+        lockName.Value = LockName;
+        command.Parameters.Add(lockName);
+
+        var timeoutSeconds = command.CreateParameter();
+        timeoutSeconds.ParameterName = "@timeoutSeconds";
+        timeoutSeconds.Value = LockTimeoutSeconds;
+        command.Parameters.Add(timeoutSeconds);
+
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return result is not null && Convert.ToInt32(result, System.Globalization.CultureInfo.InvariantCulture) == 1;
     }

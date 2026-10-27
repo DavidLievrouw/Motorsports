@@ -20,10 +20,8 @@ public sealed class FormErrors
     public void Set(Error error)
     {
         fields = error.Fields ?? None;
-        Summary =
-            error.Kind == ErrorKind.Validation
-                ? (fields.TryGetValue("", out var form) && form.Length > 0 ? form[0] : null)
-                : error.Message;
+        var val = fields.TryGetValue("", out var form) && form.Length > 0 ? form[0] : null;
+        Summary = error.Kind == ErrorKind.Validation ? val : error.Message;
     }
 
     public bool Has(string field) => fields.ContainsKey(field);

@@ -54,14 +54,6 @@ public sealed class ForcePasswordChangeMiddleware(RequestDelegate next)
             return true;
         }
 
-        foreach (var prefix in AllowedPrefixes)
-        {
-            if (path.StartsWithSegments(prefix, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return AllowedPrefixes.Any(p => path.StartsWithSegments(p, StringComparison.OrdinalIgnoreCase));
     }
 }

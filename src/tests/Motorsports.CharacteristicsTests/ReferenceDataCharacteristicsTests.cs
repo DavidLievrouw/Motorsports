@@ -61,7 +61,7 @@ public sealed class ReferenceDataCharacteristicsTests(MariaDbFixture fixture)
         if (field is not null)
         {
             error.Fields.ShouldNotBeNull();
-            error.Fields!.ContainsKey(field).ShouldBeTrue();
+            error.Fields.ContainsKey(field).ShouldBeTrue();
         }
     }
 
