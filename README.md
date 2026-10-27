@@ -37,7 +37,7 @@ branding.
    dotnet run --project src/Motorsports.Web
    ```
 
-   The app listens on `http://localhost:4100` with the repository launch settings. `GET /health` reports host health.
+   The app listens on `http://localhost:4100` with the repository launch settings. `GET /health` checks MariaDB.
    Database migrations run automatically before the app accepts requests.
 
 ## Configuration
@@ -50,6 +50,7 @@ branding.
 | `Auth:LoginPermitLimit` | Login attempts per client IP in the configured window; defaults to 5 |
 | `Auth:LoginWindowSeconds` | Login rate-limit window; defaults to 60 seconds |
 | `ForwardedHeaders:KnownProxies` | Trusted proxy IP addresses. Configure the TLS-terminating proxy so client IPs and HTTPS are forwarded safely |
+| `Health:PublicUrl` | Public HTTPS origin, default `https://ms.dalion.eu`; checked outside Development |
 
 In containers, use the corresponding double-underscore environment variable names, such as `App__TimeZone` and
 `ForwardedHeaders__KnownProxies__0`. Forwarded headers are accepted only from configured proxies.
@@ -142,10 +143,28 @@ The runtime uses the .NET 10 `noble-chiseled-extra` image with IANA time-zone da
 `/health` through `dotnet` without a shell or `curl`; set `HEALTHCHECK_HOST` if the host allowed by `AllowedHosts`
 differs from `ms.dalion.eu`.
 
-Both application Compose files explicitly configure their health probes. The older `docker-compose/motorsports`
-deployment uses its image's `curl` against port 80 with `Host: ms.dalion.eu`; `docker-compose/motorsports-web`
-uses the current image's .NET probe (the chiseled image has no shell or `curl`). Redeploy/recreate the container
+Both application Compose files explicitly configure the .NET health probe (the chiseled image has no shell or
+`curl`), with a 15-second Docker timeout and a 10-second local HTTP timeout. Redeploy/recreate the container
 after updating a Portainer stack; restarting alone does not apply changed health-check configuration.
+
+### Health checks
+
+`GET /health` returns 200 only when its checks succeed, otherwise 503. It queries MariaDB's `Country` table
+through EF Core to verify connectivity, authentication, and access to the configured application schema.
+Outside Development it also requests `Health:PublicUrl` + `/health/live` through normal DNS and HTTPS
+certificate validation. Redirects, unexpected responses, network errors, and timeouts fail the check.
+Both checks have five-second timeouts and run concurrently. Failure details are logged server-side;
+the anonymous response exposes only the overall status, not exceptions or credentials.
+
+`GET /health/live` returns the fixed application marker without dependency checks, preventing recursive
+public health requests. Keep both paths accessible through the reverse proxy. The public check is not
+registered in Development. The public URL must be an HTTPS origin without a path, credentials, query, or fragment;
+override it with `Health__PublicUrl` for another deployment.
+
+The public check originates inside the app container: it tests the public DNS/TLS/proxy route as seen there,
+not independent Internet access. Hairpin routing must work. Use an external uptime monitor against the public
+`/health` URL to verify reachability from outside your network. Docker unhealthy status alone does not restart
+containers under `restart: unless-stopped`; do not use dependency readiness as an automatic restart trigger.
 
 The Content Security Policy is enforced after browser verification of the report-only policy. Scripts are restricted
 to same-origin resources and a per-response nonce; inline styles remain allowed for MudBlazor. Framing is prohibited

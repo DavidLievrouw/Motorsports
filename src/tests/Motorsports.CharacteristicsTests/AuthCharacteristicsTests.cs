@@ -11,6 +11,7 @@ using Motorsports.Auth;
 using Motorsports.CharacteristicsTests.Fixtures;
 using Motorsports.Common;
 using Motorsports.Infrastructure.Entities;
+using Motorsports.Web;
 using Shouldly;
 
 namespace Motorsports.CharacteristicsTests;
@@ -33,6 +34,22 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
             builder.UseSetting("ConnectionStrings:Motorsports", connectionString);
             builder.UseSetting("Auth:SecureCookies", secureCookies.ToString());
             builder.UseSetting("Auth:LoginPermitLimit", loginLimit.ToString());
+            builder.ConfigureServices(services =>
+                services
+                    .AddHttpClient(PublicHostHealthCheck.ClientName)
+                    .ConfigurePrimaryHttpMessageHandler(() => new HealthyPublicHostHandler())
+            );
+        }
+
+        private sealed class HealthyPublicHostHandler : HttpMessageHandler
+        {
+            protected override Task<HttpResponseMessage> SendAsync(
+                HttpRequestMessage request,
+                CancellationToken cancellationToken
+            ) =>
+                Task.FromResult(
+                    new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("Motorsports") }
+                );
         }
 
         public HttpClient NewClient() =>

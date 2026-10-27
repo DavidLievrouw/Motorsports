@@ -30,6 +30,7 @@ using Serilog.Events;
 
 if (args is ["--health-check"])
 {
+    await using var logger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
     var configuredEndpoint = Environment.GetEnvironmentVariable("Kestrel__Endpoints__Http__Url");
     var configuredPorts = Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORTS");
     var healthPort =
@@ -37,21 +38,28 @@ if (args is ["--health-check"])
         : configuredPorts is not null && int.TryParse(configuredPorts, out var port) ? port
         : 8080;
     var healthHost = Environment.GetEnvironmentVariable("HEALTHCHECK_HOST") ?? "ms.dalion.eu";
-    using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+    using var client = new HttpClient();
+    client.Timeout = TimeSpan.FromSeconds(10);
     using var request = new HttpRequestMessage(HttpMethod.Get, $"http://127.0.0.1:{healthPort}/health");
     request.Headers.Host = healthHost;
 
     try
     {
         using var response = await client.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.Error("Health endpoint returned HTTP {StatusCode}.", (int)response.StatusCode);
+        }
         return response.IsSuccessStatusCode ? 0 : 1;
     }
-    catch (HttpRequestException)
+    catch (HttpRequestException exception)
     {
+        logger.Error(exception, "Could not reach the local health endpoint on port {Port}.", healthPort);
         return 1;
     }
-    catch (TaskCanceledException)
+    catch (TaskCanceledException exception)
     {
+        logger.Error(exception, "Local health endpoint timed out on port {Port}.", healthPort);
         return 1;
     }
 }
@@ -181,7 +189,32 @@ builder.Services.AddResponseCompression(o =>
     o.EnableForHttps = true;
     o.Providers.Add<BrotliCompressionProvider>();
 });
-builder.Services.AddHealthChecks();
+var healthChecks = builder
+    .Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("mariadb", timeout: TimeSpan.FromSeconds(5));
+if (!builder.Environment.IsDevelopment())
+{
+    builder
+        .Services.AddOptions<HealthOptions>()
+        .Bind(builder.Configuration.GetSection(HealthOptions.Section))
+        .Validate(
+            options =>
+                Uri.TryCreate(options.PublicUrl, UriKind.Absolute, out var uri)
+                && uri.Scheme == Uri.UriSchemeHttps
+                && string.IsNullOrEmpty(uri.UserInfo)
+                && uri.AbsolutePath == "/"
+                && string.IsNullOrEmpty(uri.Query)
+                && string.IsNullOrEmpty(uri.Fragment),
+            "Health:PublicUrl must be an absolute HTTPS origin without credentials, path, query, or fragment."
+        )
+        .ValidateOnStart();
+    builder
+        .Services.AddHttpClient(PublicHostHealthCheck.ClientName, client => client.Timeout = TimeSpan.FromSeconds(5))
+        .ConfigurePrimaryHttpMessageHandler(() =>
+            new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false }
+        );
+    healthChecks.AddCheck<PublicHostHealthCheck>("public-host", timeout: TimeSpan.FromSeconds(5));
+}
 
 var app = builder.Build();
 
@@ -235,6 +268,7 @@ app.UseForcePasswordChange();
 app.UseAntiforgery();
 
 app.MapHealthChecks("/health").AllowAnonymous();
+app.MapGet("/health/live", () => Results.Text(PublicHostHealthCheck.LivenessResponse)).AllowAnonymous();
 app.MapStaticAssets().AllowAnonymous();
 app.MapAuthEndpoints();
 app.MapSportImages();

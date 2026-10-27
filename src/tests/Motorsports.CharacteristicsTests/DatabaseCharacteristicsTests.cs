@@ -314,7 +314,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
             .ToDictionaryAsync(sport => sport.Name, sport => sport.Image, cancellationToken);
         foreach (var name in new[] { "f1", "fe", "indycar", "motogp", "nascar", "wec" })
         {
-            using var stream = typeof(MotorsportsDbContext).Assembly.GetManifestResourceStream(
+            await using var stream = typeof(MotorsportsDbContext).Assembly.GetManifestResourceStream(
                 $"Motorsports.Infrastructure.Migrations.SportImages.{name}.png"
             )!;
             using var expected = new MemoryStream();

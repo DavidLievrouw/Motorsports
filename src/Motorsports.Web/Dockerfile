@@ -21,5 +21,5 @@ ENV ASPNETCORE_HTTP_PORTS=8080 \
     DOTNET_TieredPGO=1
 USER $APP_UID
 EXPOSE 8080
-HEALTHCHECK --interval=30s --timeout=3s --start-period=30s CMD ["dotnet", "Motorsports.Web.dll", "--health-check"]
+HEALTHCHECK --interval=30s --timeout=15s --start-period=30s CMD ["dotnet", "Motorsports.Web.dll", "--health-check"]
 ENTRYPOINT ["dotnet", "Motorsports.Web.dll"]
