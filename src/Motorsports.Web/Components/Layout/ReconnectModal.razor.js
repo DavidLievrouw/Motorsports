@@ -1,63 +1,81 @@
-// Set up event handlers
 const reconnectModal = document.getElementById("components-reconnect-modal");
 reconnectModal.addEventListener("components-reconnect-state-changed", handleReconnectStateChanged);
 
 const retryButton = document.getElementById("components-reconnect-button");
-retryButton.addEventListener("click", retry);
+retryButton.addEventListener("click", recover);
 
 const resumeButton = document.getElementById("components-resume-button");
-resumeButton.addEventListener("click", resume);
+resumeButton.addEventListener("click", recover);
+
+let state = "hide";
+let recovering = false;
+let retryTimer;
+
+document.addEventListener("visibilitychange", recoverWhenVisible);
+window.addEventListener("online", recoverWhenVisible);
+window.addEventListener("pageshow", recoverWhenVisible);
+reconnectModal.addEventListener("cancel", event => event.preventDefault());
 
 function handleReconnectStateChanged(event) {
-    if (event.detail.state === "show") {
-        reconnectModal.showModal();
-    } else if (event.detail.state === "hide") {
+    state = event.detail.state;
+    clearTimeout(retryTimer);
+    if (state === "hide") {
         reconnectModal.close();
-    } else if (event.detail.state === "failed") {
-        document.addEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
-    } else if (event.detail.state === "rejected") {
-        location.reload();
+        return;
+    }
+
+    if (!reconnectModal.open) {
+        reconnectModal.showModal();
+    }
+
+    // Let Blazor finish its initial retries before taking over recovery.
+    recoverWhenVisible();
+}
+
+function canRecover() {
+    return document.visibilityState === "visible"
+        && navigator.onLine !== false
+        && ["failed", "rejected", "paused", "resume-failed"].includes(state);
+}
+
+function recoverWhenVisible() {
+    clearTimeout(retryTimer);
+    if (canRecover()) {
+        void recover();
     }
 }
 
-async function retry() {
-    document.removeEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
-
-    try {
-        // Reconnect will asynchronously return:
-        // - true to mean success
-        // - false to mean we reached the server, but it rejected the connection (e.g., unknown circuit ID)
-        // - exception to mean we didn't reach the server (this can be sync or async)
-        const successful = await Blazor.reconnect();
-        if (!successful) {
-            // We have been able to reach the server, but the circuit is no longer available.
-            // We'll reload the page so the user can continue using the app as quickly as possible.
-            const resumeSuccessful = await Blazor.resumeCircuit();
-            if (!resumeSuccessful) {
-                location.reload();
-            } else {
-                reconnectModal.close();
-            }
-        }
-    } catch (err) {
-        // We got an exception, server is currently unavailable
-        document.addEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
+async function recover() {
+    if (recovering || !canRecover()) {
+        return;
     }
-}
 
-async function resume() {
+    clearTimeout(retryTimer);
+    recovering = true;
+    retryButton.disabled = true;
+    resumeButton.disabled = true;
     try {
-        const successful = await Blazor.resumeCircuit();
+        const successful = state === "failed"
+            ? await Blazor.reconnect() || await Blazor.resumeCircuit()
+            : await Blazor.resumeCircuit();
+
         if (!successful) {
+            // The server was reached but no longer has this circuit. Never replay a form submission.
+            state = "hide";
             location.reload();
+            return;
         }
-    } catch {
-        reconnectModal.classList.replace("components-reconnect-paused", "components-reconnect-resume-failed");
-    }
-}
 
-async function retryWhenDocumentBecomesVisible() {
-    if (document.visibilityState === "visible") {
-        await retry();
+        state = "hide";
+        reconnectModal.close();
+    } catch (error) {
+        console.warn("Session recovery failed; retrying when online and visible.", error);
+    } finally {
+        recovering = false;
+        retryButton.disabled = false;
+        resumeButton.disabled = false;
+        if (canRecover()) {
+            retryTimer = setTimeout(recoverWhenVisible, 5000);
+        }
     }
 }

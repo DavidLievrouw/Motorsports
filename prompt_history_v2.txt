@@ -323,9 +323,9 @@ I would create dedicated service methods for these actions, with their separate 
 
 When I use this app on my phone, it is often disabled, and I have to do a full page refresh. That is not acceptable. Find a solution for that.
 Explain what is causing it.
+Also make sure that the reconnect dialog is shown in the middle of the screen, and not in the top left corner. It should be centered, like a modal dialog.
 
-
-
+----------------------
 
 Future:
 - Update to dotnet 11. Target framework, NuGet references and docker image.

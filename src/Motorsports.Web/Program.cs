@@ -161,7 +161,7 @@ builder
     .Services.AddRazorComponents()
     .AddInteractiveServerComponents(o =>
     {
-        o.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(1);
+        o.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(5);
         o.DisconnectedCircuitMaxRetained = 20;
     });
 builder.Services.AddResponseCompression(o =>

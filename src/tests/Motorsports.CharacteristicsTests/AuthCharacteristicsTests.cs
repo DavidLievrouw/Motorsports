@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -152,6 +153,22 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         response.Content.Headers.ContentType!.MediaType.ShouldBe("text/javascript");
+    }
+
+    [Fact]
+    public async Task Mobile_recovery_keeps_circuits_for_five_minutes_with_a_bounded_count_and_loads_styles()
+    {
+        await using var app = await StartAsync();
+        var client = app.NewClient();
+        var response = await client.GetAsync("/login", TestContext.Current.CancellationToken);
+        var page = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        var options = app.Services.GetRequiredService<IOptions<CircuitOptions>>().Value;
+
+        options.DisconnectedCircuitRetentionPeriod.ShouldBe(TimeSpan.FromMinutes(5));
+        options.DisconnectedCircuitMaxRetained.ShouldBe(20);
+        page.ShouldContain("Motorsports.Web.");
+        page.ShouldContain(".styles.css");
+        page.ShouldContain("Restoring connection");
     }
 
     [Fact]

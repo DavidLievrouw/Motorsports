@@ -61,7 +61,10 @@ dotnet build src/Motorsports.slnx -warnaserror
 dotnet csharpier format .
 dotnet csharpier check .
 dotnet test --solution src/Motorsports.slnx
+node --test src\tests\browser\reconnect.test.cjs
 ```
+
+The dependency-free Node tests exercise the mobile reconnect handler's browser lifecycle and network-failure paths.
 
 Characteristics tests use Testcontainers MariaDB and synthetic data. Run the Home query benchmark against a populated
 MariaDB using `ConnectionStrings__Motorsports`:
@@ -88,6 +91,18 @@ retained performance index for the baseline, restores it afterward, and records 
 Temporary candidate indexes are removed even if a measurement fails. Run without concurrent builds/tests for useful
 timings; allocations include harness/background overhead and are not retained-memory or circuit-size measurements.
 Recorded evidence and index decisions are in `src\PLAN.md`, section 4b.
+
+## Mobile connection recovery
+
+Interactive controls require a live Blazor server connection. Phone sleep, background tabs, and Wi-Fi/mobile-data
+switches can interrupt it. Disconnected sessions are retained for five minutes, capped at 20 sessions per app instance.
+The client retries automatically while visible and online, including after returning to the app or regaining connectivity.
+The reconnect dialog blocks input only while recovery is needed; no manual refresh is required for connection recovery.
+
+Reconnecting to a retained session preserves its form state. If the session has expired, been evicted, or the server
+restarted, recovery automatically reloads the current URL. Unsaved edits are then lost; submissions are never replayed.
+This is connection recovery, not offline editing or durable form storage. Enable WebSocket support on the reverse proxy;
+production proxy logs and phone-browser diagnostics are needed to identify the exact source of any remaining disconnects.
 
 ## Release and Docker deployment
 
