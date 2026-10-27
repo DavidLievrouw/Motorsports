@@ -25,12 +25,31 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         string connectionString,
         int loginLimit,
         bool secureCookies,
-        string environment = "Development"
+        string environment = "Development",
+        bool configureKeyRingCertificate = true
     ) : WebApplicationFactory<Program>
     {
+        private TestDataProtectionCertificate? _keyRingCertificate;
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (disposing)
+            {
+                _keyRingCertificate?.Dispose();
+            }
+        }
+
         protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
         {
             builder.UseEnvironment(environment);
+            if (environment != "Development" && configureKeyRingCertificate)
+            {
+                // Outside Development the key ring must be encrypted with a certificate held outside the database.
+                _keyRingCertificate = TestDataProtectionCertificate.Create();
+                _keyRingCertificate.Configure(builder);
+            }
+
             builder.UseSetting("ConnectionStrings:Motorsports", connectionString);
             builder.UseSetting("Auth:SecureCookies", secureCookies.ToString());
             builder.UseSetting("Auth:LoginPermitLimit", loginLimit.ToString());
@@ -238,6 +257,45 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
 
         allowed.StatusCode.ShouldBe(HttpStatusCode.OK);
         rejected.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Production_data_protection_keys_are_encrypted_at_rest()
+    {
+        await fixture.ResetSchemaAsync();
+        await using var app = new AuthApp(fixture.ConnectionString, 1000, false, "Production");
+        var client = app.NewClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/login");
+        request.Headers.Host = "ms.dalion.eu";
+
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        await using var context = await fixture
+            .CreateContextFactory()
+            .CreateDbContextAsync(TestContext.Current.CancellationToken);
+        var keyXml = await context
+            .DataProtectionKeys.AsNoTracking()
+            .Select(key => key.Xml)
+            .SingleAsync(TestContext.Current.CancellationToken);
+        keyXml.ShouldNotBeNull();
+        keyXml!.ShouldContain("encryptedSecret");
+    }
+
+    [Fact]
+    public void Production_requires_a_key_ring_certificate()
+    {
+        using var app = new AuthApp(
+            fixture.ConnectionString,
+            1000,
+            false,
+            "Production",
+            configureKeyRingCertificate: false
+        );
+
+        var exception = Should.Throw<InvalidOperationException>(() => app.NewClient());
+
+        exception.ToString()!.ShouldContain("DataProtection:CertificatePath must be configured");
     }
 
     [Fact]

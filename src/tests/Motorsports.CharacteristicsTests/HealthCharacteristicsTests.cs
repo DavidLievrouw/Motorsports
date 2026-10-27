@@ -75,9 +75,26 @@ public sealed class HealthCharacteristicsTests(MariaDbFixture fixture)
     private sealed class HealthApp(string connectionString, string environment, HttpMessageHandler handler)
         : WebApplicationFactory<Program>
     {
+        private TestDataProtectionCertificate? _keyRingCertificate;
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (disposing)
+            {
+                _keyRingCertificate?.Dispose();
+            }
+        }
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment(environment);
+            if (environment != "Development")
+            {
+                _keyRingCertificate = TestDataProtectionCertificate.Create();
+                _keyRingCertificate.Configure(builder);
+            }
+
             builder.UseSetting("ConnectionStrings:Motorsports", connectionString);
             builder.UseSetting("AllowedHosts", "ms.dalion.eu");
             builder.UseSetting("Health:PublicUrl", "https://health.example");

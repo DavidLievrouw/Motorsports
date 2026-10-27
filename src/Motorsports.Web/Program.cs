@@ -88,7 +88,18 @@ var connectionString =
 
 builder.Services.AddMotorsportsDatabase(connectionString);
 builder.Services.AddHostedService<DatabaseMigrator>();
-builder.Services.AddDataProtection().SetApplicationName("Motorsports").PersistKeysToDbContext<MotorsportsDbContext>();
+var dataProtection = builder
+    .Services.AddDataProtection()
+    .SetApplicationName("Motorsports")
+    .PersistKeysToDbContext<MotorsportsDbContext>();
+var keyRingCertificate = KeyRingProtection.LoadCertificate(
+    builder.Configuration.GetSection(KeyRingProtectionOptions.Section).Get<KeyRingProtectionOptions>() ?? new(),
+    builder.Environment.IsDevelopment()
+);
+if (keyRingCertificate is not null)
+{
+    dataProtection.ProtectKeysWithCertificate(keyRingCertificate);
+}
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped(sp => new UserClock(
     sp.GetRequiredService<TimeProvider>(),

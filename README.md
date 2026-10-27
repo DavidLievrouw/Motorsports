@@ -49,6 +49,8 @@ branding.
 | `Auth:SecureCookies` | Secure-cookie policy; keep enabled outside local plain-HTTP development |
 | `Auth:LoginPermitLimit` | Login attempts per client IP in the configured window; defaults to 5 |
 | `Auth:LoginWindowSeconds` | Login rate-limit window; defaults to 60 seconds |
+| `DataProtection:CertificatePath` | PKCS#12 certificate that encrypts the Data Protection key ring; required outside Development |
+| `DataProtection:CertificatePassword` | Password of that PKCS#12 file |
 | `ForwardedHeaders:KnownProxies` | Trusted proxy IP addresses. Configure the TLS-terminating proxy so client IPs and HTTPS are forwarded safely |
 | `Health:PublicUrl` | Public HTTPS origin, default `https://ms.dalion.eu`; checked outside Development |
 
@@ -120,8 +122,84 @@ publishes no host port, and listens on port 80 via
 `ms.dalion.eu`; only the trusted proxy at `172.18.0.3` should reach the app container, which listens on port 80 in that
 deployment. Keep Secure cookies enabled and back up the database before the first deployment that applies migrations.
 The Data Protection key ring is stored in the `DataProtectionKeys` table in the configured database and is included in
-normal database backups. Database access exposes the unencrypted key XML, so restrict database credentials and backup
-access accordingly.
+normal database backups. Outside Development the key XML is encrypted with an X.509 certificate kept outside the
+database and its backups. The application refuses to start without a valid RSA certificate containing its private key.
+Compose sets `DataProtection__CertificatePath` to `/run/secrets/dataprotection.pfx` and requires
+`DATAPROTECTION_CERTIFICATE_PASSWORD` for `DataProtection__CertificatePassword`. The host PFX is bind-mounted
+read-only from `/etc/dalion/motorsports/secrets/dataprotection.pfx`. It must be readable by the non-root app user and backed up separately; without it,
+encrypted keys cannot be read. Keys written before this setting was introduced remain unencrypted: before first
+protected startup, back up the database, stop the old app, and delete all existing rows in `DataProtectionKeys`. This
+signs all users out. Earlier database backups still contain the unencrypted keys; restrict or retire those backups and do
+not restore their old key rows into the protected deployment. Replacing the certificate without preserving access to the
+old one makes older keys unreadable and signs users out; plan certificate rotation explicitly.
+
+#### Certificate setup and first deployment
+
+Run these commands on the Docker host from the repository root (the directory containing `version.txt`). The Compose
+file contains secrets after configuration; restrict access to it and never commit the modified file.
+
+If you do not already have the certificate that protects this key ring, create one once. Do not generate a replacement
+just because the app image is being updated: existing keys require the same certificate. These commands create the
+directory if needed, generate a self-signed RSA certificate, and export a password-protected PKCS#12 file. OpenSSL
+prompts for the PFX password; keep it for the Compose configuration and a secure backup. The .NET chiseled image runs
+as UID 1654; the permissions below allow it to read the certificate without making it accessible to other host users.
+
+```sh
+sudo mkdir -p /etc/dalion/motorsports/secrets
+sudo chown root:1654 /etc/dalion/motorsports/secrets
+sudo chmod 0710 /etc/dalion/motorsports/secrets
+sudo sh -c '
+  set -eu
+  umask 077
+  openssl req -x509 -newkey rsa:3072 -sha256 -nodes -days 3650 \
+    -keyout /etc/dalion/motorsports/secrets/key.pem \
+    -out /etc/dalion/motorsports/secrets/certificate.pem \
+    -subj "/CN=Motorsports Data Protection"
+  openssl pkcs12 -export \
+    -out /etc/dalion/motorsports/secrets/dataprotection.pfx \
+    -inkey /etc/dalion/motorsports/secrets/key.pem \
+    -in /etc/dalion/motorsports/secrets/certificate.pem \
+    -name "Motorsports Data Protection"
+  rm /etc/dalion/motorsports/secrets/key.pem /etc/dalion/motorsports/secrets/certificate.pem
+  chown 1654:1654 /etc/dalion/motorsports/secrets/dataprotection.pfx
+  chmod 0400 /etc/dalion/motorsports/secrets/dataprotection.pfx
+'
+```
+
+The temporary PEM private key is unencrypted, so create it under a root-only umask and remove it after export as shown.
+Keep a protected backup of the PFX and its password separately from the database backups. If you already have the
+certificate, do not run the generation commands; use its existing PFX and password. Ensure the PFX is readable by UID
+1654 and that every parent directory permits traversal by that UID.
+
+In `docker-compose/motorsports-web/docker-compose.yml`, replace the `${...}` substitutions with the deployment
+values. For example, change the relevant entries to:
+
+| Compose entry | Value to use |
+|---|---|
+| `image: motorsports-web:${MOTORSPORTS_VERSION:-2.0.0}` | `image: motorsports-web:2.0.0` (or the release being deployed) |
+| `ConnectionStrings__Motorsports=${MOTORSPORTS_CONNECTION_STRING:?...}` | `ConnectionStrings__Motorsports=<full production MariaDB connection string>` |
+| `ForwardedHeaders__KnownProxies__0=${FORWARDED_HEADERS_KNOWN_PROXY_0:-172.18.0.3}` | `ForwardedHeaders__KnownProxies__0=<trusted proxy IP>` |
+| `DataProtection__CertificatePassword=${DATAPROTECTION_CERTIFICATE_PASSWORD:?...}` | `DataProtection__CertificatePassword=<PFX password>` |
+| `DataProtection__CertificatePath` | Keep `/run/secrets/dataprotection.pfx` (container path) |
+| Bind mount source | Keep `/etc/dalion/motorsports/secrets/dataprotection.pfx` (host path) |
+
+If a password or connection-string value contains `$`, write it as `$$` in the Compose file to prevent Compose variable interpolation.
+Restrict access to the edited Compose file because it now contains production credentials.
+
+For the first protected deployment, take a database backup, stop the old app, and delete the existing plaintext
+`DataProtectionKeys` rows using an authorized database session (`DELETE FROM DataProtectionKeys;`) before starting the
+new container. This deliberately signs everyone out. Do not clear the table on later deployments. Then build and deploy
+from the repository root:
+
+```sh
+docker build -f src/Motorsports.Web/Dockerfile -t motorsports-web:2.0.0 .
+docker compose -f docker-compose/motorsports-web/docker-compose.yml config --quiet
+docker compose -f docker-compose/motorsports-web/docker-compose.yml up -d --force-recreate
+docker compose -f docker-compose/motorsports-web/docker-compose.yml ps
+```
+
+Confirm the container is healthy before considering deployment complete; check its logs if startup fails, without
+printing secrets or key XML.
 
 The application database user needs only these grants on its own database (startup migrations need the DDL rights;
 `GET_LOCK` needs none). No global rights, no `DROP`, routines, triggers, events, or `GRANT OPTION`:
@@ -169,6 +247,7 @@ containers under `restart: unless-stopped`; do not use dependency readiness as a
 The Content Security Policy is enforced after browser verification of the report-only policy. Scripts are restricted
 to same-origin resources and a per-response nonce; inline styles remain allowed for MudBlazor. Framing is prohibited
 with `frame-ancestors 'none'`. Browser-extension script injection is not a reason to weaken the application policy.
+
 ## Database migrations
 
 Migrations run automatically at startup under a MariaDB named lock and are designed to be idempotent across

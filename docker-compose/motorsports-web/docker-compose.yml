@@ -10,6 +10,13 @@ services:
       - Health__PublicUrl=https://ms.dalion.eu
       - Auth__SecureCookies=true
       - ForwardedHeaders__KnownProxies__0=${FORWARDED_HEADERS_KNOWN_PROXY_0:-172.18.0.3}
+      - DataProtection__CertificatePath=/run/secrets/dataprotection.pfx
+      - DataProtection__CertificatePassword=${DATAPROTECTION_CERTIFICATE_PASSWORD:?Set DATAPROTECTION_CERTIFICATE_PASSWORD in your environment}
+    volumes:
+      - type: bind
+        source: /etc/dalion/motorsports/secrets/dataprotection.pfx
+        target: /run/secrets/dataprotection.pfx
+        read_only: true
     healthcheck:
       test: ["CMD", "dotnet", "Motorsports.Web.dll", "--health-check"]
       interval: 30s
