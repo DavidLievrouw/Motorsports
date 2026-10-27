@@ -1,15 +1,12 @@
-using System.Threading.RateLimiting;
 using FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Motorsports.Common;
 using Motorsports.Infrastructure.Auth;
 using Motorsports.Infrastructure.Entities;
@@ -22,7 +19,6 @@ public static class AuthEndpoints
     public const string LogoutPath = "/logout";
     public const string AccessDeniedPath = "/accessdenied";
     public const string ChangePasswordPath = "/account/change-password";
-    public const string LoginRateLimitPolicy = "login";
 
     // Verified for unknown users so response time does not reveal whether a user name exists.
     private static readonly User DummyUser = new();
@@ -44,26 +40,18 @@ public static class AuthEndpoints
                 ServiceLifetime.Singleton,
                 includeInternalTypes: true
             );
-            services.AddRateLimiter(o =>
-            {
-                o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-                o.AddPolicy(
-                    LoginRateLimitPolicy,
-                    context =>
-                    {
-                        var limits = context.RequestServices.GetRequiredService<IOptions<AuthOptions>>().Value;
-                        return RateLimitPartition.GetFixedWindowLimiter(
-                            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                            _ => new FixedWindowRateLimiterOptions
-                            {
-                                PermitLimit = limits.LoginPermitLimit,
-                                Window = TimeSpan.FromSeconds(limits.LoginWindowSeconds),
-                                QueueLimit = 0,
-                            }
-                        );
-                    }
-                );
-            });
+            services
+                .AddOptions<AuthProtectionOptions>()
+                .Bind(configuration.GetSection(AuthProtectionOptions.Section))
+                .ValidateDataAnnotations()
+                .Validate(
+                    limits => 3L * limits.GlobalAttempts * 60 <= 500L * limits.GlobalWindowSeconds,
+                    "The global rate must allow at most 500 new reputation keys per minute so indexed cleanup can keep up."
+                )
+                .ValidateOnStart();
+            services.AddSingleton<AuthThrottleStore>();
+            services.AddSingleton<AuthProtection>();
+            services.AddHostedService<AuthProtectionCleanup>();
             return services;
         }
     }
@@ -77,7 +65,7 @@ public static class AuthEndpoints
     {
         public IEndpointRouteBuilder MapAuthEndpoints()
         {
-            endpoints.MapPost(LoginPath, LoginAsync).AllowAnonymous().RequireRateLimiting(LoginRateLimitPolicy);
+            endpoints.MapPost(LoginPath, LoginAsync).AllowAnonymous();
             endpoints.MapPost(LogoutPath, LogoutAsync).AllowAnonymous();
             endpoints.MapPost(ChangePasswordPath, ChangePasswordAsync).RequireAuthorization();
             return endpoints;
@@ -91,6 +79,9 @@ public static class AuthEndpoints
 
     private static async Task<IResult> LoginAsync(
         [FromForm] LoginForm form,
+        HttpContext context,
+        AuthProtection protection,
+        AuthThrottleStore throttle,
         SignInManager<User> signInManager,
         IValidator<LoginForm> validator,
         IPasswordHasher<User> passwordHasher,
@@ -99,8 +90,41 @@ public static class AuthEndpoints
     )
     {
         var logger = loggerFactory.CreateLogger("Motorsports.Auth.Login");
+        using var lease = protection.TryEnter();
+        if (!lease.IsAcquired)
+        {
+            return protection.Reject(context, 1);
+        }
+        var admission = await throttle.ReserveAsync(
+            signInManager.UserManager.NormalizeName(form.Username is { Length: <= 255 } ? form.Username : ""),
+            ClientAddress(context),
+            protection.Device(context),
+            cancellationToken
+        );
+        if (!admission.IsSuccess)
+        {
+            logger.LogWarning(
+                "Authentication protection could not reserve an attempt: {Reason}",
+                admission.Error.Message
+            );
+            return protection.Reject(context, 60, unavailable: true);
+        }
+        if (admission.Value.Reservation is not { } reservation)
+        {
+            return protection.Reject(context, admission.Value.RetryAfterSeconds);
+        }
         if (!(await validator.ValidateAsync(form, cancellationToken)).IsValid)
         {
+            var invalid = await throttle.CompleteAsync(
+                reservation,
+                AuthAttemptOutcome.InvalidInput,
+                CancellationToken.None
+            );
+            if (!invalid.IsSuccess)
+            {
+                logger.LogWarning("Authentication protection completion failed: {Reason}", invalid.Error.Message);
+                return protection.Reject(context, 60, unavailable: true);
+            }
             return Results.Redirect(LoginFailedUrl(form.ReturnUrl));
         }
 
@@ -114,6 +138,19 @@ public static class AuthEndpoints
             var result = await signInManager.CheckPasswordSignInAsync(user, form.Password!, lockoutOnFailure: false);
             if (result.Succeeded)
             {
+                var completion = await throttle.CompleteAsync(
+                    reservation,
+                    AuthAttemptOutcome.Succeeded,
+                    CancellationToken.None
+                );
+                if (!completion.IsSuccess)
+                {
+                    logger.LogWarning(
+                        "Authentication protection completion failed: {Reason}",
+                        completion.Error.Message
+                    );
+                    return protection.Reject(context, 60, unavailable: true);
+                }
                 await signInManager.SignInAsync(user, isPersistent: false);
                 return Results.Redirect(
                     user.ForceChangePassword
@@ -123,6 +160,12 @@ public static class AuthEndpoints
             }
         }
 
+        var failure = await throttle.CompleteAsync(reservation, AuthAttemptOutcome.Failed, CancellationToken.None);
+        if (!failure.IsSuccess)
+        {
+            logger.LogWarning("Authentication protection completion failed: {Reason}", failure.Error.Message);
+            return protection.Reject(context, 60, unavailable: true);
+        }
         logger.LogInformation("Failed login attempt.");
         return Results.Redirect(LoginFailedUrl(form.ReturnUrl));
     }
@@ -136,6 +179,8 @@ public static class AuthEndpoints
     private static async Task<IResult> ChangePasswordAsync(
         [FromForm] ChangePasswordModel form,
         HttpContext context,
+        AuthProtection protection,
+        AuthThrottleStore throttle,
         SignInManager<User> signInManager,
         IValidator<ChangePasswordModel> validator,
         ILoggerFactory loggerFactory,
@@ -149,11 +194,6 @@ public static class AuthEndpoints
             return error is null ? url : $"{url}&error={Uri.EscapeDataString(error)}";
         };
 
-        if (!(await validator.ValidateAsync(form, cancellationToken)).IsValid)
-        {
-            return Results.Redirect(redirectUrl("invalid"));
-        }
-
         var userManager = signInManager.UserManager;
         var user = await userManager.GetUserAsync(context.User);
         if (user is null)
@@ -161,7 +201,55 @@ public static class AuthEndpoints
             return Results.Redirect(LoginPath);
         }
 
+        using var lease = protection.TryEnter();
+        if (!lease.IsAcquired)
+        {
+            return protection.Reject(context, 1);
+        }
+        var admission = await throttle.ReserveAsync(
+            userManager.NormalizeName(user.Username),
+            ClientAddress(context),
+            protection.Device(context),
+            cancellationToken
+        );
+        if (!admission.IsSuccess)
+        {
+            logger.LogWarning(
+                "Authentication protection could not reserve an attempt: {Reason}",
+                admission.Error.Message
+            );
+            return protection.Reject(context, 60, unavailable: true);
+        }
+        if (admission.Value.Reservation is not { } reservation)
+        {
+            return protection.Reject(context, admission.Value.RetryAfterSeconds);
+        }
+        if (!(await validator.ValidateAsync(form, cancellationToken)).IsValid)
+        {
+            var invalid = await throttle.CompleteAsync(
+                reservation,
+                AuthAttemptOutcome.InvalidInput,
+                CancellationToken.None
+            );
+            if (!invalid.IsSuccess)
+            {
+                logger.LogWarning("Authentication protection completion failed: {Reason}", invalid.Error.Message);
+                return protection.Reject(context, 60, unavailable: true);
+            }
+            return Results.Redirect(redirectUrl("invalid"));
+        }
+
         var result = await userManager.ChangePasswordAsync(user, form.CurrentPassword!, form.NewPassword!);
+        var outcome =
+            result.Succeeded ? AuthAttemptOutcome.Succeeded
+            : result.Errors.Any(error => error.Code == "PasswordMismatch") ? AuthAttemptOutcome.Failed
+            : AuthAttemptOutcome.InvalidInput;
+        var completed = await throttle.CompleteAsync(reservation, outcome, CancellationToken.None);
+        if (!completed.IsSuccess)
+        {
+            logger.LogWarning("Authentication protection completion failed: {Reason}", completed.Error.Message);
+            return protection.Reject(context, 60, unavailable: true);
+        }
         if (!result.Succeeded)
         {
             var error = result.Errors.Any(identityError => identityError.Code == "PasswordMismatch")
@@ -183,5 +271,11 @@ public static class AuthEndpoints
 
         await signInManager.RefreshSignInAsync(user);
         return Results.Redirect(LocalUrl.OrDefault(form.ReturnUrl));
+    }
+
+    private static string ClientAddress(HttpContext context)
+    {
+        var address = context.Connection.RemoteIpAddress;
+        return address is null ? "unknown" : (address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address).ToString();
     }
 }

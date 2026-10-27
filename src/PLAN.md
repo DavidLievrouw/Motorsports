@@ -106,6 +106,11 @@ Performance indexes require idempotent migrations (`CREATE INDEX IF NOT EXISTS`,
 
 Candidates evaluated in Phase 8: `Round(Venue, Number, Date)` (event history), `Round(Status, Date)` (home), `Round(Season, Date, Number)` (round list), `Participant(LastName, FirstName)`, `Team(Sport, Name)`.
 
+Authentication follow-up (2026-10-27): `20261027124050_AddAuthProtection` adds the operational `AuthThrottleState` table,
+its ASCII/binary primary key, `IX_AuthThrottleState_ExpiresAt`, and the singleton coordination row. Creation/seeding are
+self-guarding and Down drops only this new table. MariaDB regressions verify reapplication, rollback/reapply, concurrent
+startup, primary-key/expiry-index plans, and bounded cleanup. No existing application rows are changed.
+
 Approved exception: the user approved a unique index on `Participant(Title, FirstName, LastName, Country)` on 2026-10-25. Migration `20261025083000_ParticipantUniqueIdentity` creates only this index. The 2026-10-26 preflight on the local restored database found zero duplicate groups, so it does not modify participant or winner data.
 
 The local restored database preflight found 0 duplicate groups for Team `(Sport, Name)` and positive Round `(Season, Number)`; 80 rounds have `Number = 0`, with no negative values. Migration `20261026100239_AddBusinessUniqueConstraints` adds these database constraints using a unique Team index and a generated nullable `ChampionshipNumber` (null for non-positive numbers), then removes the now-redundant single-column FK indexes. Characteristics tests cover duplicate rejection, same-name teams in different sports, and multiple zero-number rounds. The password columns were retained during Phase 8; the 2026-10-27 cleanup below supersedes that temporary restriction.
@@ -463,7 +468,9 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 - A minimal-API POST only gets antiforgery validation if it binds a form; `/logout` binds `IFormCollection` for that reason (a test caught it unprotected).
 - BL0008: no initializer on `[SupplyParameterFromForm]` properties; use `= default!` plus `??= new()`.
 - Cookies are `Secure` outside Development. Deploying over plain http (e.g. compose without TLS) requires `Auth__SecureCookies=false`.
-- Login rate limit is per remote IP (fixed window, `Auth:LoginPermitLimit`/`LoginWindowSeconds`). Forwarded headers are accepted only from configured `ForwardedHeaders:KnownProxies` addresses (default framework loopback proxies); set `ForwardedHeaders__KnownProxies__0` to the TLS proxy address in deployment. Account lockout was not implemented (optional in plan).
+- Phase 7 initially limited login per remote IP (`Auth:LoginPermitLimit`/`LoginWindowSeconds`); the separately approved
+  2026-10-27 abuse-protection phase replaces these settings with shared `Auth:Protection:*` budgets and cooldowns.
+  Forwarded headers remain restricted to configured `ForwardedHeaders:KnownProxies`.
 - Tooling note: in this environment only PowerShell was available for file edits (no create/edit tools); `R` is an alias of Invoke-History, so do not name helpers `R`.
 - `FuzzySelect`/`FuzzyMultiSelect` use immediate query updates to avoid requiring a second Enter press. Their click/typing behaviour and the theme switch still need a browser test (Playwright) or manual check.
 - Phase 3: this environment has no create/edit tool; all files were written through PowerShell with .NET `WriteAllText` (no BOM). PowerShell 5.1 `Set-Content -Encoding utf8` adds a BOM, avoid it.
@@ -490,15 +497,21 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 - Mobile recovery follow-up: one-minute circuit retention made phone backgrounding unusually destructive. After retry exhaustion, the template handler subscribed only to a future visibility change, leaving an already-visible page stuck and ignoring network-return events. Recovery now retries while visible/online and reacts immediately to foreground/online/page restoration. The root omitted the scoped CSS bundle needed for reconnect state visibility; it is now included. These are source-confirmed defects, not proof of the specific production transport interruption.
 - Reconnect theme follow-up: native dialog colors and hard-coded template colors did not follow the app theme. The dialog now pairs MudBlazor surface/text colors, with contrasting dark/light fallbacks for static auth pages without a theme provider. Outlined buttons inherit those colors: white on the default dark primary misses the 4.5:1 text-contrast threshold. Keyboard focus remains visible.
 - MariaDB connection verification (2026-10-27): MySqlConnector 2.6.2 defaults to resetting pooled connections on checkout. Disposable MariaDB 11.7.2 tests confirm replacement after server idle expiry or `KILL CONNECTION` while pooled. A connection killed after checkout still fails the Home read without retry; the next operation succeeds, so this is not a permanently poisoned pool. Transport failures are not mapped by `DbOperations`; read errors can propagate into HTTP 500 responses or terminate interactive circuits. Do not enable provider-wide retries without integrating the explicit write transactions and handling unknown commit outcomes.
-- Connection-verification suite run exposed an intermittent existing `Responses_include_security_headers` assertion: a generated nonce containing `+` did not match its HTML-encoded attribute literally. No unrelated code was changed; the subsequent complete run passed all 163 tests.
+- Connection-verification suite run exposed an intermittent existing `Responses_include_security_headers` assertion: a
+  generated nonce containing `+` did not match its HTML-encoded attribute literally. The authentication abuse-protection
+  follow-up corrects the auth regression assertion by HTML-decoding markup before comparing the nonce; CSP is unchanged.
 
 ## 10. Handover (rewrite at the end of every phase)
 
 - Backup/key-ring follow-up (2026-10-27): added real MariaDB dump/drop/recreate/restore regression coverage for Development and certificate-protected Production. It preserves users and migration history, restores an empty key table, checks fresh persisted keys, rejects old cookies, and verifies a fresh login; production keys must remain encrypted. No runtime change is needed for empty-ring regeneration. The supplied backup change was unstaged (the index was empty), not staged. Existing unrelated solution changes are untouched.
 - Follow-up validation: warning-as-error solution build and CSharpier format/check pass; final solution run passes 175/175 tests, including both restore scenarios. The intermittent pre-existing nonce assertion is recorded above.
-Date: 2026-10-27. Phases 0–8 are complete; mobile connection recovery follow-up implemented.
+Date: 2026-10-27. Phases 0–8, mobile connection recovery, and authentication abuse protection are complete.
 
 State:
+- Authentication abuse protection is implemented for login/password changes with shared MariaDB budgets, progressive
+  cooldowns, local IP/device reputation, bounded indexed cleanup, and private operator-reset SQL. Release warning-as-error
+  build, CSharpier format/check, all 194 .NET tests, all eight reconnect Node tests, and EF model consistency checks pass.
+  Generated idempotent SQL was reviewed. Details and approved thresholds are in the follow-up phase below.
 - [x] Reconnect dialog readability: theme-aware text, surface, buttons, and activity indicator; dark/light static-page fallbacks follow `html[data-theme]`. Node coverage checks paired palette bindings and fallback text contrast (at least 4.5:1).
 - Reconnect theme validation: headless Edge native-dialog checks pass for dark/light palettes and static-page fallbacks (dialog, Retry, and Resume text all meet 4.5:1 contrast). Release warning-as-error build, CSharpier format/check, eight Node regressions, and all 175 .NET tests pass.
 - [x] Mobile recovery: disconnected circuits now survive five minutes (still capped at 20). The reconnect handler retries every five seconds after framework retry exhaustion while visible/online, and immediately on foreground, online, or page restoration. Recovery is single-flight; it first reconnects/resumes, then automatically reloads only when the server no longer has the session. No write is replayed. Retained sessions keep form state; expired/evicted sessions and app restarts can lose unsaved edits. Added dependency-free Node lifecycle/network regression tests and an HTTP/options characteristics test.
@@ -532,7 +545,8 @@ State:
 
 Known gaps / not done:
 - Production password rotation has been prepared by the user but not yet applied.
-- No admin/user UI or account lockout (outside the agreed phase scope).
+- No admin/user UI or permanent Identity lockout. Temporary authentication budgets/cooldowns are implemented in the
+  separately approved abuse-protection phase below.
 - User confirmed on 2026-10-26 that authentication survives an app restart with the MariaDB `DataProtectionKeys` key ring. Full container replacement was verified the same day: the session survived, and the key row count stayed at 1. Least-privilege DB access was verified with a restricted user (the 8 grants listed in README) and applied to the local restored `motorsports` DB.
 - Ingress was verified in a local production-shaped simulation (section Phase 8). The production compose was fixed (container `motorsports`, no published port, `Kestrel__Endpoints__Http__Url` on port 80), and the antiforgery cookie is now Secure.
 
@@ -551,7 +565,51 @@ User actions at deployment (live production was never accessed by the agent):
 - CSP enforcement follow-up: Blazor adds a separate framing policy on page responses. The header regression test selects the application's full policy rather than assuming there is only one enforcing header; both policies remain enforced.
 - The venue list search uses the shared lookup cache to resolve Vogen venue keys before a translated SQL key filter; the other reference-list searches use translated string/name or typed-key queries.
 
-Next: Phase 8 is closed. Remaining items are the deployment actions listed above. No further phase is planned; ask the user before starting new work.
+Next: deploy/recreate the app with the approved authentication protection below; migrate old login-limit overrides to
+`Auth:Protection:*`. No production deployment was performed. No further implementation phase is planned.
+
+### Authentication abuse protection (2026-10-27)
+
+Approved scope: login and password changes only; shared MariaDB state across instances/restarts, 5 failed/in-flight account
+attempts per 15 minutes, 20 IP and 10 device attempts per 5 minutes, 60 global attempts per minute, four concurrent
+credential operations per process, progressive cooldowns capped at 60 seconds, local-only reputation, a 30-day protected
+device cookie, 24-hour inactive reputation expiry, and expiry plus operator reset. Health/reconnect traffic is excluded.
+
+- [x] Add `AuthThrottleState` with primary-key lookups, an expiry index, guarded migration/Down, and singleton global row.
+- [x] Reserve account/source/global permits transactionally before credential checks; serialize cross-instance state with a
+  short global-row lock outside password hashing. Existing accounts use immutable IDs to respect MariaDB username aliases.
+- [x] Add progressive retry cooldowns, source account-switch/failure reputation, bounded indexed cleanup, protected random
+  device IDs (no fingerprinting/external services), and the per-process no-queue concurrency guard.
+- [x] Apply protection to login and password changes; preserve antiforgery and local redirects; emit generic 429/retry
+  responses and fail closed on known DB failures. Add private operator-reset SQL and configuration/privacy docs in README.
+- [x] Complete MariaDB/HTTP regressions, warning-as-error build, CSharpier format/check, full solution tests, and generated
+  migration SQL/model consistency checks.
+
+Issues encountered:
+- Identity normalization alone does not capture accent/trailing-space equivalence under the username column's collation.
+  Resolve known usernames to their immutable account ID before selecting the account counter.
+- MariaDB persists microseconds; reservation timestamps are truncated to microseconds before comparing completion windows.
+- Successful requests cannot clear concurrent failures; they release only their own account reservation. Invalid forms do
+  not count as credential failures or earn device trust, but still consume permits.
+- The full regression run initially exposed an eight-migration count assertion; the new total is nine.
+- The expanded auth regression run reproduced the documented HTML-encoded-nonce assertion failure. Decode markup before
+  comparing nonce values, matching the existing antiforgery test helper; no production security-header behavior changes.
+- Synthetic Release measurements (20 warmed reservation/completion pairs, local Docker MariaDB 11.7.2): p50 19.29 ms /
+  p95 24.65 ms, seven SQL commands per pair, one per exhausted-global rejection. `EXPLAIN` verifies the primary key and
+  expiry index; cleanup regressions verify 500-row batches against 1,000 synthetic extra rows. These are local observations
+  excluding password hashing and HTTP, not production throughput guarantees. Startup rejects global rates whose potential
+  key creation exceeds the 500-row/minute cleanup capacity.
+
+Handover: implementation and exit checks are complete: 194 .NET tests and eight Node regressions pass, Release build has
+zero warnings/errors, formatting is clean, EF reports no pending model changes, and idempotent SQL was reviewed. The 19
+new characteristics cases cover shared/atomic limits, known/unknown/aliased accounts, cooldown cap/decay, source spraying
+and trust, cookie tampering, HTTP retry/theme behavior, password changes, concurrency admission, expiry/reset/fail-closed
+storage, migration reapplication, and indexed query counts. No production or restored
+application database was changed. The new table/index are applied only by normal startup migrations; tests use synthetic
+Testcontainers data. Deployments must replace old login-limit overrides with `Auth:Protection:*`, keep policy settings
+consistent across instances, and preserve the shared Data Protection key ring. No admin UI or third-party reputation
+integration is included. The global row is an intentional low-volume coordination point; capacity observations are not
+production throughput guarantees.
 
 ### Phase 8 clarification handoff (2026-10-26)
 

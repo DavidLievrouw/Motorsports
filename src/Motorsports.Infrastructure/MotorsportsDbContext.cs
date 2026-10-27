@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Motorsports.Common;
+using Motorsports.Infrastructure.Auth;
 using Motorsports.Infrastructure.Entities;
 using Vogen;
 
@@ -23,6 +24,7 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
     public DbSet<User> Users => Set<User>();
     public DbSet<Venue> Venues => Set<Venue>();
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
+    internal DbSet<AuthThrottleState> AuthThrottleStates => Set<AuthThrottleState>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -31,6 +33,15 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AuthThrottleState>(e =>
+        {
+            e.ToTable("AuthThrottleState");
+            e.HasKey(x => x.Key);
+            e.Property(x => x.Key).HasMaxLength(80).UseCollation("ascii_bin").ValueGeneratedNever();
+            e.Property(x => x.LastAccount).HasMaxLength(80).UseCollation("ascii_bin");
+            e.HasIndex(x => x.ExpiresAt);
+        });
+
         modelBuilder.Entity<Country>(e =>
         {
             e.ToTable("Country");

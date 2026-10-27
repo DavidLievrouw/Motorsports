@@ -1,6 +1,8 @@
 # Motorsports
 
-Motorsports is a personal tracker for motorsport seasons and events. It lets the owner manage sports, seasons, teams and
+Motorsports is a personal pet project in which I test technologies.
+
+It's a tracker for motorsport seasons and events. It lets the owner manage sports, seasons, teams and
 their season-specific entries, participants, venues, rounds, results, and event conditions. The home page highlights
 what to watch next and provides a history of completed events. The application is login-protected and supports sports
 such as Formula 1 and MotoGP.
@@ -47,8 +49,13 @@ branding.
 | `ConnectionStrings:Motorsports` | MariaDB connection; configure with user-secrets or `ConnectionStrings__Motorsports` |
 | `App:TimeZone` | Fallback IANA time zone if browser time-zone detection is unavailable; defaults to `Europe/Brussels` |
 | `Auth:SecureCookies` | Secure-cookie policy; keep enabled outside local plain-HTTP development |
-| `Auth:LoginPermitLimit` | Login attempts per client IP in the configured window; defaults to 5 |
-| `Auth:LoginWindowSeconds` | Login rate-limit window; defaults to 60 seconds |
+| `Auth:Protection:AccountFailures` / `AccountWindowSeconds` | Failed/in-flight account attempts: 5 per 900 seconds |
+| `Auth:Protection:IpAttempts` / `SourceWindowSeconds` | Attempts per IP: 20 per 300 seconds |
+| `Auth:Protection:DeviceAttempts` | Attempts per protected device ID: 10 per source window |
+| `Auth:Protection:GlobalAttempts` / `GlobalWindowSeconds` | Shared login/password-change admission budget: 60 per 60 seconds |
+| `Auth:Protection:ConcurrentPasswordChecks` | Concurrent credential operations per app process: 4; no queue |
+| `Auth:Protection:MaximumCooldownSeconds` | Progressive failure cooldown cap: 60 seconds |
+| `Auth:Protection:ReputationHours` / `DeviceCookieDays` | Inactive reputation expires after 24 hours; device cookie expires after 30 days |
 | `DataProtection:CertificatePath` | PKCS#12 certificate that encrypts the Data Protection key ring; required outside Development |
 | `DataProtection:CertificatePassword` | Password of that PKCS#12 file |
 | `ForwardedHeaders:KnownProxies` | Trusted proxy IP addresses. Configure the TLS-terminating proxy so client IPs and HTTPS are forwarded safely |
@@ -56,6 +63,82 @@ branding.
 
 In containers, use the corresponding double-underscore environment variable names, such as `App__TimeZone` and
 `ForwardedHeaders__KnownProxies__0`. Forwarded headers are accepted only from configured proxies.
+
+## Authentication abuse protection
+
+Login and password-change POSTs share MariaDB-backed account, IP, device, and global limits. Health checks, page reads,
+logout, and Blazor reconnects are excluded. Budgets use per-key fixed windows, not rolling windows.
+The old `Auth:LoginPermitLimit` and `Auth:LoginWindowSeconds` settings are
+replaced by `Auth:Protection:*`; migrate any deployment overrides. All instances must use the same policy settings and
+synchronized UTC clocks. Limits survive restarts. The four-operation concurrency guard is intentionally per process,
+not a distributed semaphore; the global admission budget remains shared.
+
+Reservations count before password hashing, so parallel requests cannot overshoot the account budget. Successful
+credential checks release only their own account reservation; source/global attempts still count. Invalid forms consume
+permits but do not earn device trust or increment credential-failure reputation. Aborted operations conservatively
+retain their permit until the window expires. After three credential failures, cooldowns start at one second and
+double to the configured cap; the streak decays after one account window without a credential failure. An IP/device
+that switches accounts at least four times and accumulates at least three failures gets a fourfold source penalty.
+A source with a recent successful check starts its normal source cooldown one failure later; it never bypasses
+credentials, account limits, or global limits. These are local behavioral heuristics, not an external threat feed or a
+claim that an IP/device identifies a person. Shared NATs and targeted account attacks can temporarily limit legitimate users.
+
+Blocked requests return HTTP `429`, a generic retry page, and `Retry-After` seconds immediately, without sleeping or
+queuing. Recognized protection-store database failures deny authentication with HTTP `503` and a retry interval. No automatic request replay
+is performed. A protected, HttpOnly, SameSite=Lax `ms.device` cookie stores a random identifier for 30 days, marked Secure
+in production. Missing, expired, or forged cookies are replaced; clearing cookies never resets account/IP/global state.
+All instances use the existing shared Data Protection key ring. There is no browser fingerprinting or third-party IP lookup.
+
+`AuthThrottleState` stores SHA-256 pseudonymous keys, counters, timestamps, account-switch counts, and the last account
+key for each source, not passwords, raw usernames, raw IP addresses, or raw device tokens. Hashes are **not anonymous**:
+low-entropy IP addresses or usernames can be guessed. Treat this table and its backups as sensitive. Logs record generic
+protection decisions, not submitted identifiers or tokens. Active keys expire 24 hours after their last admitted/completed
+attempt; expired state has no effect even before physical deletion. A hosted worker and admissions cooperatively delete
+at most 500 expired rows per minute across all instances, using the expiry index. Cleanup can lag under a backlog or
+downtime; backups follow their own retention policy.
+
+Performance: one short transaction locks the seeded `global` row to serialize reservations/completions across instances;
+password hashing runs **outside** that transaction. Key lookups use the primary key; expiry scans use
+`IX_AuthThrottleState_ExpiresAt` (covering the key in InnoDB). Admissions stop creating source/account rows once the global
+budget is exhausted. There is no per-request history table, whole-table reputation scan, or unbounded in-memory cache.
+Startup validates that the configured global rate can create at most 500 keys per minute (three per admission), keeping
+the bounded cleanup batch ahead of sustained expiry volume.
+The global row is a deliberate coordination point for this low-volume app, not a high-throughput distributed limiter.
+The guarded `AddAuthProtection` migration creates this table, index, and singleton row automatically at startup.
+The synthetic MariaDB regression asserts seven SQL commands per steady reservation/completion pair and one per
+global rejection, and checks both indexes with `EXPLAIN`. A local Release sample of 20 warmed pairs measured
+p50 19.29 ms / p95 24.65 ms, excluding password hashing and the rest of the HTTP flow; this is not a production capacity guarantee.
+
+### Operator reset
+
+Use an authorized MariaDB session; do not expose a public reset endpoint. Prefer expiry unless an operator has verified
+the user. Resetting account state does not reset IP/device/global limits. Set `@username` privately, then run:
+
+```sql
+START TRANSACTION;
+SELECT `Key` FROM `AuthThrottleState` WHERE `Key` = 'global' FOR UPDATE;
+SET @accountId = (SELECT `Id` FROM `User` WHERE `Username` = @username AND `IsDeleted` = 0 LIMIT 1);
+DELETE FROM `AuthThrottleState`
+WHERE `Key` = CONCAT('account:', LOWER(SHA2(CONCAT('id:', @accountId), 256)));
+COMMIT;
+```
+
+For a verified IP, delete its key in the same locked transaction using
+`CONCAT('ip:', LOWER(SHA2(@canonicalIp, 256)))`. Use the canonical .NET address spelling (IPv4-mapped IPv6 becomes IPv4).
+For emergency **all-state reset**, pause sign-in/password-change traffic or stop all app instances, then:
+
+```sql
+START TRANSACTION;
+SELECT `Key` FROM `AuthThrottleState` WHERE `Key` = 'global' FOR UPDATE;
+DELETE FROM `AuthThrottleState` WHERE `Key` <> 'global';
+UPDATE `AuthThrottleState` SET `Attempts` = 0, `WindowStart` = UTC_TIMESTAMP(6)
+WHERE `Key` = 'global';
+COMMIT;
+```
+
+Never delete the `global` row. Restart/resume traffic afterward. A reset racing an already-admitted operation can deny that
+operation's completion if its state is missing. A password change may already have committed before that denial, so
+verify the current password rather than automatically retrying the write. Reset does not revoke existing login sessions.
 
 ## Build and tests
 

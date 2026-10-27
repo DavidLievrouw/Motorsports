@@ -43,6 +43,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
             "20261026100239_AddBusinessUniqueConstraints",
             "20261026133143_AddRoundSeasonDateNumberIndex",
             "20261027074827_RemoveLegacyPasswordColumns",
+            "20261027124050_AddAuthProtection",
         ]);
         (await context.Users.CountAsync(cancellationToken)).ShouldBe(0);
     }
@@ -467,7 +468,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
         await Task.WhenAll(first, second);
 
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
-        (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).Count().ShouldBe(8);
+        (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).Count().ShouldBe(9);
     }
 
     [Fact]

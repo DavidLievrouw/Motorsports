@@ -42,6 +42,49 @@ namespace Motorsports.Infrastructure.Migrations
                     b.ToTable("DataProtectionKeys", (string)null);
                 });
 
+            modelBuilder.Entity("Motorsports.Infrastructure.Auth.AuthThrottleState", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(80)
+                        .HasColumnType("varchar(80)")
+                        .UseCollation("ascii_bin");
+
+                    b.Property<int>("AccountChanges")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("BlockedUntil")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Failures")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LastAccount")
+                        .HasMaxLength(80)
+                        .HasColumnType("varchar(80)")
+                        .UseCollation("ascii_bin");
+
+                    b.Property<DateTime>("LastFailure")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("LastSuccess")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("WindowStart")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Key");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.ToTable("AuthThrottleState", (string)null);
+                });
+
             modelBuilder.Entity("Motorsports.Infrastructure.Entities.Country", b =>
                 {
                     b.Property<string>("Iso")

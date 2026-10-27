@@ -272,7 +272,6 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseForcePasswordChange();

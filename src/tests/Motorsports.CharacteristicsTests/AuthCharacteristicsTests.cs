@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using Motorsports.Auth;
 using Motorsports.CharacteristicsTests.Fixtures;
 using Motorsports.Common;
+using Motorsports.Infrastructure.Auth;
 using Motorsports.Infrastructure.Entities;
 using Motorsports.Web;
 using Shouldly;
@@ -58,7 +59,7 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
 
             builder.UseSetting("ConnectionStrings:Motorsports", connectionString);
             builder.UseSetting("Auth:SecureCookies", secureCookies.ToString());
-            builder.UseSetting("Auth:LoginPermitLimit", loginLimit.ToString());
+            builder.UseSetting("Auth:Protection:IpAttempts", loginLimit.ToString());
             builder.ConfigureServices(services =>
                 services
                     .AddHttpClient(PublicHostHealthCheck.ClientName)
@@ -237,7 +238,9 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         response.Headers.GetValues("X-Frame-Options").ShouldContain("DENY");
 
         var loginPage = await client.GetAsync("/login", TestContext.Current.CancellationToken);
-        var page = await loginPage.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        var page = WebUtility.HtmlDecode(
+            await loginPage.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)
+        );
         loginPage.Headers.Contains("Content-Security-Policy-Report-Only").ShouldBeFalse();
         var loginCsp = loginPage
             .Headers.GetValues("Content-Security-Policy")
@@ -436,7 +439,7 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
     public async Task Untrusted_forwarded_for_headers_do_not_bypass_login_rate_limiting()
     {
         await using var app = await StartAsync(loginLimit: 2);
-        app.Services.GetRequiredService<IOptions<AuthOptions>>().Value.LoginPermitLimit.ShouldBe(2);
+        app.Services.GetRequiredService<IOptions<AuthProtectionOptions>>().Value.IpAttempts.ShouldBe(2);
         var client = app.NewClient();
         var token = await TokenAsync(client, "/login");
 
@@ -587,6 +590,101 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         }
 
         (await LoginAsync(client, "nobody", "x", token: token)).StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+    }
+
+    [Fact]
+    public async Task Hosts_share_limits_and_rejections_have_retry_after_without_blocking_health()
+    {
+        await using var first = await StartAsync(loginLimit: 2);
+        var client = first.NewClient();
+        await LoginAsync(client, "nobody", "wrong");
+        await LoginAsync(client, "nobody", "wrong");
+        await using var second = new AuthApp(fixture.ConnectionString, 2, false);
+        var otherClient = second.NewClient();
+        otherClient.DefaultRequestHeaders.Add("Cookie", "theme=light");
+
+        var blocked = await LoginAsync(otherClient, "another-name", "wrong");
+
+        blocked.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+        blocked.Headers.RetryAfter!.Delta!.Value.ShouldBeGreaterThan(TimeSpan.Zero);
+        blocked.Headers.CacheControl!.NoStore.ShouldBeTrue();
+        var page = await blocked.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        page.ShouldContain("data-theme=\"light\"");
+        page.ShouldContain("class=\"auth-card\"");
+        page.ShouldContain("role=\"alert\"");
+        (
+            await otherClient.GetAsync("/_content/Motorsports.Auth/auth.css", TestContext.Current.CancellationToken)
+        ).StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await otherClient.GetAsync("/health", TestContext.Current.CancellationToken)).StatusCode.ShouldBe(
+            HttpStatusCode.OK
+        );
+        (await otherClient.GetAsync("/login", TestContext.Current.CancellationToken)).StatusCode.ShouldBe(
+            HttpStatusCode.OK
+        );
+    }
+
+    [Fact]
+    public async Task Device_cookie_is_protected_secure_and_tampering_does_not_bypass_other_limits()
+    {
+        await using var app = await StartAsync(loginLimit: 1, secureCookies: true);
+        var client = app.NewClient();
+        client.BaseAddress = new Uri("https://localhost");
+        var response = await LoginAsync(client, "nobody", "wrong");
+        var cookie = response
+            .Headers.GetValues("Set-Cookie")
+            .Single(value => value.StartsWith("ms.device=", StringComparison.Ordinal));
+        cookie.ShouldContain("httponly", Case.Insensitive);
+        cookie.ShouldContain("secure", Case.Insensitive);
+        cookie.ShouldContain("samesite=lax", Case.Insensitive);
+        cookie.ShouldContain("max-age=2592000", Case.Insensitive);
+        var other = app.NewClient();
+        other.BaseAddress = new Uri("https://localhost");
+        other.DefaultRequestHeaders.Add("Cookie", "ms.device=forged");
+        var blocked = await LoginAsync(other, "different", "wrong");
+        blocked.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+        blocked
+            .Headers.GetValues("Set-Cookie")
+            .ShouldContain(value => value.StartsWith("ms.device=", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Password_hash_concurrency_guard_rejects_before_reserving_database_state()
+    {
+        await using var app = await StartAsync();
+        var client = app.NewClient();
+        var token = await TokenAsync(client, "/login");
+        var protection = app.Services.GetRequiredService<AuthProtection>();
+        using var first = protection.TryEnter();
+        using var second = protection.TryEnter();
+        using var third = protection.TryEnter();
+        using var fourth = protection.TryEnter();
+        first.IsAcquired.ShouldBeTrue();
+        fourth.IsAcquired.ShouldBeTrue();
+        var blocked = await LoginAsync(client, "nobody", "wrong", token: token);
+        blocked.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+        await using var db = await fixture
+            .CreateContextFactory()
+            .CreateDbContextAsync(TestContext.Current.CancellationToken);
+        (await db.AuthThrottleStates.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task Password_changes_use_the_same_account_failure_budget_as_login()
+    {
+        await using var app = await StartAsync();
+        await SeedUserAsync("protected-user");
+        var client = app.NewClient();
+        await LoginAsync(client, "protected-user", Password);
+        var token = await TokenAsync(client, "/account/change-password");
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            (
+                await PostChangeAsync(client, token, "wrong", "new password value", "new password value")
+            ).StatusCode.ShouldBe(HttpStatusCode.Redirect);
+        }
+        var blocked = await PostChangeAsync(client, token, Password, "new password value", "new password value");
+        blocked.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+        blocked.Headers.RetryAfter!.Delta!.Value.ShouldBeGreaterThan(TimeSpan.Zero);
     }
 
     [Fact]
