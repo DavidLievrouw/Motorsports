@@ -364,11 +364,7 @@ internal sealed class RoundService(IDbContextFactory<MotorsportsDbContext> facto
                 row.Name,
                 row.Venue,
                 row.Status,
-                row.Note,
-                row.Rating,
-                row.Rain,
-                row.WinningTeam,
-                winners
+                new RoundVersionResults(row.Note, row.Rating, row.Rain, row.WinningTeam, winners)
             ),
         };
     }
@@ -433,11 +429,7 @@ internal sealed class RoundService(IDbContextFactory<MotorsportsDbContext> facto
                     row.Name,
                     row.Venue,
                     row.Status,
-                    row.Note,
-                    row.Rating,
-                    row.Rain,
-                    row.WinningTeam,
-                    winners
+                    new RoundVersionResults(row.Note, row.Rating, row.Rain, row.WinningTeam, winners)
                 ),
             },
             row.Country
@@ -529,24 +521,7 @@ internal sealed class RoundService(IDbContextFactory<MotorsportsDbContext> facto
                 }
 
                 var current = rows[0];
-                var form = outcome is { } targetStatus
-                    ? new RoundForm
-                    {
-                        SeasonId = current.Season.Value,
-                        Date = current.Date,
-                        OriginalDate = current.Date,
-                        Number = current.Number,
-                        Name = current.Name,
-                        Venue = current.Venue.Value,
-                        Status = targetStatus.Value,
-                        Note = submitted.Note,
-                        Rating = submitted.Rating,
-                        Rain = submitted.Rain,
-                        WinningTeam = submitted.WinningTeam,
-                        Winners = submitted.Winners,
-                        RowVersion = submitted.RowVersion,
-                    }
-                    : submitted;
+                var form = CreateUpdateForm(current, submitted, outcome);
                 var validation = await validator.ValidateAsync(
                     form,
                     options =>
@@ -565,7 +540,6 @@ internal sealed class RoundService(IDbContextFactory<MotorsportsDbContext> facto
                 }
 
                 var seasonId = SeasonId.From(form.SeasonId);
-                var participantIds = form.Winners.Select(ParticipantId.From).ToArray();
                 if (current.Season != seasonId)
                 {
                     return Error.Validation(nameof(RoundForm.SeasonId), "The season of a round cannot be changed.");
@@ -584,73 +558,104 @@ internal sealed class RoundService(IDbContextFactory<MotorsportsDbContext> facto
                         current.Name,
                         current.Venue,
                         current.Status,
-                        current.Note,
-                        current.Rating,
-                        current.Rain,
-                        current.WinningTeam,
-                        winnerIds
+                        new RoundVersionResults(
+                            current.Note,
+                            current.Rating,
+                            current.Rain,
+                            current.WinningTeam,
+                            winnerIds
+                        )
                     )
                 )
                 {
                     return Error.Conflict(StaleMessage);
                 }
 
-                var lookup = await ResolveLookupsAsync(db, form, roundId, ct);
-                if (lookup.Error is { } error)
-                {
-                    return error;
-                }
-
-                var rating = (decimal?)form.Rating;
-                if (outcome is null && lookup.StatusStep <= 1 && (rating is null || rating <= 0))
-                {
-                    rating = null;
-                }
-
-                decimal? rainValue = form.Rain.HasValue ? (int)form.Rain.Value : null;
-                var name = outcome is null ? BlankToNull(form.Name) : current.Name;
-                var note = BlankToNull(form.Note);
-                var date = form.Date!.Value;
-                var venue = lookup.Venue!.Value;
-                var status = lookup.Status!.Value;
-                TeamId? winningTeam = form.WinningTeam is { } value ? TeamId.From(value) : null;
-                var number = form.Number;
-
-                await db
-                    .Rounds.Where(round => round.Id == roundId)
-                    .ExecuteUpdateAsync(
-                        updates =>
-                            updates
-                                .SetProperty(round => round.Date, date)
-                                .SetProperty(round => round.Number, number)
-                                .SetProperty(round => round.Name, name)
-                                .SetProperty(round => round.Venue, venue)
-                                .SetProperty(round => round.Status, status)
-                                .SetProperty(round => round.Note, note)
-                                .SetProperty(round => round.Rating, rating)
-                                .SetProperty(round => round.Rain, rainValue)
-                                .SetProperty(round => round.WinningTeam, winningTeam),
-                        ct
-                    );
-                await db.RoundWinners.Where(winner => winner.Round == roundId).ExecuteDeleteAsync(ct);
-                if (participantIds.Length > 0)
-                {
-                    db.RoundWinners.AddRange(
-                        participantIds.Select(participant => new RoundWinner
-                        {
-                            Round = roundId,
-                            Participant = participant,
-                        })
-                    );
-                    await db.SaveChangesAsync(ct);
-                }
-
-                return Result<int>.Ok(roundId.Value);
+                return await ApplyUpdateAsync(db, current, form, outcome, ct);
             },
             IsolationLevel.Serializable,
             cancellationToken
         );
         return result;
+    }
+
+    private static RoundForm CreateUpdateForm(Round current, RoundForm submitted, StatusName? outcome) =>
+        outcome is { } targetStatus
+            ? new RoundForm
+            {
+                SeasonId = current.Season.Value,
+                Date = current.Date,
+                OriginalDate = current.Date,
+                Number = current.Number,
+                Name = current.Name,
+                Venue = current.Venue.Value,
+                Status = targetStatus.Value,
+                Note = submitted.Note,
+                Rating = submitted.Rating,
+                Rain = submitted.Rain,
+                WinningTeam = submitted.WinningTeam,
+                Winners = submitted.Winners,
+                RowVersion = submitted.RowVersion,
+            }
+            : submitted;
+
+    private static async Task<Result<int>> ApplyUpdateAsync(
+        MotorsportsDbContext db,
+        Round current,
+        RoundForm form,
+        StatusName? outcome,
+        CancellationToken ct
+    )
+    {
+        var roundId = current.Id;
+        var participantIds = form.Winners.Select(ParticipantId.From).ToArray();
+        var lookup = await ResolveLookupsAsync(db, form, roundId, ct);
+        if (lookup.Error is { } error)
+        {
+            return error;
+        }
+
+        var rating = (decimal?)form.Rating;
+        if (outcome is null && lookup.StatusStep <= 1 && (rating is null || rating <= 0))
+        {
+            rating = null;
+        }
+
+        decimal? rainValue = form.Rain.HasValue ? (int)form.Rain.Value : null;
+        var name = outcome is null ? BlankToNull(form.Name) : current.Name;
+        var note = BlankToNull(form.Note);
+        var date = form.Date!.Value;
+        var venue = lookup.Venue!.Value;
+        var status = lookup.Status!.Value;
+        TeamId? winningTeam = form.WinningTeam is { } value ? TeamId.From(value) : null;
+        var number = form.Number;
+
+        await db
+            .Rounds.Where(round => round.Id == roundId)
+            .ExecuteUpdateAsync(
+                updates =>
+                    updates
+                        .SetProperty(round => round.Date, date)
+                        .SetProperty(round => round.Number, number)
+                        .SetProperty(round => round.Name, name)
+                        .SetProperty(round => round.Venue, venue)
+                        .SetProperty(round => round.Status, status)
+                        .SetProperty(round => round.Note, note)
+                        .SetProperty(round => round.Rating, rating)
+                        .SetProperty(round => round.Rain, rainValue)
+                        .SetProperty(round => round.WinningTeam, winningTeam),
+                ct
+            );
+        await db.RoundWinners.Where(winner => winner.Round == roundId).ExecuteDeleteAsync(ct);
+        if (participantIds.Length > 0)
+        {
+            db.RoundWinners.AddRange(
+                participantIds.Select(participant => new RoundWinner { Round = roundId, Participant = participant })
+            );
+            await db.SaveChangesAsync(ct);
+        }
+
+        return Result<int>.Ok(roundId.Value);
     }
 
     public async Task<RoundDeleteInfo?> GetDeleteInfoAsync(int id, CancellationToken cancellationToken = default)
@@ -874,6 +879,14 @@ internal sealed class RoundService(IDbContextFactory<MotorsportsDbContext> facto
 
     private static string? BlankToNull(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
+    private readonly record struct RoundVersionResults(
+        string? Note,
+        decimal? Rating,
+        decimal? Rain,
+        TeamId? WinningTeam,
+        IEnumerable<ParticipantId> Winners
+    );
+
     private static string ComputeVersion(
         SeasonId season,
         DateOnly date,
@@ -881,11 +894,7 @@ internal sealed class RoundService(IDbContextFactory<MotorsportsDbContext> facto
         string? name,
         VenueName venue,
         StatusName status,
-        string? note,
-        decimal? rating,
-        decimal? rain,
-        TeamId? winningTeam,
-        IEnumerable<ParticipantId> winners
+        RoundVersionResults results
     ) =>
         RowVersion.Compute(
             season.Value.ToString(),
@@ -894,10 +903,10 @@ internal sealed class RoundService(IDbContextFactory<MotorsportsDbContext> facto
             name,
             venue.Value,
             status.Value,
-            note,
-            rating?.ToString(),
-            rain?.ToString(),
-            winningTeam?.Value.ToString(),
-            string.Join(",", winners.Select(winner => winner.Value).Order())
+            results.Note,
+            results.Rating?.ToString(),
+            results.Rain?.ToString(),
+            results.WinningTeam?.Value.ToString(),
+            string.Join(",", results.Winners.Select(winner => winner.Value).Order())
         );
 }

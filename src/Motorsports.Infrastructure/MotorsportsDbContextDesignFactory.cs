@@ -10,7 +10,7 @@ public sealed class MotorsportsDbContextDesignFactory : IDesignTimeDbContextFact
     {
         var connectionString =
             Environment.GetEnvironmentVariable("ConnectionStrings__Motorsports")
-            ?? "Server=localhost;Database=motorsports_design;User Id=design;Password=design;";
+            ?? "Server=localhost;Database=motorsports_design;User Id=design;";
         var options = new DbContextOptionsBuilder<MotorsportsDbContext>();
         DatabaseConfiguration.Configure(options, connectionString);
         return new MotorsportsDbContext(options.Options);

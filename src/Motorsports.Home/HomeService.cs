@@ -142,13 +142,7 @@ internal sealed class HomeService(IDbContextFactory<MotorsportsDbContext> factor
             .ToArrayAsync(cancellationToken);
 
         var relevantRows = rows.Where(row =>
-                selectedRounds.Any(selected =>
-                    selected.Sport == row.Sport
-                    && selected.Venue == row.Venue
-                    && row.Date >= selected.Date.AddYears(-10)
-                    && row.Date <= selected.Date
-                    && (selected.Number == 0 ? row.Number == 0 : row.Number > 0)
-                )
+                selectedRounds.Any(selected => MatchesHistory(selected, row.Sport, row.Venue, row.Date, row.Number))
             )
             .ToArray();
         if (relevantRows.Length == 0)
@@ -189,13 +183,7 @@ internal sealed class HomeService(IDbContextFactory<MotorsportsDbContext> factor
             selected => selected.Id,
             selected =>
                 relevantRows
-                    .Where(row =>
-                        row.Sport == selected.Sport
-                        && row.Venue == selected.Venue
-                        && row.Date >= selected.Date.AddYears(-10)
-                        && row.Date <= selected.Date
-                        && (selected.Number == 0 ? row.Number == 0 : row.Number > 0)
-                    )
+                    .Where(row => MatchesHistory(selected, row.Sport, row.Venue, row.Date, row.Number))
                     .OrderByDescending(row => row.Date)
                     .ThenByDescending(row => row.Id.Value)
                     .Take(50)
@@ -206,13 +194,33 @@ internal sealed class HomeService(IDbContextFactory<MotorsportsDbContext> factor
                         row.Name,
                         row.Rating,
                         row.Rain,
-                        row.WinningTeamName is null ? null
-                            : row.WinningTeamCountry is { } country
-                                ? CountryFlag.WithName(country.Value, row.WinningTeamName)
-                            : row.WinningTeamName,
+                        FormatWinningTeam(row.WinningTeamName, row.WinningTeamCountry),
                         winnersByRound.GetValueOrDefault(row.Id) ?? []
                     ))
                     .ToArray()
         );
+    }
+
+    private static bool MatchesHistory(
+        HomeRound selected,
+        SportName sport,
+        VenueName venue,
+        DateOnly date,
+        short number
+    ) =>
+        sport == selected.Sport
+        && venue == selected.Venue
+        && date >= selected.Date.AddYears(-10)
+        && date <= selected.Date
+        && (selected.Number == 0 ? number == 0 : number > 0);
+
+    private static string? FormatWinningTeam(string? name, CountryIso? country)
+    {
+        if (name is null)
+        {
+            return null;
+        }
+
+        return country is { } iso ? CountryFlag.WithName(iso.Value, name) : name;
     }
 }

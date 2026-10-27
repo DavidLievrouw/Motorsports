@@ -54,7 +54,7 @@ public static class DbOperations
         CancellationToken cancellationToken = default
     )
     {
-        for (var attempt = 1; ; attempt++)
+        for (var attempt = 1; attempt <= MaxAttempts; attempt++)
         {
             try
             {
@@ -84,17 +84,20 @@ public static class DbOperations
                         await Task.Delay(Random.Shared.Next(10, 40 * attempt), cancellationToken);
                         continue;
                     case DbFailure.Busy:
-                        return Error.Conflict(BusyMessage);
+                        break;
                     case DbFailure.Duplicate:
                         return Error.Conflict(DuplicateMessage);
                     case DbFailure.ForeignKey:
                         return Error.Conflict(ReferencedMessage);
                     case DbFailure.TooLong:
                         return Error.Validation("", "A value is too long.");
+                    case DbFailure.None:
                     default:
                         throw;
                 }
             }
         }
+
+        return Error.Conflict(BusyMessage);
     }
 }

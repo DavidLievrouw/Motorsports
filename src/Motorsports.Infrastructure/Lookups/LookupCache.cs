@@ -174,7 +174,7 @@ public sealed class LookupCache
                         Sport = team.SportRef!.Name,
                         team.Country,
                         CountryName = team.CountryRef!.NiceName ?? team.CountryRef.Name,
-                        SeasonId = (SeasonId?)entry!.Season,
+                        SeasonId = (SeasonId?)entry.Season,
                         SeasonLabel = entry.SeasonRef!.Label,
                         EntryName = entry.Name,
                         StartDate = context

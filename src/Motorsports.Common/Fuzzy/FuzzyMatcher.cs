@@ -13,6 +13,8 @@ public static class FuzzyMatcher
     public const int SubstringScore = 60;
     public const int SubsequenceScore = 30;
 
+    internal static readonly HitComparer HitComparerInstance = new();
+
     // Folding tables (no ICU/normalization dependency, so InvariantGlobalization is safe on Linux).
     private const string Latin1Lower = "aaaaaaaceeeeiiiidnooooo÷ouuuuyty"; // U+00E0..U+00FF
     private const string LatinExtA =
@@ -220,7 +222,7 @@ public sealed class FuzzyIndex<T>
             }
 
             // Higher score first, then original (already sorted) order.
-            Array.Sort(hits, 0, count, HitComparer.Instance);
+            Array.Sort(hits, 0, count, FuzzyMatcher.HitComparerInstance);
             var take = Math.Min(count, max);
             var result = new T[take];
             for (var i = 0; i < take; i++)
@@ -233,17 +235,6 @@ public sealed class FuzzyIndex<T>
         finally
         {
             pool.Return(hits);
-        }
-    }
-
-    private sealed class HitComparer : IComparer<(int Score, int Index)>
-    {
-        public static readonly HitComparer Instance = new();
-
-        public int Compare((int Score, int Index) x, (int Score, int Index) y)
-        {
-            var c = y.Score.CompareTo(x.Score);
-            return c != 0 ? c : x.Index.CompareTo(y.Index);
         }
     }
 }

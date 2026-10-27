@@ -22,8 +22,14 @@ public sealed class UserClock(TimeProvider timeProvider, TimeZoneInfo fallbackZo
             {
                 return TimeZoneInfo.FindSystemTimeZoneById(id);
             }
-            catch (TimeZoneNotFoundException) { }
-            catch (InvalidTimeZoneException) { }
+            catch (TimeZoneNotFoundException)
+            {
+                // Noop
+            }
+            catch (InvalidTimeZoneException)
+            {
+                // Noop
+            }
         }
 
         return TimeZoneInfo.Local;

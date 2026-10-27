@@ -33,10 +33,8 @@ if (args is ["--health-check"])
     await using var logger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
     var configuredEndpoint = Environment.GetEnvironmentVariable("Kestrel__Endpoints__Http__Url");
     var configuredPorts = Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORTS");
-    var healthPort =
-        configuredEndpoint is not null ? new Uri(configuredEndpoint).Port
-        : configuredPorts is not null && int.TryParse(configuredPorts, out var port) ? port
-        : 8080;
+    var parsedPort = configuredPorts is not null && int.TryParse(configuredPorts, out var port) ? port : 8080;
+    var healthPort = configuredEndpoint is not null ? new Uri(configuredEndpoint).Port : parsedPort;
     var healthHost = Environment.GetEnvironmentVariable("HEALTHCHECK_HOST") ?? "ms.dalion.eu";
     using var client = new HttpClient();
     client.Timeout = TimeSpan.FromSeconds(10);

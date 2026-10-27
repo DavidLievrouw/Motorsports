@@ -236,61 +236,69 @@ internal sealed class VenueService(
 
         var newName = form.Name!.Trim();
         var result = await factory.InTransactionAsync<string>(
-            async (db, ct) =>
-            {
-                var country = await CanonicalCountryAsync(db, form.Country!, ct);
-                if (country is null)
-                {
-                    return Error.Validation(nameof(VenueForm.Country), "Select a valid country.");
-                }
-
-                // Lock the row, then compare its current values with the ones the form was loaded from.
-                var rows = await db
-                    .Venues.FromSql($"SELECT `Name`, `Country` FROM `Venue` WHERE `Name` = {originalName} FOR UPDATE")
-                    .AsNoTracking()
-                    .ToListAsync(ct);
-                if (rows.Count == 0)
-                {
-                    return Error.NotFound("Venue not found.");
-                }
-
-                var current = rows[0];
-                if (!RowVersion.Matches(form.RowVersion, RowVersion.Compute(current.Name.Value, current.Country.Value)))
-                {
-                    return Error.Conflict(StaleMessage);
-                }
-
-                if (string.Equals(newName, current.Name.Value, StringComparison.Ordinal))
-                {
-                    if (country.Value != current.Country)
-                    {
-                        await db
-                            .Venues.Where(v => v.Name == current.Name)
-                            .ExecuteUpdateAsync(s => s.SetProperty(x => x.Country, country.Value), ct);
-                    }
-
-                    return Result<string>.Ok(current.Name.Value);
-                }
-
-                // At most one row matches under the case/accent-insensitive collation: this venue (case/accent-only
-                // rename) or a different venue (duplicate).
-                var match = await db
-                    .Venues.Where(v => v.Name == VenueName.From(newName))
-                    .Select(v => (VenueName?)v.Name)
-                    .FirstOrDefaultAsync(ct);
-                var sameRow = match is { } matchedName && matchedName == current.Name;
-                if (match is not null && !sameRow)
-                {
-                    return Error.Validation(nameof(VenueForm.Name), "A venue with this name already exists.");
-                }
-
-                await RenameAsync(db, current.Name.Value, newName, country.Value.Value, sameRow, ct);
-                return Result<string>.Ok(newName);
-            },
+            (db, ct) => UpdateInTransactionAsync(db, originalName, newName, form, ct),
             cancellationToken: cancellationToken
         );
         InvalidateAfterWrite(result);
         return result;
+    }
+
+    private static async Task<Result<string>> UpdateInTransactionAsync(
+        MotorsportsDbContext db,
+        string originalName,
+        string newName,
+        VenueForm form,
+        CancellationToken ct
+    )
+    {
+        var country = await CanonicalCountryAsync(db, form.Country!, ct);
+        if (country is null)
+        {
+            return Error.Validation(nameof(VenueForm.Country), "Select a valid country.");
+        }
+
+        // Lock the row, then compare its current values with the ones the form was loaded from.
+        var rows = await db
+            .Venues.FromSql($"SELECT `Name`, `Country` FROM `Venue` WHERE `Name` = {originalName} FOR UPDATE")
+            .AsNoTracking()
+            .ToListAsync(ct);
+        if (rows.Count == 0)
+        {
+            return Error.NotFound("Venue not found.");
+        }
+
+        var current = rows[0];
+        if (!RowVersion.Matches(form.RowVersion, RowVersion.Compute(current.Name.Value, current.Country.Value)))
+        {
+            return Error.Conflict(StaleMessage);
+        }
+
+        if (string.Equals(newName, current.Name.Value, StringComparison.Ordinal))
+        {
+            if (country.Value != current.Country)
+            {
+                await db
+                    .Venues.Where(v => v.Name == current.Name)
+                    .ExecuteUpdateAsync(s => s.SetProperty(x => x.Country, country.Value), ct);
+            }
+
+            return Result<string>.Ok(current.Name.Value);
+        }
+
+        // At most one row matches under the case/accent-insensitive collation: this venue (case/accent-only
+        // rename) or a different venue (duplicate).
+        var match = await db
+            .Venues.Where(v => v.Name == VenueName.From(newName))
+            .Select(v => (VenueName?)v.Name)
+            .FirstOrDefaultAsync(ct);
+        var sameRow = match is { } matchedName && matchedName == current.Name;
+        if (match is not null && !sameRow)
+        {
+            return Error.Validation(nameof(VenueForm.Name), "A venue with this name already exists.");
+        }
+
+        await RenameAsync(db, current.Name.Value, newName, country.Value.Value, sameRow, ct);
+        return Result<string>.Ok(newName);
     }
 
     private void InvalidateAfterWrite<T>(Result<T> result)

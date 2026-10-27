@@ -75,29 +75,12 @@ internal sealed class SportService(
         string[] winningParticipants = [];
         if (latestSeason is not null)
         {
-            if (latestSeason.WinningTeam is { } teamId)
-            {
-                var teamCountry = await db
-                    .Teams.AsNoTracking()
-                    .Where(team => team.Id == teamId)
-                    .Select(team => (CountryIso?)team.Country)
-                    .FirstOrDefaultAsync(cancellationToken);
-                var plainName =
-                    await db
-                        .SeasonEntries.AsNoTracking()
-                        .Where(entry => entry.Season == latestSeason.Id && entry.Team == teamId)
-                        .Select(entry => entry.Name)
-                        .FirstOrDefaultAsync(cancellationToken)
-                    ?? await db
-                        .Teams.AsNoTracking()
-                        .Where(team => team.Id == teamId)
-                        .Select(team => team.Name)
-                        .FirstOrDefaultAsync(cancellationToken);
-                winningTeamName =
-                    plainName is null ? null
-                    : teamCountry is { } country ? CountryFlag.WithName(country.Value, plainName)
-                    : plainName;
-            }
+            winningTeamName = await GetWinningTeamNameAsync(
+                db,
+                latestSeason.Id,
+                latestSeason.WinningTeam,
+                cancellationToken
+            );
 
             var winnerRows = await db
                 .SeasonWinners.AsNoTracking()
@@ -129,17 +112,58 @@ internal sealed class SportService(
             .Select(round => (DateOnly?)round.Date)
             .FirstOrDefaultAsync(cancellationToken);
 
+        string? latestSeasonLabel = null;
+        if (latestSeason is not null)
+        {
+            latestSeasonLabel = !string.IsNullOrWhiteSpace(latestSeason.Label)
+                ? latestSeason.Label
+                : latestSeason.LastDate?.Year.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    ?? $"#{latestSeason.Id}";
+        }
+
         return sport with
         {
-            LatestSeasonLabel =
-                latestSeason is null ? null
-                : !string.IsNullOrWhiteSpace(latestSeason.Label) ? latestSeason.Label
-                : latestSeason.LastDate?.Year.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                    ?? $"#{latestSeason.Id}",
+            LatestSeasonLabel = latestSeasonLabel,
             WinningTeamName = winningTeamName,
             WinningParticipants = winningParticipants,
             NextRoundDate = nextRoundDate,
         };
+    }
+
+    private static async Task<string?> GetWinningTeamNameAsync(
+        MotorsportsDbContext db,
+        SeasonId seasonId,
+        TeamId? winningTeam,
+        CancellationToken cancellationToken
+    )
+    {
+        if (winningTeam is not { } teamId)
+        {
+            return null;
+        }
+
+        var teamCountry = await db
+            .Teams.AsNoTracking()
+            .Where(team => team.Id == teamId)
+            .Select(team => (CountryIso?)team.Country)
+            .FirstOrDefaultAsync(cancellationToken);
+        var plainName =
+            await db
+                .SeasonEntries.AsNoTracking()
+                .Where(entry => entry.Season == seasonId && entry.Team == teamId)
+                .Select(entry => entry.Name)
+                .FirstOrDefaultAsync(cancellationToken)
+            ?? await db
+                .Teams.AsNoTracking()
+                .Where(team => team.Id == teamId)
+                .Select(team => team.Name)
+                .FirstOrDefaultAsync(cancellationToken);
+        if (plainName is null)
+        {
+            return null;
+        }
+
+        return teamCountry is { } country ? CountryFlag.WithName(country.Value, plainName) : plainName;
     }
 
     public async Task<SportForm?> GetFormAsync(string name, CancellationToken cancellationToken = default)
@@ -156,6 +180,13 @@ internal sealed class SportService(
                 s.Image,
             })
             .FirstOrDefaultAsync(cancellationToken);
+
+        string? storedImageName = null;
+        if (row is not null)
+        {
+            storedImageName = row.Image is null ? null : row.Name.Value;
+        }
+
         return row is null
             ? null
             : new SportForm
@@ -163,7 +194,7 @@ internal sealed class SportService(
                 Name = row.Name.Value,
                 FullName = row.FullName,
                 Image = row.Image,
-                StoredImageName = row.Image is null ? null : row.Name.Value,
+                StoredImageName = storedImageName,
                 RowVersion = ComputeVersion(row.Name.Value, row.FullName, row.Image),
             };
     }
