@@ -189,7 +189,7 @@ CPU cycles are drinking water. Memory bytes are gold. Every change is judged on 
 
 ## Environment
 
-- SDK: .NET 10.0.200 installed (also 8, 9). Docker available. Dev DB = MariaDB **11.7.x** (production is `11.7.2-MariaDB-ubu2404`, utf8mb4). Local dev: `docker-compose.yml` MariaDB + restore a dump from `db/Backup*_MariaDB.sql` (newest file; user maintains these, ignore the older and the `_Azure`/`.bak` ones; never edit them).
+- SDK: .NET 10.0.200 installed (also 8, 9). Docker available. Dev and production DB = MariaDB **12.3.3**, utf8mb4. Local dev: `docker-compose.yml` MariaDB + restore a dump from `db/Backup*_MariaDB.sql` (newest file; user maintains these, ignore the older and the `_Azure`/`.bak` ones; never edit them).
 - Dumps contain real data and `User` password hashes: never print them, never copy them into tests or logs. Tests use a schema-only extract plus synthetic seed data.
 - Secrets: connection string via user-secrets (`ConnectionStrings:Motorsports`) or env var `ConnectionStrings__Motorsports`. Do not read credentials into output.
 - Ports: development `http://localhost:4100`; container listens on 8080.

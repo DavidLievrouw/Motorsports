@@ -8,7 +8,7 @@ namespace Motorsports.CharacteristicsTests.Fixtures;
 
 public sealed class MariaDbFixture : IAsyncLifetime
 {
-    private readonly MariaDbContainer container = new MariaDbBuilder("mariadb:11.7.2")
+    private readonly MariaDbContainer container = new MariaDbBuilder("mariadb:12.3.3")
         .WithDatabase("motorsports_test")
         .WithUsername("test")
         .WithPassword("Motorsports_test_123!")

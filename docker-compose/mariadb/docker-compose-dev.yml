@@ -1,6 +1,6 @@
 services:
   mariadb:
-    image: mariadb:11.7
+    image: mariadb:12.3.3
     hostname: mariadb
     container_name: mariadb
     restart: always
