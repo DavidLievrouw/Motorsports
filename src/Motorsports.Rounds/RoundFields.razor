@@ -10,8 +10,13 @@
               Error="@Errors.Has(nameof(RoundForm.Name))" ErrorText="@Errors.Text(nameof(RoundForm.Name))" />
 <FuzzySelect T="VenueOption" Value="_venue" ValueChanged="VenueChangedAsync" Items="_venues" Text="VenueText"
              Label="Venue" Error="@Errors.Has(nameof(RoundForm.Venue))" ErrorText="@Errors.Text(nameof(RoundForm.Venue))" />
-<FuzzySelect T="StatusOption" Value="_status" ValueChanged="StatusChangedAsync" Items="_statuses" Text="StatusText"
-             Label="Status" Error="@Errors.Has(nameof(RoundForm.Status))" ErrorText="@Errors.Text(nameof(RoundForm.Status))" />
+<MudSelect T="string" @bind-Value="Form.Status" Label="Status" Variant="Variant.Outlined" Margin="Margin.Dense"
+           Error="@Errors.Has(nameof(RoundForm.Status))" ErrorText="@Errors.Text(nameof(RoundForm.Status))">
+    @foreach (var status in _statuses)
+    {
+        <MudSelectItem T="string" Value="@status.Name.Value">@status.Name.Value</MudSelectItem>
+    }
+</MudSelect>
 @if (ShowResults)
 {
     <MudText Typo="Typo.subtitle2">Rating @(Form.Rating is { } rating ? $"{rating} / 10" : "—")</MudText>
@@ -38,7 +43,6 @@
     private IReadOnlyList<VenueOption> _venues = [];
     private IReadOnlyList<StatusOption> _statuses = [];
     private VenueOption? _venue;
-    private StatusOption? _status;
 
     [Parameter, EditorRequired]
     public RoundForm Form { get; set; } = default!;
@@ -71,13 +75,10 @@
     private void SyncSelection()
     {
         _venue = _venues.FirstOrDefault(venue => venue.Name.Value == Form.Venue);
-        _status = _statuses.FirstOrDefault(status => status.Name.Value == Form.Status);
     }
 
     private static string VenueText(VenueOption venue) =>
         CountryFlag.WithName(venue.Country.Value, venue.Name.Value);
-
-    private static string StatusText(StatusOption status) => status.Name.Value;
 
     private Task OnDate(DateOnly? date)
     {
@@ -92,10 +93,4 @@
         return Task.CompletedTask;
     }
 
-    private Task StatusChangedAsync(StatusOption? status)
-    {
-        _status = status;
-        Form.Status = status?.Name.Value;
-        return Task.CompletedTask;
-    }
 }

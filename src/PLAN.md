@@ -493,6 +493,7 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 Date: 2026-10-26. Phases 0–8 are complete.
 
 State:
+- Round create/edit Status uses a non-editable MudSelect over cached statuses in Step order; venue and other searchable reference pickers remain fuzzy controls.
 - Presentation follow-up: the header title links Home; link colors differ for dark/light mode, and the theme-cookie helper synchronizes `html[data-theme]` when toggled without reloading.
 - The new app is organized into Common, shared UI, Infrastructure, feature slices, and the Web host. Unit, architecture, benchmark, and MariaDB characteristics projects are in the solution.
 - `Motorsports.Home` owns `/`; its populated query path performs four reads, covered by a characteristics test. The local benchmark baseline is 11.156 ms mean / 272.17 KB managed allocation per call.

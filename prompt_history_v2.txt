@@ -298,7 +298,6 @@ Vogen:
 Future:
 - Update to dotnet 11. Target framework, NuGet references and docker image.
 - The legacy app does not exist anymore. Remove any backward compatibility, and legacy columns from the database.
-- Edit round form: The Status should be a control that does not require typing. It's a fixed set of values.
 - Finish round form:
     - When editing a round from the Home page, navigate to this specialized form to edit the round.
     - Date, Number, Name, Venue are read-only.
