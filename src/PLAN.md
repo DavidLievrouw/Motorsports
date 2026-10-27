@@ -17,6 +17,7 @@ Status legend: `[ ]` todo, `[x]` done. Update as you go.
 | Performance | Hard requirement, see AGENTS.md "Performance" |
 | Versioning | `version.txt` -> tracked `src/version.props` -> all projects (AGENTS.md "Versioning") |
 | Auth | ASP.NET Identity, custom user store over `User`, standard Identity password hasher using `PasswordHashV3`, migration on startup; no legacy password verifier |
+| Logging | Serilog writes to the console; minimum level is Debug in Development and Information elsewhere. ASP.NET Core and EF Core database-command logs remain Warning. |
 | Validation | FluentValidation, before mutation, inside transaction |
 | Tooling | Roslynator, CSharpier, central package mgmt, `Directory.Build.props`, `.editorconfig` |
 | Deploy | Docker on Ubuntu only, manual. No CI/CD in scope, no IIS |
@@ -514,6 +515,7 @@ State:
 - Final Phase 8 validation (after the ingress fixes): warning-as-error solution build passed, CSharpier check passed, and all 157 tests passed. Build/test used isolated artifact paths to avoid the running development app's output DLLs. Generated idempotent migration SQL was reviewed; EF reports no pending model changes. The earlier chiseled Docker build and health smoke also passed.
 - The user-authorized preflight used a local restored copy only. It has 1,823 rounds (80 unnumbered), 88 seasons, 77 teams, and 214 participants; duplicate aggregates for Team names, positive round numbers, and participant identity were all zero. User data and password hashes were not read. No persistent schema or data changes were made to that copy; temporary benchmark indexes were removed.
 - Performance/index audit is solved (section 4b). The separately authorized `motorsports_phase8` throwaway DB was reset to synthetic data and measured at current-size and 10× growth scales. Retained only `Round(Season, Date, Number)` for the demonstrated cold team-history lookup improvement (~46% growth p50); added guarded migration `20261026133143_AddRoundSeasonDateNumberIndex` and regression coverage. All seven migrations are applied to the throwaway DB, with 18,240 synthetic rounds and no temporary audit indexes. The original restored copy and live production were not changed.
+- Serilog console logging is configured in the Web host, with Debug minimum level in Development and Information elsewhere; request logging is enabled and existing ASP.NET Core / EF command warning thresholds are preserved.
 
 Known gaps / not done:
 - Production password rotation has been prepared by the user but not yet applied.

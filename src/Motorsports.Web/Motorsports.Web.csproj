@@ -9,6 +9,8 @@
 
   <ItemGroup>
     <PackageReference Include="MudBlazor" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     <ProjectReference Include="..\Motorsports.Auth\Motorsports.Auth.csproj" />
     <ProjectReference Include="..\Motorsports.Common\Motorsports.Common.csproj" />

@@ -25,6 +25,8 @@ using Motorsports.Venues;
 using Motorsports.Web;
 using Motorsports.Web.Components;
 using MudBlazor.Services;
+using Serilog;
+using Serilog.Events;
 
 if (args is ["--health-check"])
 {
@@ -55,6 +57,16 @@ if (args is ["--health-check"])
 }
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSerilog(
+    (_, loggerConfiguration) =>
+        loggerConfiguration
+            .MinimumLevel.Is(builder.Environment.IsDevelopment() ? LogEventLevel.Debug : LogEventLevel.Information)
+            .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+);
 
 builder
     .Services.AddOptions<AppOptions>()
@@ -207,6 +219,7 @@ app.Use(
         await next();
     }
 );
+app.UseSerilogRequestLogging();
 app.UseResponseCompression();
 app.UseRouting();
 if (!app.Environment.IsDevelopment())
