@@ -327,12 +327,10 @@ Also make sure that the reconnect dialog is shown in the middle of the screen, a
 
 ----------------------
 
-Introduce Serilog, and log to the console. INF as minimum level in production, DBG in Development
+Introduce Serilog, and log to the console. INF as minimum level in production, DBG in Development.
 
 ----------------------
 
 
-
 Future:
-- Reconnection dialog in dark mode has black text.
 - Update to dotnet 11. Target framework, NuGet references and docker image.
