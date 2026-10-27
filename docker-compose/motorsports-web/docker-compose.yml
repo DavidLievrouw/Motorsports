@@ -9,6 +9,12 @@ services:
       - App__TimeZone=Europe/Brussels
       - Auth__SecureCookies=true
       - ForwardedHeaders__KnownProxies__0=${FORWARDED_HEADERS_KNOWN_PROXY_0:-172.18.0.3}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-H", "Host: ms.dalion.eu", "http://127.0.0.1:80/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 30s
+      retries: 3
     networks:
       - motorsports_network
 

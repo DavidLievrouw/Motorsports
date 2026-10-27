@@ -142,6 +142,11 @@ The runtime uses the .NET 10 `noble-chiseled-extra` image with IANA time-zone da
 `/health` through `dotnet` without a shell or `curl`; set `HEALTHCHECK_HOST` if the host allowed by `AllowedHosts`
 differs from `ms.dalion.eu`.
 
+Both application Compose files explicitly configure their health probes. The older `docker-compose/motorsports`
+deployment uses its image's `curl` against port 80 with `Host: ms.dalion.eu`; `docker-compose/motorsports-web`
+uses the current image's .NET probe (the chiseled image has no shell or `curl`). Redeploy/recreate the container
+after updating a Portainer stack; restarting alone does not apply changed health-check configuration.
+
 The Content Security Policy is enforced after browser verification of the report-only policy. Scripts are restricted
 to same-origin resources and a per-response nonce; inline styles remain allowed for MudBlazor. Framing is prohibited
 with `frame-ancestors 'none'`. Browser-extension script injection is not a reason to weaken the application policy.
