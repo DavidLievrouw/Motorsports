@@ -39,6 +39,7 @@ public sealed partial class AuthCharacteristicsTests
         "/seasons/1/rounds/create",
         "/rounds/details/1",
         "/rounds/edit/1",
+        "/rounds/finish/1",
         "/rounds/delete/1",
     ];
 
@@ -123,6 +124,10 @@ public sealed partial class AuthCharacteristicsTests
         var client = app.NewClient();
         (await LoginAsync(client, "editor", Password)).StatusCode.ShouldBe(HttpStatusCode.Redirect);
 
+        var homeMarkup = await client.GetStringAsync("/", TestContext.Current.CancellationToken);
+        homeMarkup.ShouldContain("href=\"/rounds/finish/2\"");
+        homeMarkup.ShouldNotContain("href=\"/rounds/edit/");
+
         var list = await client.GetAsync("/sports", TestContext.Current.CancellationToken);
         list.StatusCode.ShouldBe(HttpStatusCode.OK);
         (await list.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldContain("Formula One");
@@ -187,7 +192,7 @@ public sealed partial class AuthCharacteristicsTests
         teamMarkup.ShouldContain("Tu, March 31, 2026");
         teamMarkup.ShouldContain("We, April 1, 2026");
 
-        foreach (var route in new[] { "/rounds/details/2", "/rounds/edit/2" })
+        foreach (var route in new[] { "/rounds/details/2", "/rounds/edit/2", "/rounds/finish/2" })
         {
             var historyMarkup = System.Net.WebUtility.HtmlDecode(
                 await (await client.GetAsync(route, TestContext.Current.CancellationToken)).Content.ReadAsStringAsync(
@@ -195,6 +200,34 @@ public sealed partial class AuthCharacteristicsTests
                 )
             );
             historyMarkup.ShouldContain("href=\"/rounds/details/1\"");
+            if (route == "/rounds/finish/2")
+            {
+                historyMarkup.ShouldContain("Mark finished");
+                historyMarkup.ShouldContain("Mark postponed");
+                historyMarkup.ShouldContain("Mark stopped");
+                historyMarkup.ShouldContain("Mark cancelled");
+                historyMarkup.ShouldContain("Rating");
+                historyMarkup.ShouldContain("Rain");
+                historyMarkup.ShouldContain("Winning team");
+                historyMarkup.ShouldContain("Winning participants");
+                historyMarkup.ShouldContain("Note");
+                historyMarkup.ShouldContain("href=\"/seasons/1/entries\"");
+                historyMarkup.ShouldContain("href=\"/participants\"");
+                historyMarkup.ShouldNotContain("Save");
+            }
+        }
+
+        foreach (var route in new[] { "/rounds/edit/1", "/rounds/finish/1" })
+        {
+            var formMarkup = WebUtility.HtmlDecode(
+                await client.GetStringAsync(route, TestContext.Current.CancellationToken)
+            );
+            formMarkup.ShouldContain("\U0001F1EC\U0001F1E7 Alex Driver");
+            formMarkup.ShouldContain("type=\"range\"");
+            formMarkup.ShouldContain("min=\"0\"");
+            formMarkup.ShouldContain("max=\"10\"");
+            formMarkup.ShouldContain("step=\"1\"");
+            formMarkup.ShouldContain("6 / 10");
         }
 
         var seasonEntryEdit = System.Net.WebUtility.HtmlDecode(
@@ -215,6 +248,7 @@ public sealed partial class AuthCharacteristicsTests
                 "/seasons/details/99",
                 "/season-entries/details/99/99",
                 "/rounds/details/99",
+                "/rounds/finish/99",
             }
         )
         {

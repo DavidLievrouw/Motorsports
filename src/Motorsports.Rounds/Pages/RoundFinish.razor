@@ -1,0 +1,143 @@
+@page "/rounds/finish/{Id:int}"
+@attribute [Authorize]
+@inject RoundService Service
+@inject NavigationManager Navigation
+
+<PageTitle>@(_form is null ? "Finish round" : $"Finish Round {RoundLabel.Format(_form.Values.Number, _form.Values.Name)}")</PageTitle>
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_form is null)
+{
+    <NotFoundNotice Message="Round not found." />
+}
+else
+{
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">Finish Round @RoundLabel.Format(_form.Values.Number, _form.Values.Name)</MudText>
+    <EditForm Model="_form.Values">
+        <MudPaper Class="pa-4 mb-2" Style="max-width:48rem">
+            <MudStack Spacing="2">
+                @if (_errors.Summary is not null)
+                {
+                    <MudAlert Severity="@(_conflict ? Severity.Warning : Severity.Error)">
+                        @_errors.Summary
+                        @if (_conflict)
+                        {
+                            <MudButton Variant="Variant.Outlined" OnClick="ReloadAsync" Class="mt-2">Reload</MudButton>
+                        }
+                    </MudAlert>
+                }
+                @if (_errors.Has(nameof(RoundForm.Status)))
+                {
+                    <MudAlert Severity="Severity.Error">@_errors.Text(nameof(RoundForm.Status))</MudAlert>
+                }
+                <MudSimpleTable Dense="true" Style="overflow-x:auto">
+                    <tbody>
+                        <tr><th>Date</th><td>@DateDisplay.Format(_form.Values.Date!.Value)</td></tr>
+                        <tr><th>Number</th><td>@(_form.Values.Number == 0 ? "0 (non-championship)" : _form.Values.Number)</td></tr>
+                        <tr><th>Name</th><td>@(_form.Values.Name ?? "—")</td></tr>
+                        <tr><th>Venue</th><td>@CountryFlag.WithName(_form.VenueCountry.Value, _form.Values.Venue!)</td></tr>
+                    </tbody>
+                </MudSimpleTable>
+                <MudText Typo="Typo.subtitle2">Rating @(_form.Values.Rating is { } rating ? $"{rating} / 10" : "—")</MudText>
+                <MudSlider T="int" Value="_form.Values.Rating ?? 0" ValueChanged="OnRating" Min="0" Max="10" Step="1" Color="Color.Primary" />
+                @if (_errors.Has(nameof(RoundForm.Rating)))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Error">@_errors.Text(nameof(RoundForm.Rating))</MudText>
+                }
+                <MudSelect T="RainLevel?" @bind-Value="_form.Values.Rain" Label="Rain" Variant="Variant.Outlined"
+                           Margin="Margin.Dense" Clearable="true"
+                           Error="@_errors.Has(nameof(RoundForm.Rain))" ErrorText="@_errors.Text(nameof(RoundForm.Rain))">
+                    @foreach (var level in Enum.GetValues<RainLevel>())
+                    {
+                        <MudSelectItem T="RainLevel?" Value="level">@RainLevelDisplay.Format((int)level)</MudSelectItem>
+                    }
+                </MudSelect>
+                <RoundWinnersFields SeasonId="_form.Values.SeasonId" Form="_form.Values" Errors="_errors" />
+                <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                    <MudButton Href="@($"/seasons/{_form.Values.SeasonId}/entries")" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Group">Season entries</MudButton>
+                    <MudButton Href="/participants" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Person">Participants</MudButton>
+                </MudStack>
+                <MudTextField @bind-Value="_form.Values.Note" Label="Note" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3"
+                              Error="@_errors.Has(nameof(RoundForm.Note))" ErrorText="@_errors.Text(nameof(RoundForm.Note))" />
+                <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2" Class="mt-2">
+                    <MudButton OnClick="@(() => SaveAsync(Service.MarkFinishedAsync))" Variant="Variant.Filled" Color="Color.Primary" Disabled="_saving">Mark finished</MudButton>
+                    <MudButton OnClick="@(() => SaveAsync(Service.MarkPostponedAsync))" Variant="Variant.Outlined" Disabled="_saving">Mark postponed</MudButton>
+                    <MudButton OnClick="@(() => SaveAsync(Service.MarkStoppedAsync))" Variant="Variant.Outlined" Disabled="_saving">Mark stopped</MudButton>
+                    <MudButton OnClick="@(() => SaveAsync(Service.MarkCancelledAsync))" Variant="Variant.Outlined" Color="Color.Error" Disabled="_saving">Mark cancelled</MudButton>
+                    <MudButton Href="@($"/rounds/details/{Id}")" Variant="Variant.Text">Cancel</MudButton>
+                </MudStack>
+            </MudStack>
+        </MudPaper>
+    </EditForm>
+    <EventHistory RoundId="Id" />
+}
+
+@code {
+    private RoundFinishForm? _form;
+    private bool _loading = true;
+    private bool _saving;
+    private bool _conflict;
+    private readonly FormErrors _errors = new();
+
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _form = await Service.GetFinishFormAsync(Id);
+        _errors.Clear();
+        _conflict = false;
+        _loading = false;
+    }
+
+    private async Task SaveAsync(Func<int, RoundForm, CancellationToken, Task<Result<int>>> action)
+    {
+        if (_saving || _form is null)
+        {
+            return;
+        }
+
+        _saving = true;
+        _errors.Clear();
+        _conflict = false;
+        Result<int> result;
+        try
+        {
+            result = await action(Id, _form.Values, CancellationToken.None);
+        }
+        finally
+        {
+            _saving = false;
+        }
+        if (result.IsSuccess)
+        {
+            Navigation.NavigateTo($"/rounds/details/{result.Value}");
+            return;
+        }
+
+        _errors.Set(result.Error);
+        _conflict = result.Error.Kind == ErrorKind.Conflict;
+        if (result.Error.Kind == ErrorKind.NotFound)
+        {
+            _form = null;
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        _form = await Service.GetFinishFormAsync(Id);
+        _errors.Clear();
+        _conflict = false;
+    }
+
+    private void OnRating(int value)
+    {
+        if (_form is not null)
+        {
+            _form.Values.Rating = value;
+        }
+    }
+}

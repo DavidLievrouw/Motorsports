@@ -51,7 +51,7 @@
         CountryFlag.WithName(entry.Country.Value, entry.Name);
 
     private static string ParticipantText(ParticipantOption participant) =>
-        $"{participant.FirstName} {participant.LastName}";
+        CountryFlag.WithName(participant.Country.Value, $"{participant.FirstName} {participant.LastName}");
 
     private static string[] ParticipantKeys(ParticipantOption participant) =>
         [$"{participant.FirstName} {participant.LastName}", $"{participant.LastName} {participant.FirstName}"];

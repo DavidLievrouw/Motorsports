@@ -373,6 +373,77 @@ internal sealed class RoundService(IDbContextFactory<MotorsportsDbContext> facto
         };
     }
 
+    public async Task<RoundFinishForm?> GetFinishFormAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var roundId = RoundId.From(id);
+        await using var db = await factory.CreateDbContextAsync(cancellationToken);
+        var row = await db
+            .Rounds.AsNoTracking()
+            .Where(round => round.Id == roundId)
+            .Join(
+                db.Venues.AsNoTracking(),
+                round => round.Venue,
+                venue => venue.Name,
+                (round, venue) => new { Round = round, venue.Country }
+            )
+            .Select(row => new
+            {
+                row.Round.Season,
+                row.Round.Date,
+                row.Round.Number,
+                row.Round.Name,
+                row.Round.Venue,
+                row.Country,
+                row.Round.Status,
+                row.Round.Note,
+                row.Round.Rating,
+                row.Round.Rain,
+                row.Round.WinningTeam,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (row is null)
+        {
+            return null;
+        }
+
+        var winners = await db
+            .RoundWinners.AsNoTracking()
+            .Where(winner => winner.Round == roundId)
+            .Select(winner => winner.Participant)
+            .ToListAsync(cancellationToken);
+        return new RoundFinishForm(
+            new RoundForm
+            {
+                SeasonId = row.Season.Value,
+                Date = row.Date,
+                OriginalDate = row.Date,
+                Number = row.Number,
+                Name = row.Name,
+                Venue = row.Venue.Value,
+                Status = row.Status.Value,
+                Note = row.Note,
+                Rating = row.Rating is { } rating ? decimal.ToInt32(rating) : null,
+                Rain = row.Rain is { } rain ? (RainLevel)(int)rain : null,
+                WinningTeam = row.WinningTeam?.Value,
+                Winners = winners.Select(winner => winner.Value).ToList(),
+                RowVersion = ComputeVersion(
+                    row.Season,
+                    row.Date,
+                    row.Number,
+                    row.Name,
+                    row.Venue,
+                    row.Status,
+                    row.Note,
+                    row.Rating,
+                    row.Rain,
+                    row.WinningTeam,
+                    winners
+                ),
+            },
+            row.Country
+        );
+    }
+
     public async Task<Result<int>> CreateAsync(RoundForm form, CancellationToken cancellationToken = default)
     {
         var validation = await validator.ValidateAsync(form, cancellationToken);
@@ -416,17 +487,35 @@ internal sealed class RoundService(IDbContextFactory<MotorsportsDbContext> facto
         return result;
     }
 
-    public async Task<Result<int>> UpdateAsync(int id, RoundForm form, CancellationToken cancellationToken = default)
-    {
-        var validation = await validator.ValidateAsync(form, cancellationToken);
-        if (!validation.IsValid)
-        {
-            return validation.ToError();
-        }
+    public Task<Result<int>> UpdateAsync(int id, RoundForm form, CancellationToken cancellationToken = default) =>
+        UpdateCoreAsync(id, form, null, cancellationToken);
 
+    public Task<Result<int>> MarkFinishedAsync(int id, RoundForm form, CancellationToken cancellationToken = default) =>
+        UpdateCoreAsync(id, form, StatusName.Finished, cancellationToken);
+
+    public Task<Result<int>> MarkPostponedAsync(
+        int id,
+        RoundForm form,
+        CancellationToken cancellationToken = default
+    ) => UpdateCoreAsync(id, form, StatusName.Postponed, cancellationToken);
+
+    public Task<Result<int>> MarkStoppedAsync(int id, RoundForm form, CancellationToken cancellationToken = default) =>
+        UpdateCoreAsync(id, form, StatusName.Stopped, cancellationToken);
+
+    public Task<Result<int>> MarkCancelledAsync(
+        int id,
+        RoundForm form,
+        CancellationToken cancellationToken = default
+    ) => UpdateCoreAsync(id, form, StatusName.Cancelled, cancellationToken);
+
+    private async Task<Result<int>> UpdateCoreAsync(
+        int id,
+        RoundForm submitted,
+        StatusName? outcome,
+        CancellationToken cancellationToken
+    )
+    {
         var roundId = RoundId.From(id);
-        var seasonId = SeasonId.From(form.SeasonId);
-        var participantIds = form.Winners.Select(ParticipantId.From).ToArray();
         var result = await factory.InTransactionAsync(
             async (db, ct) =>
             {
@@ -440,6 +529,43 @@ internal sealed class RoundService(IDbContextFactory<MotorsportsDbContext> facto
                 }
 
                 var current = rows[0];
+                var form = outcome is { } targetStatus
+                    ? new RoundForm
+                    {
+                        SeasonId = current.Season.Value,
+                        Date = current.Date,
+                        OriginalDate = current.Date,
+                        Number = current.Number,
+                        Name = current.Name,
+                        Venue = current.Venue.Value,
+                        Status = targetStatus.Value,
+                        Note = submitted.Note,
+                        Rating = submitted.Rating,
+                        Rain = submitted.Rain,
+                        WinningTeam = submitted.WinningTeam,
+                        Winners = submitted.Winners,
+                        RowVersion = submitted.RowVersion,
+                    }
+                    : submitted;
+                var validation = await validator.ValidateAsync(
+                    form,
+                    options =>
+                    {
+                        options.IncludeRulesNotInRuleSet();
+                        if (outcome is { } status)
+                        {
+                            options.IncludeRuleSets(status.Value);
+                        }
+                    },
+                    ct
+                );
+                if (!validation.IsValid)
+                {
+                    return validation.ToError();
+                }
+
+                var seasonId = SeasonId.From(form.SeasonId);
+                var participantIds = form.Winners.Select(ParticipantId.From).ToArray();
                 if (current.Season != seasonId)
                 {
                     return Error.Validation(nameof(RoundForm.SeasonId), "The season of a round cannot be changed.");
@@ -476,13 +602,13 @@ internal sealed class RoundService(IDbContextFactory<MotorsportsDbContext> facto
                 }
 
                 var rating = (decimal?)form.Rating;
-                if (lookup.StatusStep <= 1 && (rating is null || rating <= 0))
+                if (outcome is null && lookup.StatusStep <= 1 && (rating is null || rating <= 0))
                 {
                     rating = null;
                 }
 
                 decimal? rainValue = form.Rain.HasValue ? (int)form.Rain.Value : null;
-                var name = BlankToNull(form.Name);
+                var name = outcome is null ? BlankToNull(form.Name) : current.Name;
                 var note = BlankToNull(form.Note);
                 var date = form.Date!.Value;
                 var venue = lookup.Venue!.Value;

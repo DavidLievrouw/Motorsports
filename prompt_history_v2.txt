@@ -295,11 +295,37 @@ Vogen:
 
 ----------------------
 
+- Add a Finish Round form:
+    - When editing a round from the Home page, navigate to this specialized form to edit the round, instead of the regular Edit Round form.
+    - Date, Number, Name, Venue are read-only. Show them like in the Round Details page.
+    - The status should only allow to be updated to: Finished, Cancelled, Postponed, Stopped
+
+----------------------
+
+That is functionally incorrect. Finish round should also require to fill in Rating, Rain, Winning Team and Winning Participants. Note is optional. The links to Seson Entries and Participants should also be there, like on the Edit Round form.
+
+Second, the Event History should be displayed too, like on the Edit Round form.
+
+Third, finishing, by adding a status, should be a button. The following buttons should be available, in place of Save:
+- Mark finished: All fields except Note are required
+- Mark postponed: Note is required.
+- Mark stopped: Rain and Rating are required.
+- Mark cancelled: Note is required.
+
+I would create dedicated service methods for these actions, with their separate validation rules in place. Also add characteristics tests.
+
+----------------------
+
+- While the Winning Team in Edit Round and Finish Round is prefixed with the country flag, the Winning Participants are not. Make sure they are. In both forms.
+- You created a numeric control for Rating in Finish Round. Make sure it is a slider, like in Edit Round. The numeric control is not user-friendly on a phone.
+
+----------------------
+
+When I use this app on my phone, it is often disabled, and I have to do a full page refresh. That is not acceptable. Find a solution for that.
+Explain what is causing it.
+
+
+
+
 Future:
 - Update to dotnet 11. Target framework, NuGet references and docker image.
-- The legacy app does not exist anymore. Remove any backward compatibility, and legacy columns from the database.
-- Finish round form:
-    - When editing a round from the Home page, navigate to this specialized form to edit the round.
-    - Date, Number, Name, Venue are read-only.
-    - The status should be quickselect with only end states: Finished, Cancelled, Postponed, Stopped
-- Find a solution for the app being disabled that much, requiring a full page refresh

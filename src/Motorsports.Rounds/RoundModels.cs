@@ -64,6 +64,8 @@ internal sealed record RoundDeleteInfo(
     bool HasWinningTeam
 );
 
+internal sealed record RoundFinishForm(RoundForm Values, CountryIso VenueCountry);
+
 public sealed class RoundForm
 {
     public int SeasonId { get; set; }
@@ -128,5 +130,32 @@ internal sealed class RoundFormValidator : AbstractValidator<RoundForm>
             .WithMessage("Winning participants cannot contain duplicates.")
             .Must(winners => winners.Count <= MaxWinners)
             .WithMessage($"Select at most {MaxWinners} winning participants.");
+
+        RuleSet(
+            StatusName.Finished.Value,
+            () =>
+            {
+                RuleFor(form => form.Rating).NotNull().WithMessage("Rating is required.");
+                RuleFor(form => form.Rain).NotNull().WithMessage("Rain is required.");
+                RuleFor(form => form.WinningTeam).NotNull().WithMessage("Select a winning team.");
+                RuleFor(form => form.Winners).NotEmpty().WithMessage("Select at least one winning participant.");
+            }
+        );
+        RuleSet(
+            StatusName.Stopped.Value,
+            () =>
+            {
+                RuleFor(form => form.Rating).NotNull().WithMessage("Rating is required.");
+                RuleFor(form => form.Rain).NotNull().WithMessage("Rain is required.");
+            }
+        );
+        RuleSet(
+            StatusName.Postponed.Value,
+            () => RuleFor(form => form.Note).NotEmpty().WithMessage("Note is required when postponing a round.")
+        );
+        RuleSet(
+            StatusName.Cancelled.Value,
+            () => RuleFor(form => form.Note).NotEmpty().WithMessage("Note is required when cancelling a round.")
+        );
     }
 }
