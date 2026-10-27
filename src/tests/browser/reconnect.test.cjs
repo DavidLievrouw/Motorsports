@@ -7,6 +7,40 @@ const vm = require("node:vm");
 const source = readFileSync(resolve(__dirname,
     "..", "..", "Motorsports.Web", "Components", "Layout", "ReconnectModal.razor.js"), "utf8");
 
+test("reconnect dialog and actions use paired theme colors with readable static-page fallbacks", () => {
+    const css = readFileSync(resolve(__dirname,
+        "..", "..", "Motorsports.Web", "Components", "Layout", "ReconnectModal.razor.css"), "utf8");
+    const rule = selector => {
+        const start = css.indexOf(`${selector} {`);
+        assert.notEqual(start, -1);
+        return css.slice(start, css.indexOf("}", start));
+    };
+    const contrast = (foreground, background) => {
+        const luminance = hex => {
+            const channels = hex.match(/[a-f\d]{2}/gi).map(value => parseInt(value, 16) / 255)
+                .map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+            return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+        };
+        const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+        return (values[0] + 0.05) / (values[1] + 0.05);
+    };
+    for (const selector of ["#components-reconnect-modal",
+        "html[data-theme='light'] #components-reconnect-modal"]) {
+        const styles = rule(selector);
+        const background = styles.match(/background-color: var\(--mud-palette-(surface), (#[a-f\d]{6})\)/i);
+        const foreground = styles.match(/(?:^|\s)color: var\(--mud-palette-(text-primary), (#[a-f\d]{6})\)/i);
+        assert.ok(background, selector);
+        assert.ok(foreground, selector);
+        assert.ok(contrast(foreground[2], background[2]) >= 4.5, selector);
+    }
+    assert.match(rule("#components-reconnect-modal"), /color-scheme: dark/);
+    assert.match(rule("html[data-theme='light'] #components-reconnect-modal"), /color-scheme: light/);
+    assert.match(rule("#components-reconnect-modal button"), /background-color: inherit/);
+    assert.match(rule("#components-reconnect-modal button"), /(?:^|\s)color: inherit/);
+    assert.match(rule("#components-reconnect-modal button"), /border: 1px solid currentColor/);
+    assert.match(rule("#components-reconnect-modal button:focus-visible"), /outline: 2px solid currentColor/);
+});
+
 function harness() {
     const listeners = new Map();
     const timers = new Map();
