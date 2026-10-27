@@ -9,14 +9,8 @@ namespace Motorsports.Benchmarks;
 [MemoryDiagnoser]
 public class HomeOverviewBenchmarks
 {
-    private PooledDbContextFactory<MotorsportsDbContext> _factory;
     private HomeService service = null!;
     private DateOnly today;
-
-    public HomeOverviewBenchmarks()
-    {
-        _factory = null!;
-    }
 
     [GlobalSetup]
     public void Setup()
@@ -31,8 +25,8 @@ public class HomeOverviewBenchmarks
 
         var options = new DbContextOptionsBuilder<MotorsportsDbContext>();
         DatabaseConfiguration.Configure(options, connectionString);
-        _factory = new PooledDbContextFactory<MotorsportsDbContext>(options.Options);
-        service = new HomeService(_factory);
+        var factory = new PooledDbContextFactory<MotorsportsDbContext>(options.Options);
+        service = new HomeService(factory);
         today = DateOnly.FromDateTime(TimeProvider.System.GetUtcNow().UtcDateTime);
     }
 

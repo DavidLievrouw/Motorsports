@@ -334,8 +334,47 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
 
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
         var migrator = context.GetService<IMigrator>();
+        (await ReadBusinessIndexesAsync()).ShouldBe([
+            "Round.IX_Round_Season_ChampionshipNumber",
+            "Team.IX_Team_Sport_Name",
+        ]);
+        (await ReadBusinessColumnsAsync()).ShouldBe(["Round.ChampionshipNumber"]);
+
         await migrator.MigrateAsync("20261026081111_PersistDataProtectionKeys", cancellationToken);
+        (await ReadBusinessIndexesAsync()).ShouldBeEmpty();
+        (await ReadBusinessColumnsAsync()).ShouldBeEmpty();
+
         await migrator.MigrateAsync(null, cancellationToken);
+        (await ReadBusinessIndexesAsync()).ShouldBe([
+            "Round.IX_Round_Season_ChampionshipNumber",
+            "Team.IX_Team_Sport_Name",
+        ]);
+        (await ReadBusinessColumnsAsync()).ShouldBe(["Round.ChampionshipNumber"]);
+
+        Task<string[]> ReadBusinessIndexesAsync() =>
+            context
+                .Database.SqlQueryRaw<string>(
+                    """
+                    SELECT DISTINCT CONCAT(table_name, '.', index_name) AS Value
+                    FROM information_schema.statistics
+                    WHERE table_schema = DATABASE()
+                      AND index_name IN ('IX_Round_Season_ChampionshipNumber', 'IX_Team_Sport_Name')
+                    ORDER BY table_name, index_name
+                    """
+                )
+                .ToArrayAsync(cancellationToken);
+
+        Task<string[]> ReadBusinessColumnsAsync() =>
+            context
+                .Database.SqlQueryRaw<string>(
+                    """
+                    SELECT CONCAT(table_name, '.', column_name) AS Value
+                    FROM information_schema.columns
+                    WHERE table_schema = DATABASE()
+                      AND table_name = 'Round' AND column_name = 'ChampionshipNumber'
+                    """
+                )
+                .ToArrayAsync(cancellationToken);
     }
 
     [Fact]
