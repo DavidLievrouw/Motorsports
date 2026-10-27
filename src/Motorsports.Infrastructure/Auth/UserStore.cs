@@ -6,8 +6,8 @@ using Motorsports.Infrastructure.Entities;
 namespace Motorsports.Infrastructure.Auth;
 
 /// <summary>
-/// Identity store over the legacy <c>User</c> table. One context per operation. Deleted users are invisible, so they
-/// can neither sign in nor keep a session. Only the columns the new app owns are ever written.
+/// Identity store over the <c>User</c> table. One context per operation. Deleted users are invisible, so they
+/// can neither sign in nor keep a session.
 /// </summary>
 public sealed class UserStore(IDbContextFactory<MotorsportsDbContext> factory)
     : IUserPasswordStore<User>,
@@ -86,16 +86,11 @@ public sealed class UserStore(IDbContextFactory<MotorsportsDbContext> factory)
         return Task.CompletedTask;
     }
 
-    // Users without a v3 hash expose the marker so the hasher verifies the legacy PBKDF2 columns.
     public Task<string?> GetPasswordHashAsync(User user, CancellationToken cancellationToken) =>
-        Task.FromResult(
-            !string.IsNullOrEmpty(user.PasswordHashV3) ? user.PasswordHashV3
-            : user.PasswordHash.Length > 0 ? LegacyPasswordHasher.LegacyMarker
-            : null
-        );
+        Task.FromResult(user.PasswordHashV3);
 
     public Task<bool> HasPasswordAsync(User user, CancellationToken cancellationToken) =>
-        Task.FromResult(!string.IsNullOrEmpty(user.PasswordHashV3) || user.PasswordHash.Length > 0);
+        Task.FromResult(!string.IsNullOrEmpty(user.PasswordHashV3));
 
     public Task SetSecurityStampAsync(User user, string stamp, CancellationToken cancellationToken)
     {
@@ -103,7 +98,7 @@ public sealed class UserStore(IDbContextFactory<MotorsportsDbContext> factory)
         return Task.CompletedTask;
     }
 
-    // Legacy rows have no stamp yet; an empty one stays consistent between cookie issue and validation.
+    // An unset stamp stays consistent between cookie issue and validation.
     public Task<string?> GetSecurityStampAsync(User user, CancellationToken cancellationToken) =>
         Task.FromResult<string?>(user.SecurityStamp ?? "");
 

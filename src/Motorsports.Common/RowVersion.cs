@@ -5,7 +5,7 @@ namespace Motorsports.Common;
 
 /// <summary>
 /// Optimistic concurrency token without a schema change: a hash of the column values as loaded.
-/// Values are compared ordinally, so case-only changes written by the legacy app are detected too.
+/// Values are compared ordinally, so case-only changes are detected too.
 /// </summary>
 public static class RowVersion
 {

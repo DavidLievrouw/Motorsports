@@ -98,10 +98,9 @@ docker build -f src/Motorsports.Web/Dockerfile -t motorsports-web:2.0.0 .
 ```
 
 `docker-compose/motorsports-web/docker-compose.yml` requires `MOTORSPORTS_CONNECTION_STRING` (and
-`FORWARDED_HEADERS_KNOWN_PROXY_0` if the proxy is not at `172.18.0.3`). It replaces the old `motorsports` container
-(same container name, which is NPM's upstream), publishes no host port, and listens on port 80 via
-`Kestrel__Endpoints__Http__Url` (use the double-underscore spelling: the health probe reads that variable). Stop the
-old `docker-compose/motorsports` stack first. Production runs behind nginx-proxy-manager at
+`FORWARDED_HEADERS_KNOWN_PROXY_0` if the proxy is not at `172.18.0.3`). Its `motorsports` container is NPM's upstream,
+publishes no host port, and listens on port 80 via
+`Kestrel__Endpoints__Http__Url` (use the double-underscore spelling: the health probe reads that variable). Production runs behind nginx-proxy-manager at
 `ms.dalion.eu`; only the trusted proxy at `172.18.0.3` should reach the app container, which listens on port 80 in that
 deployment. Keep Secure cookies enabled and back up the database before the first deployment that applies migrations.
 The Data Protection key ring is stored in the `DataProtectionKeys` table in the configured database and is included in
@@ -136,3 +135,17 @@ with `frame-ancestors 'none'`. Browser-extension script injection is not a reaso
 Migrations run automatically at startup under a MariaDB named lock and are designed to be idempotent across
 concurrent app instances. Take a database backup before applying schema changes. Each schema change must have a
 matching `Down` migration; check generated migration SQL with `dotnet ef migrations script --idempotent`.
+
+The legacy application is retired. Migration `20261027074827_RemoveLegacyPasswordColumns` removes `User.PasswordHash`,
+`Salt`, `Iterations`, and `Prf`. Authentication uses only the existing Identity hash in `PasswordHashV3`; account IDs,
+security/concurrency stamps, and Data Protection keys are unchanged.
+
+Stop all app instances and back up the database before deploying this schema change; old binaries cannot run against
+the updated schema. Every active account must already have an Identity hash. If one does not, startup stops with
+`Active users need Identity password hashes before removing legacy credentials.` Complete a password reset using
+ASP.NET Identity before deploying; the old PBKDF2 hashes cannot be converted without the user's password. Do not copy
+old hash bytes into `PasswordHashV3`. Deleted accounts do not block the migration and remain unable to sign in.
+
+`Down` recreates the removed columns with empty values; it cannot recover deleted credentials. Restore a backup if
+those values are needed. Historical migrations and the pre-migration schema fixture remain for upgrade tests, not
+runtime backward compatibility. No personal backup files are changed by this cleanup.

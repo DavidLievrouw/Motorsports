@@ -1,14 +1,7 @@
 <Project>
-  <!-- The legacy projects keep their own settings. -->
+  <Import Project="version.props" />
+
   <PropertyGroup>
-    <IsLegacyProject
-      Condition="'$(MSBuildProjectName)' == 'Motorsports.Scaffolding.Core' Or '$(MSBuildProjectName)' == 'Build'"
-      >true</IsLegacyProject>
-  </PropertyGroup>
-
-  <Import Project="version.props" Condition="'$(IsLegacyProject)' != 'true'" />
-
-  <PropertyGroup Condition="'$(IsLegacyProject)' != 'true'">
     <TargetFramework>net10.0</TargetFramework>
     <LangVersion>14</LangVersion>
     <Nullable>enable</Nullable>
@@ -21,14 +14,14 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(IsLegacyProject)' != 'true'">
+  <ItemGroup>
     <InternalsVisibleTo Include="Motorsports.ArchitectureTests" />
     <InternalsVisibleTo Include="Motorsports.CharacteristicsTests" />
     <InternalsVisibleTo Include="Motorsports.UnitTests" />
     <InternalsVisibleTo Include="Motorsports.Benchmarks" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(IsLegacyProject)' != 'true'">
+  <ItemGroup>
     <PackageReference Include="Roslynator.Analyzers" PrivateAssets="all" />
     <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" PrivateAssets="all" />
     <PackageReference Include="Roslynator.Formatting.Analyzers" PrivateAssets="all" />

@@ -81,7 +81,7 @@ builder.Services.AddSingleton(
     )
 );
 
-// Auth: Identity over the legacy User table, cookie sign-in, everything requires login unless [AllowAnonymous].
+// Auth: Identity over the User table, cookie sign-in, everything requires login unless [AllowAnonymous].
 builder.Services.AddAuthServices(builder.Configuration);
 
 // Reference-data slices and the shared lookup cache they invalidate after commits.

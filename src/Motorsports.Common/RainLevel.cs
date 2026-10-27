@@ -1,6 +1,6 @@
 namespace Motorsports.Common;
 
-/// <summary>Legacy rain impact stored on <c>Round.Rain</c> as <c>decimal(1,0)</c>.</summary>
+/// <summary>Rain impact stored on <c>Round.Rain</c> as <c>decimal(1,0)</c>.</summary>
 public enum RainLevel
 {
     NoRain = 0,

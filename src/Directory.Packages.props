@@ -1,6 +1,5 @@
 <Project>
-  <!-- Central package management for the new projects only; legacy projects pin their own versions. -->
-  <PropertyGroup Condition="'$(MSBuildProjectName)' != 'Motorsports.Scaffolding.Core' And '$(MSBuildProjectName)' != 'Build'">
+  <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>

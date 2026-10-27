@@ -21,7 +21,7 @@ public sealed class LookupCacheOptions
 {
     public const string Section = "Cache";
 
-    /// <summary>The legacy app writes to the same DB and cannot invalidate us, so entries expire.</summary>
+    /// <summary>Entries expire so external database changes become visible without application invalidation.</summary>
     public TimeSpan MaxAge { get; set; } = TimeSpan.FromSeconds(30);
 }
 

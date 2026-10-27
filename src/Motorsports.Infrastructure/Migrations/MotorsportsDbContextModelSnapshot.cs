@@ -17,7 +17,7 @@ namespace Motorsports.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.21")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -361,25 +361,9 @@ namespace Motorsports.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<int>("Iterations")
-                        .HasColumnType("int");
-
-                    b.Property<byte[]>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("varbinary(50)");
-
                     b.Property<string>("PasswordHashV3")
                         .HasMaxLength(512)
                         .HasColumnType("varchar(512)");
-
-                    b.Property<string>("Prf")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("varchar(10)");
-
-                    b.Property<byte[]>("Salt")
-                        .IsRequired()
-                        .HasColumnType("varbinary(50)");
 
                     b.Property<string>("SecurityStamp")
                         .HasMaxLength(64)

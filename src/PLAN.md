@@ -11,12 +11,12 @@ Status legend: `[ ]` todo, `[x]` done. Update as you go.
 | Target | `net10.0`, C# 14, `src/Motorsports.slnx` |
 | UI | Blazor Web App, interactive server render mode, MudBlazor, responsive (phone + desktop) |
 | Architecture | Vertical slices as Razor class libraries + dependency-free `Motorsports.Common` + shared `Motorsports.Ui` + `Motorsports.Infrastructure`; host `Motorsports.Web`. Slice APIs are `internal` except module/DI entry points the host needs; tests use InternalsVisibleTo. |
-| Data | EF Core only. MariaDB via `Microting.EntityFrameworkCore.MySql` 10.0.13 + EF Core 10.0.13 on net10.0. Microting follows the .NET release cycle; move to its .NET 11-compatible line when available. Dapper/`IQueryExecutor` dropped |
-| DB | MariaDB schema managed by idempotent EF migrations. Existing rows are preserved; the legacy password-hash columns remain in place. |
+| Data | EF Core only. MariaDB via `Microting.EntityFrameworkCore.MySql` 10.0.13 + EF Core 10.0.14 on net10.0. Microting follows the .NET release cycle; move to its .NET 11-compatible line when available. Dapper/`IQueryExecutor` dropped |
+| DB | MariaDB schema managed by idempotent EF migrations. Preserve application rows and current Identity credentials; remove obsolete legacy password columns. The legacy app is retired (2026-10-27), with no runtime compatibility requirement. |
 | Theme | Dark default, light optional. Per-sport branding = logo + subtle accent only |
 | Performance | Hard requirement, see AGENTS.md "Performance" |
 | Versioning | `version.txt` -> tracked `src/version.props` -> all projects (AGENTS.md "Versioning") |
-| Auth | ASP.NET Identity, custom user store over `User`, existing password hashes verified and upgraded on login, migration on startup |
+| Auth | ASP.NET Identity, custom user store over `User`, standard Identity password hasher using `PasswordHashV3`, migration on startup; no legacy password verifier |
 | Validation | FluentValidation, before mutation, inside transaction |
 | Tooling | Roslynator, CSharpier, central package mgmt, `Directory.Build.props`, `.editorconfig` |
 | Deploy | Docker on Ubuntu only, manual. No CI/CD in scope, no IIS |
@@ -24,7 +24,7 @@ Status legend: `[ ]` todo, `[x]` done. Update as you go.
 
 ## 2. Legacy inventory (parity checklist)
 
-Legacy source: `src/Motorsports.Scaffolding.Core`. DB reference: `src/Db/Backup20261024_MariaDB.sql` (MariaDB) and `src/Db/dbo/Tables/*.sql` (older SQL Server DDL).
+Historical inventory only: the legacy source `src/Motorsports.Scaffolding.Core` has been removed. The parity decisions below describe how the current features were derived, not a requirement to keep old binaries working. Backups are read-only historical artifacts, never migration inputs containing user data.
 
 Tables: `Country, Participant, Round, RoundWinner, Season, SeasonEntry, SeasonWinner, Sport, Status, Team, User, Venue`.
 Keys: Sport.Name (string), Venue.Name (string), Status.Name (string, has `Step`), Country.Iso (char2), SeasonEntry (Season, Team) composite; the rest int ids.
@@ -98,7 +98,7 @@ Legacy uses select2 in `Views/Shared/EditorTemplates/*.cshtml`: `Team.cshtml` (s
 - Lookup lists come from the shared singleton cache (no query per keystroke). Matching spec in AGENTS.md. Keyboard: arrows/enter/escape, works with touch, 44px targets.
 - Tests: bUnit for selection/clear/max/chip removal; unit tests for ranking (`"verst"` -> Verstappen, `"max ver"`, `"hamliton"` typo, diacritics `"raikkonen"`); benchmark for matching 5k items per keystroke (target: no allocations per match, microseconds).
 
-## 4b. Schema suggestions (apply only if additive and legacy-safe)
+## 4b. Schema changes and measured index decisions
 
 Performance indexes require idempotent migrations (`CREATE INDEX IF NOT EXISTS`, `Down` = `DROP INDEX IF EXISTS`), one migration per index. Apply only after EXPLAIN/measurement proves a gain; log each here: table, columns, query, measured gain, migration name.
 
@@ -106,7 +106,7 @@ Candidates evaluated in Phase 8: `Round(Venue, Number, Date)` (event history), `
 
 Approved exception: the user approved a unique index on `Participant(Title, FirstName, LastName, Country)` on 2026-10-25. Migration `20261025083000_ParticipantUniqueIdentity` creates only this index. The 2026-10-26 preflight on the local restored database found zero duplicate groups, so it does not modify participant or winner data.
 
-The local restored database preflight found 0 duplicate groups for Team `(Sport, Name)` and positive Round `(Season, Number)`; 80 rounds have `Number = 0`, with no negative values. Migration `20261026100239_AddBusinessUniqueConstraints` adds these database constraints using a unique Team index and a generated nullable `ChampionshipNumber` (null for non-positive numbers), then removes the now-redundant single-column FK indexes. Characteristics tests cover duplicate rejection, same-name teams in different sports, and multiple zero-number rounds. Do not drop `User.PasswordHash`, `Salt`, `Iterations`, or `Prf` in this phase.
+The local restored database preflight found 0 duplicate groups for Team `(Sport, Name)` and positive Round `(Season, Number)`; 80 rounds have `Number = 0`, with no negative values. Migration `20261026100239_AddBusinessUniqueConstraints` adds these database constraints using a unique Team index and a generated nullable `ChampionshipNumber` (null for non-positive numbers), then removes the now-redundant single-column FK indexes. Characteristics tests cover duplicate rejection, same-name teams in different sports, and multiple zero-number rounds. The password columns were retained during Phase 8; the 2026-10-27 cleanup below supersedes that temporary restriction.
 
 Initial index experiments used `ANALYZE` on the 1,823-round restored database; temporary indexes were dropped after measurement. Home still scanned 1,823 rounds and filesorted with `(Status, Date)` because its filter joins on `Status.Step`; participant and team list sort candidates did not remove filesorts. `(Venue, Number, Date)` was used for a 16-row venue range but still filesorted. `(Season, Date, Number)` removed the filesort for a 40-row round-list range, but that small dataset provided no repeatable wall-clock gain. No performance-only index was retained from that initial inspection; the synthetic follow-up below establishes the separate justification.
 
@@ -268,22 +268,15 @@ Items 1-7 would make the MariaDB schema match the old scripts again; only #8 int
 
 ## 5. Auth and the `User` table
 
-Existing `User` (MariaDB): `Id varchar(36)`, `Username`, `PasswordHash varbinary(50)`, `Salt varbinary(50)`, `Iterations int`, `Prf varchar(10)` (HMACSHA1/256/512, PBKDF2), `ForceChangePassword`, `Title`, `GivenName`, `FamilyName`, `EmailAddress`, `IsDeleted`. Legacy defaults: HMACSHA512, 10000 iterations, 16-byte salt, 32-byte hash (`Security/HashPasswordService.cs`, `PasswordHashingConfig.cs`). The hash is `KeyDerivation.Pbkdf2(password, salt, prf, iterations, 32)`, so the plain-text password is UTF-8 string input.
+Current `User` (MariaDB): `Id varchar(36)`, `Username`, `PasswordHashV3 varchar(512)`, `SecurityStamp varchar(64)`, `ConcurrencyStamp varchar(64)`, `ForceChangePassword`, `Title`, `GivenName`, `FamilyName`, `EmailAddress`, `IsDeleted`.
 
-Approach:
-1. EF migration, **additive only**, on `User`: nullable `PasswordHashV3 varchar(512)`, `SecurityStamp varchar(64)`, `ConcurrencyStamp varchar(64)`. Legacy columns stay intact so the old app keeps working during the transition. Nothing else touched.
-2. `Motorsports.Infrastructure`: `UserStore` (`IUserStore`, `IUserPasswordStore`, `IUserSecurityStampStore`, `IUserEmailStore` as needed) over `User` (Id = Guid string, `UserName` = `Username`, `IsDeleted` users cannot sign in). `LegacyPasswordHasher : IPasswordHasher<AppUser>`: if `PasswordHashV3` set, delegate to Identity v3 hasher; else verify legacy PBKDF2 (constant-time compare) and return `SuccessRehashNeeded`.
-3. On successful legacy login: write `PasswordHashV3`. Keep legacy columns (rollback safety, old app). Document in the PR that a password changed in the new app will not work in the legacy app.
-4. Migrate automatically on startup, idempotently:
-   - Hosted `DatabaseMigrator` runs before Kestrel serves traffic (await in `Program.cs` before `app.RunAsync`), option `Database:MigrateOnStartup` (default true).
-   - Takes a MariaDB named lock (`SELECT GET_LOCK('motorsports-migrate', 60)`) on a dedicated open connection so concurrent instances (and rolling restarts) serialize; second instance waits, then finds nothing to do. Release in `finally`.
-   - MariaDB DDL auto-commits, so a crash mid-migration can leave partial state. Therefore every migration uses `migrationBuilder.Sql` with `... IF NOT EXISTS` guards, making a re-run a no-op.
-   - Existing tables are never created or altered: baseline migration has an empty `Up`. If `__EFMigrationsHistory` is missing, EF creates it (additive).
-   - Legacy app does not know the new columns; they are nullable, so its inserts/reads keep working.
-   - Tests (Testcontainers): migrate twice; migrate from two hosts concurrently; migrate on a DB where the columns already exist; legacy-schema snapshot restored from `Db/Backup*_MariaDB.sql` (schema part) then migrated.
-   - Log applied migrations and lock wait time.
-5. Cookie: `HttpOnly`, `SameSite=Lax`, `Secure` behind proxy via `ForwardedHeaders`. `ForceChangePassword` => redirect to a change-password page (new small page under Auth).
-6. Tests: legacy hash fixtures (HMACSHA1/256/512) verify; rehash on login; wrong password; deleted user; lockout optional.
+The legacy application is retired. `UserStore` exposes only `PasswordHashV3` to Identity's standard `PasswordHasher<User>`. Legacy PBKDF2 verification and its sentinel hash are removed. Unknown-user login attempts perform a standard Identity password verification against a precomputed dummy hash.
+
+Migration **`20261027074827_RemoveLegacyPasswordColumns`** removes `PasswordHash`, `Salt`, `Iterations`, and `Prf` using guarded SQL. It first refuses to proceed if any non-deleted user has a null/blank Identity hash, with an explicit error. Complete a password reset for those users before deployment; old hashes cannot be converted without the password. Stop running instances and back up the DB before deployment. `Down` restores only empty legacy columns, not discarded secrets; existing Identity hashes and stamps remain intact in either direction.
+
+`DatabaseMigrator.StartingAsync` runs before requests are accepted, takes `GET_LOCK('motorsports-migrate', 120)` on the same connection, and releases it in `finally`. Historical migrations and schema-only synthetic fixtures remain to exercise upgrades, including repeated/concurrent startup, preexisting column removal, rollback/reapply, account preservation, and refusal to discard the only active credential.
+
+Cookies remain `HttpOnly`, `SameSite=Lax`, and `Secure` behind the trusted proxy. Deleted users cannot sign in or retain sessions. `ForceChangePassword` still redirects to the password-change form. No business-data columns are removed merely because they existed in the old schema.
 
 ## 6. Phases
 
@@ -434,6 +427,8 @@ Resolved:
 ## 9. Issues encountered and corrections (keep updated every phase)
 
 Corrections to earlier assumptions (verified against the real MariaDB dump and the running app):
+- 2026-10-27 legacy retirement: removed the PBKDF2 verifier, old User mappings, legacy MSBuild conditions, and formatter/Docker exclusions. The new guarded migration drops only the four obsolete password fields; backup files and applied migrations are unchanged. Current password hashes, account metadata, and Data Protection keys are retained.
+- Legacy-retirement validation used Release outputs because the user's running Debug app/debugger locked output DLLs. No running process was stopped. Release warning-as-error build, CSharpier format/check, all 150 tests (including 16 database checks), EF snapshot consistency, and idempotent SQL review passed.
 - Theme switching must update both the cookie and `html[data-theme]` immediately; updating only the cookie leaves link and auth-page CSS in the previous theme until a full reload.
 - `Virtualize` on statically rendered Home rendered only its first few items (Home history showed 5 events); short Home lists use `@foreach`.
 - Real column widths differ from the legacy EF model: `Venue.Name` and `Round.Venue` are `varchar(100)` (legacy model said 50); `Round.Note` is `text`; `Round.Number` is `smallint`; `Status.Step` is `tinyint`. Validation max lengths must follow the **DB**: Participant Title 10, First/Last 100, Team Name 50, Sport Name 50 / FullName 100, Season Label 100, SeasonEntry Name 50, Round Name 100, Venue Name 100.
@@ -490,9 +485,11 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 
 ## 10. Handover (rewrite at the end of every phase)
 
-Date: 2026-10-26. Phases 0–8 are complete.
+Date: 2026-10-27. Phases 0–8 are complete; legacy-retirement cleanup implemented.
 
 State:
+- Legacy-retirement cleanup uses Identity-only authentication and migration `20261027074827_RemoveLegacyPasswordColumns`. Deploy with all app instances stopped and a backup; active users without Identity hashes block migration until their passwords are reset. No live or local application database was modified by this task; schema checks use disposable Testcontainers only.
+- Legacy-retirement validation: Release build has zero warnings/errors; all 150 tests pass; formatting and EF snapshot checks pass. Generated idempotent SQL was reviewed. The normal Debug app was left running and unchanged.
 - Round create/edit Status uses a non-editable MudSelect over cached statuses in Step order; venue and other searchable reference pickers remain fuzzy controls.
 - Presentation follow-up: the header title links Home; link colors differ for dark/light mode, and the theme-cookie helper synchronizes `html[data-theme]` when toggled without reloading.
 - The new app is organized into Common, shared UI, Infrastructure, feature slices, and the Web host. Unit, architecture, benchmark, and MariaDB characteristics projects are in the solution.
@@ -517,7 +514,7 @@ Known gaps / not done:
 User actions at deployment (live production was never accessed by the agent):
 1. Back up the production DB.
 2. Apply the narrowed grants to the production DB user.
-3. Stop the old `docker-compose/motorsports` stack, then start `docker-compose/motorsports-web`.
+3. Stop existing app instances, then deploy `docker-compose/motorsports-web`; do not run old binaries against the cleaned schema.
 4. Smoke test `https://ms.dalion.eu`: login, a cookie with `Secure`, CSP clean, and no host port published.
 - Not every Rider `ide`/`csharpsquid` inspection is guaranteed clean (ask before touching captured-disposed warnings).
 - Event history is not grouped by year and includes any event with `Status.Step > 1`, including postponed/cancelled events, by documented design.

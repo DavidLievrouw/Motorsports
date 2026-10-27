@@ -4,6 +4,4 @@
 **/.idea/
 .git/
 src/Db/
-src/Motorsports.Scaffolding.Core/
-src/Build/
 src/tests/

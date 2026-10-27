@@ -1,14 +1,15 @@
 using System.Net;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Motorsports.Auth;
 using Motorsports.CharacteristicsTests.Fixtures;
+using Motorsports.Common;
+using Motorsports.Infrastructure.Entities;
 using Shouldly;
 
 namespace Motorsports.CharacteristicsTests;
@@ -48,22 +49,22 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         return new AuthApp(fixture.ConnectionString, loginLimit, secureCookies);
     }
 
-    private async Task SeedUserAsync(
-        string username,
-        string prf = "HMACSHA512",
-        bool force = false,
-        bool deleted = false,
-        int iterations = 1000
-    )
+    private async Task SeedUserAsync(string username, bool force = false, bool deleted = false)
     {
-        var salt = RandomNumberGenerator.GetBytes(16);
-        var algorithm = new HashAlgorithmName(prf["HMAC".Length..]);
-        var hash = Rfc2898DeriveBytes.Pbkdf2(Encoding.UTF8.GetBytes(Password), salt, iterations, algorithm, 32);
-        await fixture.ExecuteSqlAsync(
-            $"INSERT INTO `User` (Id, Username, PasswordHash, Salt, Iterations, Prf, ForceChangePassword, IsDeleted) "
-                + $"VALUES (UUID(), '{username}', UNHEX('{Convert.ToHexString(hash)}'), UNHEX('{Convert.ToHexString(salt)}'), "
-                + $"{iterations}, '{prf}', {(force ? 1 : 0)}, {(deleted ? 1 : 0)})"
-        );
+        await using var context = await fixture
+            .CreateContextFactory()
+            .CreateDbContextAsync(TestContext.Current.CancellationToken);
+        await context.Database.MigrateAsync(TestContext.Current.CancellationToken);
+        var user = new User
+        {
+            Id = UserId.From(Guid.NewGuid().ToString()),
+            Username = username,
+            ForceChangePassword = force,
+            IsDeleted = deleted,
+        };
+        user.PasswordHashV3 = new PasswordHasher<User>().HashPassword(user, Password);
+        context.Users.Add(user);
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
     [GeneratedRegex(
@@ -286,20 +287,18 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         markup.ShouldNotContain("href=\"/account/change-password\"");
     }
 
-    [Theory]
-    [InlineData("HMACSHA1")]
-    [InlineData("HMACSHA256")]
-    [InlineData("HMACSHA512")]
-    public async Task Legacy_user_logs_in_gets_a_secure_cookie_and_is_rehashed(string prf)
+    [Fact]
+    public async Task Identity_user_logs_in_gets_a_secure_cookie_and_keeps_the_password_hash()
     {
         await using var app = await StartAsync(secureCookies: true);
-        await SeedUserAsync("legacy", prf);
+        await SeedUserAsync("identity");
         var client = app.NewClient();
         client.BaseAddress = new Uri("https://localhost");
         await client.GetAsync("/login", TestContext.Current.CancellationToken);
-        (await V3HashAsync("legacy")).ShouldBeNull();
+        var hash = await V3HashAsync("identity");
+        hash.ShouldNotBeNullOrEmpty();
 
-        var response = await LoginAsync(client, "legacy", Password);
+        var response = await LoginAsync(client, "identity", Password);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Redirect);
         LocationPathOf(response).ShouldBe("/");
@@ -309,31 +308,13 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         cookie.ShouldContain("httponly", Case.Insensitive);
         cookie.ShouldContain("samesite=lax", Case.Insensitive);
         cookie.ShouldContain("secure", Case.Insensitive);
-        (await V3HashAsync("legacy")).ShouldNotBeNullOrEmpty();
+        (await V3HashAsync("identity")).ShouldBe(hash);
         (await client.GetAsync("/", TestContext.Current.CancellationToken)).StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        // The v3 hash now verifies on its own; a second client logs in again.
         var secondClient = app.NewClient();
         secondClient.BaseAddress = new Uri("https://localhost");
-        var again = await LoginAsync(secondClient, "legacy", Password);
+        var again = await LoginAsync(secondClient, "identity", Password);
         LocationPathOf(again).ShouldBe("/");
-    }
-
-    [Fact]
-    public async Task Legacy_columns_stay_untouched_after_rehash()
-    {
-        await using var app = await StartAsync();
-        await SeedUserAsync("keeper");
-        await LoginAsync(app.NewClient(), "keeper", Password);
-
-        await using var context = await fixture
-            .CreateContextFactory()
-            .CreateDbContextAsync(TestContext.Current.CancellationToken);
-        var user = await context.Users.SingleAsync(u => u.Username == "keeper", TestContext.Current.CancellationToken);
-        user.PasswordHash.Length.ShouldBe(32);
-        user.Salt.Length.ShouldBe(16);
-        user.Iterations.ShouldBe(1000);
-        user.Prf.ShouldBe("HMACSHA512");
     }
 
     [Theory]

@@ -169,9 +169,6 @@ public sealed class MotorsportsDbContext(DbContextOptions<MotorsportsDbContext> 
             e.HasKey(x => x.Id);
             e.Property(x => x.Id).HasMaxLength(36);
             e.Property(x => x.Username).HasMaxLength(255);
-            e.Property(x => x.PasswordHash).HasColumnType("varbinary(50)").IsRequired();
-            e.Property(x => x.Salt).HasColumnType("varbinary(50)").IsRequired();
-            e.Property(x => x.Prf).HasMaxLength(10);
             e.Property(x => x.Title).HasMaxLength(255);
             e.Property(x => x.GivenName).HasMaxLength(255);
             e.Property(x => x.FamilyName).HasMaxLength(255);

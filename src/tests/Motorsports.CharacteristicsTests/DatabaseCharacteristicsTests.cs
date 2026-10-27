@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -6,6 +7,7 @@ using Motorsports.CharacteristicsTests.Fixtures;
 using Motorsports.Common;
 using Motorsports.Infrastructure;
 using Motorsports.Infrastructure.Entities;
+using MySqlConnector;
 using Shouldly;
 
 namespace Motorsports.CharacteristicsTests;
@@ -40,9 +42,116 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
             "20261026081111_PersistDataProtectionKeys",
             "20261026100239_AddBusinessUniqueConstraints",
             "20261026133143_AddRoundSeasonDateNumberIndex",
+            "20261027074827_RemoveLegacyPasswordColumns",
         ]);
         (await context.Users.CountAsync(cancellationToken)).ShouldBe(0);
     }
+
+    [Fact]
+    public async Task Legacy_password_removal_preserves_identity_accounts_and_supports_down_and_reapply()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await fixture.ResetSchemaAsync();
+        await using var context = await fixture.CreateContextFactory().CreateDbContextAsync(cancellationToken);
+        var migrator = context.GetService<IMigrator>();
+        await migrator.MigrateAsync("20261026133143_AddRoundSeasonDateNumberIndex", cancellationToken);
+        var user = new User { Id = UserId.From("identity-user"), Username = "identity-user" };
+        var hash = new PasswordHasher<User>().HashPassword(user, "Synthetic password!");
+        await context.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO `User` (`Id`, `Username`, `PasswordHash`, `Salt`, `Iterations`, `Prf`,
+                                `PasswordHashV3`, `SecurityStamp`, `ConcurrencyStamp`, `ForceChangePassword`)
+            VALUES ('identity-user', 'identity-user', X'01', X'02', 1000, 'HMACSHA512',
+                    {hash}, 'security-stamp', 'concurrency-stamp', 1)
+            """,
+            cancellationToken
+        );
+
+        await migrator.MigrateAsync(null, cancellationToken);
+        (await LegacyPasswordColumnCountAsync(context, cancellationToken)).ShouldBe(0);
+        var saved = await context.Users.AsNoTracking().SingleAsync(cancellationToken);
+        saved.Id.ShouldBe(user.Id);
+        (saved.PasswordHashV3 == hash).ShouldBeTrue();
+        saved.SecurityStamp.ShouldBe("security-stamp");
+        saved.ConcurrencyStamp.ShouldBe("concurrency-stamp");
+        saved.ForceChangePassword.ShouldBeTrue();
+        saved.IsDeleted.ShouldBeFalse();
+        new PasswordHasher<User>()
+            .VerifyHashedPassword(saved, saved.PasswordHashV3!, "Synthetic password!")
+            .ShouldBe(PasswordVerificationResult.Success);
+
+        await migrator.MigrateAsync("20261026133143_AddRoundSeasonDateNumberIndex", cancellationToken);
+        (await LegacyPasswordColumnCountAsync(context, cancellationToken)).ShouldBe(4);
+        await migrator.MigrateAsync(null, cancellationToken);
+        (await LegacyPasswordColumnCountAsync(context, cancellationToken)).ShouldBe(0);
+        await CreateMigrator(fixture.CreateContextFactory()).MigrateAsync(cancellationToken);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task Legacy_password_removal_refuses_to_lock_out_active_accounts(string? hash)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await fixture.ResetSchemaAsync();
+        await using var context = await fixture.CreateContextFactory().CreateDbContextAsync(cancellationToken);
+        var migrator = context.GetService<IMigrator>();
+        await migrator.MigrateAsync("20261026133143_AddRoundSeasonDateNumberIndex", cancellationToken);
+        await context.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO `User` (`Id`, `Username`, `PasswordHash`, `Salt`, `Iterations`, `Prf`, `PasswordHashV3`)
+            VALUES ('unconverted-user', 'unconverted-user', X'01', X'02', 1000, 'HMACSHA512', {hash})
+            """,
+            cancellationToken
+        );
+
+        var error = await Should.ThrowAsync<MySqlException>(() => migrator.MigrateAsync(null, cancellationToken));
+
+        error.Message.ShouldContain("Active users need Identity password hashes");
+        (await LegacyPasswordColumnCountAsync(context, cancellationToken)).ShouldBe(4);
+        (await context.Database.GetPendingMigrationsAsync(cancellationToken)).ShouldContain(
+            "20261027074827_RemoveLegacyPasswordColumns"
+        );
+    }
+
+    [Fact]
+    public async Task Legacy_password_removal_accepts_preexisting_removal_and_deleted_accounts_without_passwords()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await fixture.ResetSchemaAsync();
+        await using var context = await fixture.CreateContextFactory().CreateDbContextAsync(cancellationToken);
+        var migrator = context.GetService<IMigrator>();
+        await migrator.MigrateAsync("20261026133143_AddRoundSeasonDateNumberIndex", cancellationToken);
+        await fixture.ExecuteSqlAsync(
+            """
+            INSERT INTO `User` (`Id`, `Username`, `PasswordHash`, `Salt`, `Iterations`, `Prf`, `IsDeleted`)
+            VALUES ('deleted-user', 'deleted-user', X'01', X'02', 1000, 'HMACSHA512', 1);
+            ALTER TABLE `User` DROP COLUMN `PasswordHash`, DROP COLUMN `Salt`, DROP COLUMN `Iterations`, DROP COLUMN `Prf`;
+            """
+        );
+
+        await migrator.MigrateAsync(null, cancellationToken);
+
+        (await LegacyPasswordColumnCountAsync(context, cancellationToken)).ShouldBe(0);
+        var user = await context.Users.AsNoTracking().SingleAsync(cancellationToken);
+        user.IsDeleted.ShouldBeTrue();
+        user.PasswordHashV3.ShouldBeNull();
+    }
+
+    private static Task<int> LegacyPasswordColumnCountAsync(
+        MotorsportsDbContext context,
+        CancellationToken cancellationToken
+    ) =>
+        context
+            .Database.SqlQueryRaw<int>(
+                """
+                SELECT COUNT(*) AS `Value` FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'User'
+                  AND column_name IN ('PasswordHash', 'Salt', 'Iterations', 'Prf')
+                """
+            )
+            .SingleAsync(cancellationToken);
 
     [Fact]
     public async Task Data_protection_key_migration_persists_keys_in_the_application_database()
@@ -340,14 +449,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
         await CreateMigrator(factory).MigrateAsync(cancellationToken);
 
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
-        var user = new User
-        {
-            Id = UserId.From("test"),
-            Username = "test",
-            PasswordHash = [1],
-            Salt = [2],
-            Iterations = 1,
-        };
+        var user = new User { Id = UserId.From("test"), Username = "test" };
         context.Users.Add(user);
         await context.SaveChangesAsync(cancellationToken);
         (await context.Users.Select(x => x.Id.Value).SingleAsync(cancellationToken)).ShouldBe("test");
@@ -365,11 +467,11 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
         await Task.WhenAll(first, second);
 
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
-        (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).Count().ShouldBe(7);
+        (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).Count().ShouldBe(8);
     }
 
     [Fact]
-    public async Task DbContext_reads_schema_only_legacy_data_types()
+    public async Task DbContext_reads_persisted_data_types()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         await fixture.ResetSchemaAsync();
@@ -388,8 +490,8 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
             INSERT INTO `SeasonEntry` (`Season`, `Team`, `Name`) VALUES (1, 1, 'Test Team');
             INSERT INTO `Round` (`Date`, `Number`, `Name`, `Season`, `Venue`, `Status`, `Rating`, `Rain`, `Note`)
             VALUES ('2026-04-05', 1, 'Test Grand Prix', 1, 'Test Circuit', 'Scheduled', 8.0, 2, 'Synthetic fixture');
-            INSERT INTO `User` (`Id`, `Username`, `PasswordHash`, `Salt`, `Iterations`, `Prf`)
-            VALUES ('fixture-user', 'fixture-user', X'0102', X'0304', 10000, 'HMACSHA512');
+            INSERT INTO `User` (`Id`, `Username`)
+            VALUES ('fixture-user', 'fixture-user');
             """
         );
 
@@ -407,8 +509,7 @@ public sealed class DatabaseCharacteristicsTests(MariaDbFixture fixture)
         country.Iso.Value.ShouldBe("BE");
         country.NumCode.ShouldBe((short)56);
         status.Step.ShouldBe((sbyte)0);
-        user.PasswordHash.ShouldBe([1, 2]);
-        user.Salt.ShouldBe([3, 4]);
+        user.Username.ShouldBe("fixture-user");
     }
 
     private static DatabaseMigrator CreateMigrator(IDbContextFactory<MotorsportsDbContext> factory) =>

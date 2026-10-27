@@ -25,13 +25,11 @@ public static class AuthEndpoints
     public const string LoginRateLimitPolicy = "login";
 
     // Verified for unknown users so response time does not reveal whether a user name exists.
-    private static readonly User DummyUser = new()
-    {
-        Prf = "HMACSHA512",
-        Iterations = 10_000,
-        Salt = new byte[16],
-        PasswordHash = new byte[32],
-    };
+    private static readonly User DummyUser = new();
+    private static readonly string DummyPasswordHash = new PasswordHasher<User>().HashPassword(
+        DummyUser,
+        Guid.NewGuid().ToString()
+    );
 
     extension(IServiceCollection services)
     {
@@ -95,6 +93,7 @@ public static class AuthEndpoints
         [FromForm] LoginForm form,
         SignInManager<User> signInManager,
         IValidator<LoginForm> validator,
+        IPasswordHasher<User> passwordHasher,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken
     )
@@ -108,7 +107,7 @@ public static class AuthEndpoints
         var user = await signInManager.UserManager.FindByNameAsync(form.Username!);
         if (user is null)
         {
-            LegacyPasswordHasher.VerifyLegacy(DummyUser, form.Password!);
+            passwordHasher.VerifyHashedPassword(DummyUser, DummyPasswordHash, form.Password!);
         }
         else
         {

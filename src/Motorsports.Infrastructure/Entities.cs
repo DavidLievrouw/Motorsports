@@ -105,10 +105,6 @@ public sealed class User
 {
     public UserId Id { get; set; }
     public string Username { get; set; } = "";
-    public byte[] PasswordHash { get; set; } = [];
-    public byte[] Salt { get; set; } = [];
-    public int Iterations { get; set; }
-    public string Prf { get; set; } = "HMACSHA512";
     public bool ForceChangePassword { get; set; }
     public string? Title { get; set; }
     public string? GivenName { get; set; }
