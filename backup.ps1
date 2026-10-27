@@ -8,10 +8,11 @@ $password = "S3cr37_4321"
 # allowing cookie forgery when combined with the Identity data in a dump. Production now encrypts keys with an
 # external certificate; omitting them also prevents restoring historical plaintext keys. Only the table structure
 # is dumped (second command); the application generates a new key ring after a clean restore (users log in again).
-$dumpOptions = "--user root --password=$password --single-transaction --default-character-set=utf8mb4"
+$dumpOptions = "--user root --single-transaction --default-character-set=utf8mb4"
 $dataDump = "mariadb-dump $dumpOptions --routines --triggers --hex-blob --ignore-table=motorsports.DataProtectionKeys motorsports"
 $keyTableSchemaDump = "mariadb-dump $dumpOptions --no-data motorsports DataProtectionKeys"
-docker exec mariadb sh -c "$dataDump && $keyTableSchemaDump" > "$PWD/backup/Backup$($date)_MariaDB.sql"
+# Password goes via MYSQL_PWD env var: avoids shell-quoting of special characters (& #) in the password.
+docker exec -e "MYSQL_PWD=$password" mariadb sh -c "$dataDump && $keyTableSchemaDump" > "$PWD/backup/Backup$($date)_MariaDB.sql"
 
 # Restore - option 1:
 # - Run MariaDB stack
