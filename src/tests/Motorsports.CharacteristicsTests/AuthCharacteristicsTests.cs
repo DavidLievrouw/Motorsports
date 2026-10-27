@@ -503,6 +503,42 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         LocationPathOf(again).ShouldBe("/");
     }
 
+    [Fact]
+    public async Task Login_without_antiforgery_token_is_rejected_before_authentication_work()
+    {
+        await using var app = await StartAsync();
+        await SeedUserAsync("login-csrf");
+        var client = app.NewClient();
+        (await client.GetAsync("/login", TestContext.Current.CancellationToken)).StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var response = await client.PostAsync(
+            "/login",
+            new FormUrlEncodedContent(
+                new Dictionary<string, string>
+                {
+                    ["Username"] = "login-csrf",
+                    ["Password"] = Password,
+                    ["ReturnUrl"] = "",
+                }
+            ),
+            TestContext.Current.CancellationToken
+        );
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        (await client.GetAsync("/", TestContext.Current.CancellationToken)).StatusCode.ShouldBe(
+            HttpStatusCode.Redirect
+        );
+        await using var context = await fixture
+            .CreateContextFactory()
+            .CreateDbContextAsync(TestContext.Current.CancellationToken);
+        (
+            await context.AuthThrottleStates.SingleAsync(
+                state => state.Key == "global",
+                TestContext.Current.CancellationToken
+            )
+        ).Attempts.ShouldBe(0);
+    }
+
     [Theory]
     [InlineData("legacy", "wrong password")]
     [InlineData("nobody", "whatever")]

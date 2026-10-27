@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -80,6 +81,7 @@ public static class AuthEndpoints
     private static async Task<IResult> LoginAsync(
         [FromForm] LoginForm form,
         HttpContext context,
+        IAntiforgery antiforgery,
         AuthProtection protection,
         AuthThrottleStore throttle,
         SignInManager<User> signInManager,
@@ -89,6 +91,12 @@ public static class AuthEndpoints
         CancellationToken cancellationToken
     )
     {
+        // Explicit login-CSRF defence: reject cross-site credential posts before any credential check or sign-in.
+        if (!await antiforgery.IsRequestValidAsync(context))
+        {
+            return Results.BadRequest();
+        }
+
         var logger = loggerFactory.CreateLogger("Motorsports.Auth.Login");
         using var lease = protection.TryEnter();
         if (!lease.IsAcquired)
