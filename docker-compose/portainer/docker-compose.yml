@@ -1,6 +1,6 @@
 services:
   portainer:
-    image: portainer/portainer-ce:2.27.5-alpine
+    image: portainer/portainer-ce:2.45.3-alpine
     container_name: portainer
     entrypoint: >
       sh -c "apk add --update apache2-utils
@@ -12,13 +12,13 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "9000:9000"
-      - "8000:8000" 
+      - "8000:8000"
     networks:
       - motorsports_network
     logging:
       options:
         max-size: "25m"
-        max-file: "3"  
+        max-file: "3"
 
 networks:
   motorsports_network:
