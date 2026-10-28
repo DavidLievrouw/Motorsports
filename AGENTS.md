@@ -165,6 +165,7 @@ Full plan and phases: `src/PLAN.md`. Update its checklist as you finish work.
 - Data writes go through `IDbContextFactory.InTransactionAsync` (`Infrastructure/DbOperations`): one context per operation, rollback on a failed `Result`, deadlock retry, DB errors mapped to `Error.Conflict`/`Validation`. Edits lock the row (`FromSql ... FOR UPDATE` then `AsNoTracking().ToListAsync()`) and compare a `RowVersion` hash of the loaded values; no schema changes for concurrency.
 - Lookups used by pickers come from `LookupCache` (`GetCountriesAsync`, `GetSportsAsync`); any write that changes a cached kind calls `Invalidate(kind)` after commit, and forms call `RevalidateAsync(kind)` when opened.
 - Routes: `/x`, `/x/create`, `/x/details/{key}`, `/x/edit/{key}`; escape string keys with `Uri.EscapeDataString`. Records for display are `*Row`/`*Info` (never the page name). Every routed page carries `@attribute [Authorize]`; slices never reference Web or each other.
+
 ## Performance (hard requirement)
 
 CPU cycles are drinking water. Memory bytes are gold. Every change is judged on it.
