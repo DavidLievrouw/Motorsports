@@ -723,8 +723,11 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         blocked.Headers.RetryAfter!.Delta!.Value.ShouldBeGreaterThan(TimeSpan.Zero);
     }
 
-    [Fact]
-    public async Task Logout_is_post_only_with_antiforgery_and_ends_the_session()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("invalid-token")]
+    public async Task Logout_is_post_only_with_antiforgery_and_ends_the_session(string? invalidToken)
     {
         await using var app = await StartAsync();
         await SeedUserAsync("legacy");
@@ -735,8 +738,18 @@ public sealed partial class AuthCharacteristicsTests(MariaDbFixture fixture)
         (await client.GetAsync("/logout", TestContext.Current.CancellationToken)).StatusCode.ShouldNotBe(
             HttpStatusCode.OK
         );
+        (await client.GetAsync("/", TestContext.Current.CancellationToken)).StatusCode.ShouldBe(HttpStatusCode.OK);
+        var invalidForm = new Dictionary<string, string>();
+        if (invalidToken is not null)
+        {
+            invalidForm["__RequestVerificationToken"] = invalidToken;
+        }
         (
-            await client.PostAsync("/logout", new FormUrlEncodedContent([]), TestContext.Current.CancellationToken)
+            await client.PostAsync(
+                "/logout",
+                new FormUrlEncodedContent(invalidForm),
+                TestContext.Current.CancellationToken
+            )
         ).StatusCode.ShouldBe(HttpStatusCode.BadRequest);
         (await client.GetAsync("/", TestContext.Current.CancellationToken)).StatusCode.ShouldBe(HttpStatusCode.OK);
 

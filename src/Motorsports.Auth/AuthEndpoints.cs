@@ -276,8 +276,17 @@ public static class AuthEndpoints
         return services.Protection.Reject(context, 60, unavailable: true);
     }
 
-    private static async Task<IResult> LogoutAsync(SignInManager<User> signInManager)
+    private static async Task<IResult> LogoutAsync(
+        HttpContext context,
+        IAntiforgery antiforgery,
+        SignInManager<User> signInManager
+    )
     {
+        if (!await antiforgery.IsRequestValidAsync(context))
+        {
+            return Results.BadRequest();
+        }
+
         await signInManager.SignOutAsync();
         return Results.Redirect(LoginPath);
     }
