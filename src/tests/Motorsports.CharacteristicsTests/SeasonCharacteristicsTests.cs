@@ -1,4 +1,7 @@
+using Bunit;
+using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Motorsports.CharacteristicsTests.Fixtures;
@@ -7,8 +10,10 @@ using Motorsports.Infrastructure;
 using Motorsports.Infrastructure.Lookups;
 using Motorsports.Participants;
 using Motorsports.Seasons;
+using Motorsports.Seasons.Pages;
 using Motorsports.Sports;
 using Motorsports.Teams;
+using MudBlazor.Services;
 using Shouldly;
 
 namespace Motorsports.CharacteristicsTests;
@@ -16,7 +21,7 @@ namespace Motorsports.CharacteristicsTests;
 [Collection(MariaDbCollection.Name)]
 public sealed class SeasonCharacteristicsTests(MariaDbFixture fixture)
 {
-    private static CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => Xunit.TestContext.Current.CancellationToken;
 
     private sealed class Services
     {
@@ -56,6 +61,114 @@ public sealed class SeasonCharacteristicsTests(MariaDbFixture fixture)
             Seasons = new SeasonService(factory, cache, new SeasonFormValidator()),
             Entries = new SeasonEntryService(factory, cache, new SeasonEntryFormValidator()),
         };
+    }
+
+    [Fact]
+    public async Task Season_create_displays_inline_validation_instead_of_blocking_submission()
+    {
+        var services = await StartAsync();
+        await using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        context.Services.AddMudServices();
+        context.Services.AddSingleton(services.Cache);
+        context.Services.AddSingleton(services.Seasons);
+        var page = context.Render<SeasonCreate>();
+
+        await page.WaitForAssertionAsync(() => page.Find("form").HasAttribute("novalidate").ShouldBeTrue());
+        await page.Find("form").SubmitAsync();
+
+        await page.WaitForAssertionAsync(() => page.Markup.ShouldContain("Select a sport."));
+        page.FindComponent<SeasonFields>().Find("input").HasAttribute("required").ShouldBeFalse();
+        page.FindComponent<SeasonFields>().Instance.Errors.Has(nameof(SeasonForm.Label)).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Season_edit_displays_inline_validation_instead_of_blocking_submission()
+    {
+        var services = await StartAsync();
+        await services.Sports.CreateAsync(new SportForm { Name = "F1" }, Ct);
+        var id = (await services.Seasons.CreateAsync(new SeasonForm { Sport = "F1", Label = "2026" }, Ct)).Value;
+        await using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        context.Services.AddMudServices();
+        context.Services.AddSingleton(services.Cache);
+        context.Services.AddSingleton(services.Seasons);
+        var page = context.Render<SeasonEdit>(parameters => parameters.Add(component => component.Id, id));
+
+        await page.WaitForAssertionAsync(() => page.Find("form").HasAttribute("novalidate").ShouldBeTrue());
+        await page.InvokeAsync(() =>
+            page.FindComponent<SeasonFields>().Instance.Form.Label = new string(
+                'x',
+                SeasonFormValidator.MaxLabelLength + 1
+            )
+        );
+        await page.Find("form").SubmitAsync();
+
+        await page.WaitForAssertionAsync(() => page.Markup.ShouldContain("Label can have at most 100 characters."));
+        (await services.Seasons.GetAsync(id, Ct))!.Label.ShouldBe("2026");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Season_pages_save_without_a_label(bool editing)
+    {
+        var services = await StartAsync();
+        await services.Sports.CreateAsync(new SportForm { Name = "F1" }, Ct);
+        await using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        context.Services.AddMudServices();
+        context.Services.AddSingleton(services.Cache);
+        context.Services.AddSingleton(services.Seasons);
+        var id = editing
+            ? (await services.Seasons.CreateAsync(new SeasonForm { Sport = "F1", Label = "2026" }, Ct)).Value
+            : 0;
+        IRenderedComponent<IComponent> page = editing
+            ? context.Render<SeasonEdit>(parameters => parameters.Add(component => component.Id, id))
+            : context.Render<SeasonCreate>();
+        await page.WaitForAssertionAsync(() => page.Find("form").HasAttribute("novalidate").ShouldBeTrue());
+        var fields = page.FindComponent<SeasonFields>();
+        fields.Find("input").HasAttribute("required").ShouldBeFalse();
+        if (editing)
+        {
+            await fields.Find("input").InputAsync(new ChangeEventArgs { Value = "" });
+        }
+        else
+        {
+            await page.InvokeAsync(() => fields.Instance.Form.Sport = "F1");
+        }
+
+        await page.Find("form").SubmitAsync();
+        var navigation = context.Services.GetRequiredService<NavigationManager>();
+        await page.WaitForAssertionAsync(() => navigation.Uri.ShouldContain("/seasons/details/"));
+        var saved = (await services.Seasons.ListAsync(cancellationToken: Ct)).ShouldHaveSingleItem();
+        saved.Label.ShouldBeNull();
+        if (editing)
+        {
+            saved.Id.ShouldBe(SeasonId.From(id));
+        }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" \t ")]
+    public async Task Season_label_is_optional_on_create_and_can_be_cleared_on_update(string? label)
+    {
+        var services = await StartAsync();
+        await services.Sports.CreateAsync(new SportForm { Name = "F1" }, Ct);
+        var created = await services.Seasons.CreateAsync(new SeasonForm { Sport = "F1", Label = label }, Ct);
+        created.IsSuccess.ShouldBeTrue();
+        (await services.Seasons.GetAsync(created.Value, Ct))!.Label.ShouldBeNull();
+
+        var form = (await services.Seasons.GetFormAsync(created.Value, Ct))!;
+        form.Label = " 2026 ";
+        (await services.Seasons.UpdateAsync(created.Value, form, Ct)).IsSuccess.ShouldBeTrue();
+        (await services.Seasons.GetAsync(created.Value, Ct))!.Label.ShouldBe("2026");
+        form = (await services.Seasons.GetFormAsync(created.Value, Ct))!;
+        form.Label = label;
+        (await services.Seasons.UpdateAsync(created.Value, form, Ct)).IsSuccess.ShouldBeTrue();
+        (await services.Seasons.GetFormAsync(created.Value, Ct))!.Label.ShouldBeNull();
     }
 
     [Fact]
@@ -173,9 +286,10 @@ public sealed class SeasonCharacteristicsTests(MariaDbFixture fixture)
         duplicateWinner.Error.Fields!.ContainsKey(nameof(SeasonForm.Winners)).ShouldBeTrue();
 
         form.Winners = [participantId, secondParticipantId];
+        form.Label = "";
         (await services.Seasons.UpdateAsync(seasonId, form, Ct)).IsSuccess.ShouldBeTrue();
         var current = (await services.Seasons.GetAsync(seasonId, Ct))!;
-        current.Label.ShouldBe("2026");
+        current.Label.ShouldBeNull();
         current.WinningTeamName.ShouldBe("\U0001F1EC\U0001F1E7 Scuderia");
         current.WinningParticipants.ShouldBe(["\U0001F1EC\U0001F1E7 Alex Driver", "\U0001F1EC\U0001F1E7 Sam Driver"]);
 

@@ -1,6 +1,6 @@
 @inject LookupCache Lookups
 
-<MudTextField @bind-Value="Form.Label" Label="Label" Required="true" Immediate="true" AutoFocus="true"
+<MudTextField @bind-Value="Form.Label" Label="Label" Immediate="true" AutoFocus="true"
               MaxLength="@SeasonFormValidator.MaxLabelLength"
               Error="@Errors.Has(nameof(SeasonForm.Label))" ErrorText="@Errors.Text(nameof(SeasonForm.Label))" />
 <FuzzySelect T="SportOption" Value="_selectedSport" ValueChanged="SportChangedAsync" Items="_sports"

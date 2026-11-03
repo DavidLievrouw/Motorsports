@@ -183,7 +183,7 @@ internal sealed class SeasonService(
             return validation.ToError();
         }
 
-        var label = form.Label!.Trim();
+        var label = string.IsNullOrWhiteSpace(form.Label) ? null : form.Label.Trim();
         var result = await factory.InTransactionAsync(
             async (db, ct) =>
             {
@@ -272,7 +272,7 @@ internal sealed class SeasonService(
             return validation.Error;
         }
 
-        var label = form.Label!.Trim();
+        var label = string.IsNullOrWhiteSpace(form.Label) ? null : form.Label.Trim();
         await db
             .Seasons.Where(season => season.Id == seasonId)
             .ExecuteUpdateAsync(

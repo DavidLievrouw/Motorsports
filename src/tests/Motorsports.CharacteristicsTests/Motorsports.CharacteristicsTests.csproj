@@ -12,6 +12,7 @@
     <PackageReference Include="Testcontainers.MariaDb" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Shouldly" />
+    <PackageReference Include="bunit" />
     <ProjectReference Include="..\..\Motorsports.Infrastructure\Motorsports.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Motorsports.Home\Motorsports.Home.csproj" />
     <ProjectReference Include="..\..\Motorsports.Participants\Motorsports.Participants.csproj" />

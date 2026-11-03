@@ -50,8 +50,6 @@ internal sealed class SeasonFormValidator : AbstractValidator<SeasonForm>
     {
         RuleFor(form => form.Sport).Must(value => !string.IsNullOrWhiteSpace(value)).WithMessage("Select a sport.");
         RuleFor(form => form.Label)
-            .Must(value => !string.IsNullOrWhiteSpace(value))
-            .WithMessage("Label is required.")
             .Must(value => value is null || value.Trim().Length <= MaxLabelLength)
             .WithMessage($"Label can have at most {MaxLabelLength} characters.");
     }

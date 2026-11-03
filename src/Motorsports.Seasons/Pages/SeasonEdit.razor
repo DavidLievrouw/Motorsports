@@ -15,7 +15,7 @@ else if (_form is null)
 else
 {
     <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-2">Edit season</MudText>
-    <EditForm Model="_form" OnSubmit="SaveAsync">
+    <EditForm Model="_form" OnSubmit="SaveAsync" novalidate>
         <MudPaper Class="pa-4" Style="max-width:40rem">
             <MudStack Spacing="2">
                 @if (_conflict)
