@@ -91,7 +91,7 @@ else
         {
             try
             {
-                await Js.InvokeVoidAsync("eval", "document.getElementById('rounds-end')?.scrollIntoView()");
+                await Js.InvokeVoidAsync("msScrollIntoView", "rounds-end");
             }
             catch (JSException)
             {

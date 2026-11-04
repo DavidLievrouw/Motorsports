@@ -5,6 +5,9 @@ window.msSetCookie = (name, value) => {
     }
 };
 window.msTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
+window.msScrollIntoView = id => {
+    document.getElementById(id)?.scrollIntoView();
+};
 window.msLogout = () => {
     document.getElementById('logout-form').submit();
 };

@@ -32,6 +32,32 @@ Requirements: .NET SDK 10.0.200 (selected by `global.json`) and Docker Compose.
    Open `http://localhost:4100`. Database migrations run automatically before the app accepts requests. Use synthetic
    development data; do not restore personal backups into tests or print their contents.
 
+## Playwright browser regressions
+
+The C# Playwright suite starts the app on an ephemeral loopback port and creates disposable MariaDB 12.3.3
+Testcontainers. It needs Docker and installed Playwright browser binaries; no local application database or manual app
+startup is used. All test records are synthetic. Test-owned processes and containers are disposed automatically.
+Browser cases are grouped by authentication, shell/theme, sports, venues, team/participant/season-entry, and rounds/Home;
+the browser profiles and shared interaction helpers live in `BrowserRegressionTestBase.cs`.
+
+From the repository root:
+
+```powershell
+dotnet build src\tests\Motorsports.PlaywrightTests\Motorsports.PlaywrightTests.csproj
+pwsh .\src\tests\Motorsports.PlaywrightTests\bin\Debug\net10.0\playwright.ps1 install chromium firefox webkit
+dotnet test --solution src\Motorsports.slnx
+```
+
+Run one test method directly with the Microsoft.Testing.Platform runner:
+
+```powershell
+dotnet .\src\tests\Motorsports.PlaywrightTests\bin\Debug\net10.0\Motorsports.PlaywrightTests.dll -method '*Venue_country_picker_and_unicode_key_survive_create_edit*'
+```
+
+Failure screenshots and Playwright traces are retained under `%TEMP%\Motorsports.Playwright`; successful tests do not
+write artifacts there. The suite currently covers initial cross-browser workflows, not the full matrix in
+`src\PLAN-PW.md`; the Firefox CSP diagnostic recorded there remains an explicit open defect.
+
 ## Build and deploy
 
 Run from the repository root. Build and test the solution with:

@@ -465,14 +465,17 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 - The legacy csproj still builds (0 warnings, 0 errors) with the new `global.json`, `version.props` and `Directory.*.props`.
 - Phase 2: `User` itself is the Identity user type (no separate `AppUser`). Legacy `PasswordHash/Salt/Iterations/Prf` are never modified; a password set in the new app is stored only in `PasswordHashV3`, so it will not work in the legacy app.
 - Blazor routing ignores the fallback authorize policy: every routable page needs an explicit `[Authorize]` or `[AllowAnonymous]` (Phase 3+ pages must do so). Login, access denied, error, and not-found pages remain static SSR (`ExcludeFromInteractiveRouting`); login/logout/change-password POSTs are minimal-API endpoints so antiforgery and login rate-limiting apply.
-- A minimal-API POST only gets antiforgery validation if it binds a form; `/logout` binds `IFormCollection` for that reason (a test caught it unprotected).
+- Minimal-API endpoints do not automatically validate antiforgery just because middleware is enabled. Auth POST handlers
+  explicitly call `IAntiforgery.IsRequestValidAsync`; characteristics tests cover token rejection and valid operations.
 - BL0008: no initializer on `[SupplyParameterFromForm]` properties; use `= default!` plus `??= new()`.
 - Cookies are `Secure` outside Development. Deploying over plain http (e.g. compose without TLS) requires `Auth__SecureCookies=false`.
 - Phase 7 initially limited login per remote IP (`Auth:LoginPermitLimit`/`LoginWindowSeconds`); the separately approved
   2026-10-27 abuse-protection phase replaces these settings with shared `Auth:Protection:*` budgets and cooldowns.
   Forwarded headers remain restricted to configured `ForwardedHeaders:KnownProxies`.
 - Tooling note: in this environment only PowerShell was available for file edits (no create/edit tools); `R` is an alias of Invoke-History, so do not name helpers `R`.
-- `FuzzySelect`/`FuzzyMultiSelect` use immediate query updates to avoid requiring a second Enter press. Their click/typing behaviour and the theme switch still need a browser test (Playwright) or manual check.
+- `FuzzySelect`/`FuzzyMultiSelect` use immediate query updates to avoid requiring a second Enter press. The initial
+  Playwright suite exercises picker click selection and theme persistence across all six emulated profiles; ranking,
+  keyboard timing, and multi-select behavior remain uncovered in the broader matrix in `PLAN-PW.md`.
 - Phase 3: this environment has no create/edit tool; all files were written through PowerShell with .NET `WriteAllText` (no BOM). PowerShell 5.1 `Set-Content -Encoding utf8` adds a BOM, avoid it.
 - Phase 3: `FluentValidation` 12 has no `RuleFor().Transform`; trimming is done with `Must(v => v.Trim().Length <= Max)` and the service stores the trimmed value. A routed page and a record cannot share a name in one namespace (`SportDetails` page vs record): records are named `*Info`.
 - Phase 3: `FromSql("... FOR UPDATE")` must be followed only by `AsNoTracking().ToListAsync()`; composing `SingleOrDefault` wraps it in a subquery and the lock is lost.
@@ -514,6 +517,15 @@ Corrections to earlier assumptions (verified against the real MariaDB dump and t
 Date: 2026-11-03. Phases 0–8, mobile connection recovery, authentication abuse protection, and the season-label fix are implemented.
 
 State:
+- Playwright regression follow-up: a C# browser project now launches the real app on loopback with disposable MariaDB
+  and six centralized browser profiles. Browser cases cover authentication, shell/theme, sport/image, venue,
+  team/participant/season/season-entry CRUD and validation, round create/edit/finish/delete, fuzzy pickers, date
+  mask/dialog, and circuit outage recovery; the full approved matrix is still incomplete.
+  README contains browser setup and execution commands; `PLAN-PW.md` tracks coverage and gaps. Latest full Playwright run:
+  185/186 pass on all six profiles including Firefox (one WebKit text-commit flake, hardened). App fixes from this work:
+  `RoundList` JS `eval` (CSP-blocked in Firefox) replaced by `msScrollIntoView`; `DateField` `AutoClose="true"`.
+  CSP unchanged. Release warning-as-error build, CSharpier check,
+  and all eight Node reconnect tests pass. Pixel 10 Pro is a documented custom emulation, not exact-device certification.
 - Authentication abuse protection is implemented for login/password changes with shared MariaDB budgets, progressive
   cooldowns, local IP/device reputation, bounded indexed cleanup, and private operator-reset SQL. Release warning-as-error
   build, CSharpier format/check, all 194 .NET tests, all eight reconnect Node tests, and EF model consistency checks pass.

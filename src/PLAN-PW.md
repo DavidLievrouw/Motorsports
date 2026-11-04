@@ -1,8 +1,11 @@
 # Playwright full-regression plan
 
-Status: scope approved; implementation not started.
+Status: partial implementation. The disposable C# Playwright harness and initial auth, shell, sport/image, venue,
+team/participant/season-entry, and round/Home workflows are in place. The full coverage matrix and exit gates remain
+open; see the implementation ledger below.
 Date: 2026-11-03.
-Handoff: scope decisions are resolved; a new agent can implement this plan.
+Handoff: scope decisions are resolved. Continue remaining browser coverage without changing application behavior for
+the Firefox CSP issue unless the user approves that change.
 
 ## 1. Approved decisions
 
@@ -17,7 +20,7 @@ Handoff: scope decisions are resolved; a new agent can implement this plan.
 - Report unrelated existing defects for user approval before changing application behavior. Do not silently skip,
   weaken assertions, or mark broken behavior as correct to obtain a green suite.
 - No CI/CD work, production access, real application data, or deployment changes.
-- This task currently delivers this plan only, not the suite.
+- The suite is an initial implementation, not a complete realization of the coverage matrix below.
 
 ## 2. Source of truth and starting context
 
@@ -52,39 +55,44 @@ Existing test infrastructure:
 
 ## 3. Harness and execution design
 
-- [ ] Create `tests\Motorsports.PlaywrightTests` in `Motorsports.slnx`, following current .NET 10/xunit.v3/MTP patterns.
+- [x] Create `tests\Motorsports.PlaywrightTests` in `Motorsports.slnx`, following current .NET 10/xunit.v3/MTP patterns.
   Prefer C# Playwright and central package management rather than introducing a second package ecosystem.
-- [ ] Run the actual application on loopback Kestrel. Browser access must include Blazor circuits, real cookies,
+- [x] Run the actual application on loopback Kestrel. Browser access must include Blazor circuits, real cookies,
   antiforgery, JS, CSS, images, and navigation; an in-memory TestServer alone is insufficient.
-- [ ] Use disposable Testcontainers MariaDB 12.3.3 and normal startup migrations, with schema-only legacy fixture
+- [x] Use disposable Testcontainers MariaDB 12.3.3 and normal startup migrations, with schema-only legacy fixture
   setup if needed. No connections to the local restored database or production.
-- [ ] Reuse suitable infrastructure patterns without coupling the new project to test classes. Extract a narrowly
+- [x] Reuse suitable infrastructure patterns without coupling the new project to test classes. Extract a narrowly
   scoped shared test helper only if justified; do not duplicate large fixture frameworks.
-- [ ] Use an xUnit class fixture as the default application/database lifecycle, with isolated data/accounts and
-  browser contexts per test. Cookie contexts, throttle counters, caches, and destructive cases must not contaminate
+- [x] Use an xUnit class fixture as the default application/database lifecycle, with isolated accounts and browser
+  contexts per test. Throttle state is reset between browser cases; test entities are synthetic and uniquely named.
+  Cookie contexts, caches, and destructive cases must not contaminate
   other tests. Database resets cannot race active circuits. Use a fully unique app/database fixture only for cases
   that require isolation beyond the class fixture (for example restart or destructive transport scenarios).
-- [ ] Seed through test infrastructure, not public application-only test endpoints. Generate synthetic users,
-  valid image samples, related histories, and enough rows for paging/history limits.
+- [x] Seed through test infrastructure, not public application-only test endpoints. Current fixtures seed synthetic
+  lookup/domain rows and Identity users; UI flows create additional synthetic rows and a valid tiny PNG. Paging/history
+  volume, boundary-sized images, and richer histories remain unseeded.
 - [ ] Use a controllable server TimeProvider for date-boundary scenarios; browser clock alone does not control
   UserClock/server time. Configure browser time zones explicitly. Drive cooldown/expiry deterministically where safe.
-- [ ] Keep normal startup/auth behavior. Use dedicated configurations for throttling, secure-cookie/HTTPS,
-  production-certificate, restart, and circuit-expiry cases instead of weakening the whole suite.
-- [ ] Authenticate shared setup once only where authentication is not under test; keep real UI login/logout flows.
+- [x] Keep normal startup/auth behavior in the initial suite. It uses Development over loopback HTTP and resets
+  synthetic throttle state per case; secure-cookie/HTTPS, production-certificate, restart, and circuit-expiry cases
+  still need dedicated configurations.
+- [x] Use real UI login/logout flows in implemented auth cases. Forced-password-change accounts are isolated;
+  no credentials or storage state are persisted.
   Isolate password-change and forced-change accounts. Never persist credentials/storage state into tracked files.
 - [ ] Use role/label/text locators, scoped to the relevant row/card/dialog. Add stable test IDs only when semantic
   locators cannot reliably distinguish controls; never use positional selectors as the primary contract.
-- [ ] Use Playwright assertions and explicit observable readiness, not fixed sleeps or network-idle assumptions.
+- [x] Use Playwright assertions and explicit observable readiness, not fixed sleeps or network-idle assumptions.
   Blazor holds long-lived connections. Verify interactivity, not just SSR content.
-- [ ] Fail on unexpected page errors, unhandled Blazor errors, relevant failed requests, and CSP/bootstrap failures.
+- [x] Collect page errors, console errors, failed requests, HTTP 5xx, circuit/bootstrap failures, and CSP errors; fail
+  implemented workflows on unexpected browser errors.
   Narrowly classify expected negative-test failures; do not blanket-ignore console/network errors.
-- [ ] On failure retain text diagnostics and, when useful, DOM/network traces or standalone screenshots; disable
+- [x] On failure retain text diagnostics and a trace plus standalone screenshot; disable
   screenshots inside traces and disable video. Keep all artifacts in TEMP, delete successful-run artifacts, and
   retain failed-run artifacts for diagnosis. Only synthetic data may appear. Do not print image bodies, hashes, keys,
   or secrets.
-- [ ] Document browser installation, Docker prerequisites, isolated ports, full and targeted commands, artifact
+- [x] Document browser installation, Docker prerequisites, ephemeral ports, full and targeted commands, artifact
   locations, and resource cleanup. Use exact commands verified against the installed MTP runner.
-- [ ] Dispose only suite-owned processes/containers. Do not stop the user's running Debug application.
+- [x] Dispose only suite-owned processes/containers. Do not stop the user's running Debug application.
 
 ### Browser and viewport projects
 
@@ -153,6 +161,30 @@ endpoint tests; add missing companion cases rather than pretending a browser con
 
 ## 5. Historical bug regression ledger
 
+## 5a. Implementation ledger
+
+“Partial” means the named browser cases exist and run against all six profiles; it does not mean the row's complete
+coverage contract is satisfied. IDs absent from the partial rows below remain unimplemented in Playwright. Existing
+characteristics and Node tests are companion coverage only, not substitutes for the planned browser cases.
+
+| IDs | Status and current browser cases | Main gaps |
+|---|---|---|
+| AUTH | Partial — `Authenticated_routes_theme_and_write_flow_work`, `Forced_password_change_completes_in_each_browser_profile`, `Login_rejects_untrusted_return_urls_and_shows_generic_failures` | Expiry, deletion/back-cache, invalid credentials, token handling, cooldown, deleted-account behavior. |
+| AUTH-CHANGE | Partial — forced-password-change completion | Normal account-menu change, policy/mismatch/current-password errors, security-stamp behavior. |
+| AUTH-POST | Partial — real menu logout and GET `/logout` 404 in `Invalid_logout_posts_preserve_the_authenticated_session`; missing/empty/malformed logout POSTs each return 400 and preserve the session | Login/change-password missing/invalid-token requests; protocol assertions beyond the logout browser smoke. |
+| SHELL | Partial — authenticated routes, theme persistence, primary viewport overflow check | Unknown routes/records, footer/version, all forms/popovers/dialogs in both themes, landscape. |
+| HOME | Partial — due-round card and status refresh in `Due_round_can_be_created_and_marked_ready_to_watch` | Populated histories, per-sport ties, empty/overdue cases, 50-item cap. |
+| SPORT / IMAGE | Partial — `Sport_create_validates_persists_and_removes_image` | Full edit/rename/concurrency, valid image types, 2 MB boundary, invalid signatures, unauthorized endpoint, fallback. |
+| VENUE / PICKER | Partial — `Venue_country_picker_and_unicode_key_survive_create_edit`, `Venue_list_searches_pages_and_clears`, `Venue_create_and_edit_validate_conflict_and_cancel`, `Participant_picker_matches_fuzzily_and_disambiguates`, `Winning_team_picker_only_matches_entry_names_of_that_season` | Keyboard navigation, dependent rename/history, debounce/cache-freshness through the UI. |
+| TEAM | Partial — `Team_participant_and_season_entry_workflows_persist`, `Team_validation_edit_and_delete_guards` | Paging and history tables; concurrency conflict in two tabs. |
+| PARTICIPANT | Partial — accented create in `Team_participant_and_season_entry_workflows_persist`, `Participant_validation_duplicates_and_edit`, `Participant_multi_picker_caps_at_four_and_recovers_after_removal` | Order/win links, concurrency conflict in two tabs. |
+| SEASON | Partial — missing-sport inline validation and blank-label creation in `Team_participant_and_season_entry_workflows_persist`, `Season_edit_and_delete_guards` | Winner persistence through the UI, computed date/order, detail/history. |
+| ENTRY | Partial — team selection/prefill/create/reload in `Team_participant_and_season_entry_workflows_persist`, `Season_entry_create_duplicate_edit_and_delete_guards`, `Season_entry_team_picker_matches_history_names_and_filters_by_sport` | Tied/null history ordering, race guards. |
+| ROUND / DATE / READY / FINISH | Partial — typed current date, venue, number-zero round creation, due-round creation and Ready-to-watch POST, `Round_create_enforces_date_venue_and_number_rules`, `Round_create_rejects_duplicate_number_in_season`, `Round_edit_only_enforces_minimum_date_when_date_changes`, `Round_finish_validates_each_outcome_then_finishes`, `Round_finish_can_postpone_with_note`, `Round_delete_is_blocked_with_winners_and_allowed_without` | Idempotency/non-eligible requests, controlled server clock. Date mask/dialog/today/escape/clear covered by `DatePickerBrowserTests` (4 tests x 6 profiles). |
+| ERRORS | Partial — generic unknown-user message and browser diagnostics in the cases above | Production error pages, missing records, DB failures and correction/resubmission. |
+| RECOVERY | Partial — `CircuitRecoveryBrowserTests`: `Network_outage_shows_reconnect_modal_and_recovers_same_circuit_without_reload`, `Repeated_outages_each_recover_and_page_stays_interactive`, `Browser_offline_and_online_events_do_not_break_the_circuit` (real WebSocket disruption via `RouteWebSocketAsync`; no write replay/duplicate asserted via the duplicate-sport validation) | Circuit gone/expired -> automatic reload and "form not replayed" stay Node-only (`reconnect.test.cjs`); unsaved-form retention not asserted on WebKit (UI re-init under load); no MariaDB-loss case. |
+| AUTH-LIMIT, ROUND-RESULT, HISTORY, CONFLICT | Not implemented in Playwright | Use the detailed scope and named lower-layer companions in sections 4–5; keep each gap visible. |
+
 These are explicit additions from `PLAN.md`, not optional exploratory checks. Link each row to concrete test IDs/methods.
 Infrastructure-only regressions remain in their correct test layer, with a browser-visible smoke check where applicable.
 
@@ -191,8 +223,9 @@ backup, and Node guards as the corresponding regression layer.
 
 - [ ] Reconcile the route/action/validator inventory with source; expand section 4 into executable named cases.
 - [ ] Link every section 5 regression to a planned case or named existing companion test.
-- [ ] Build harness and primary browser profiles; verify real login, interactive picker, write/reload and disposal.
-- [ ] Confirm Pixel descriptor provenance/limitations; do not ask the user to repeat already-approved scope.
+- [x] Build harness and primary browser profiles; verify real login, interactive picker, write/reload and disposal.
+- [x] Confirm Pixel descriptor limitation: custom approximation, not an official exact-device descriptor; do not ask the
+  user to repeat already-approved scope.
 
 ### B. Functional workflows
 
@@ -241,12 +274,45 @@ do not quietly exclude it from the promised regression guard.
 New defects caused by test-harness or narrowly related implementation changes must be corrected. Avoid unrelated
 refactors, broad retries, public test-only endpoints, and behavior changes intended solely to make tests easier.
 
-Initial handover:
+Current handover:
 
-- Done: user-approved scope captured; current PLAN.md business rules, Issues, and follow-ups reviewed and mapped.
-- In progress: nothing.
-- Next: implement phase A, then follow phases B-D.
-- Existing limitation: browser emulation cannot prove real Pixel sleep, OS/network switching, or real iOS behavior.
+- Done: loopback/Kestrel and disposable MariaDB harness; six centralized profiles; initial cross-browser auth, shell,
+  sport/image, venue, team/participant/season/entry, and due-round/Ready-to-watch workflows. Browser install, full-suite,
+  targeted-method, artifact, Docker, and cleanup instructions are in README.
+- In progress: all coverage beyond the partial cases in section 5a, full route/action/validator inventory, controlled
+  server time, published-host smoke, conflict/recovery workflows, and reliable full-suite exit gates.
+- Firefox: passes the full matrix. Root cause of the earlier `eval` CSP error was app code (`RoundList.razor` used JS
+  `eval` to scroll); replaced by `window.msScrollIntoView` in `app.js`. CSP unchanged. Harness changes in
+  `BrowserSession`: navigation-pending/document-ready tracking and a teardown-noise list. Aborted requests
+  (`NS_BINDING_ABORTED`, "Load request cancelled") from navigation/teardown are ignored; every other console/page/request
+  failure still fails the test. Outage tests call `ExpectCircuitOutages()`, which excuses only the SignalR disconnect,
+  in-flight `DispatchEventAsync` and `Popover Service already initialized` errors.
+- App fix found by date tests: `DateField` now sets `AutoClose="true"`; a day click in the dialog previously did not
+  commit the date.
+- Recovery simulation notes: `SetOfflineAsync` does not drop an idle socket; closing a fresh socket immediately makes
+  Blazor flap; use `RouteWebSocketAsync` with a transparent `ConnectToServer()` and a black hole with ~2 s delayed close
+  (manual message forwarding breaks the MessagePack protocol). Drain in-flight events before dropping with a
+  deterministic server round trip (`SyncWithServerAsync`: whitespace name + Create -> "Name is required."). Avoid the
+  country autocomplete in recovery tests (loses state across reconnect).
+- Organization: tests are split per domain (`AuthenticationBrowserTests`, `ShellAndThemeBrowserTests`,
+  `SportsBrowserTests`, `VenuesBrowserTests`, `TeamsParticipantsSeasonsBrowserTests`, `RoundsHomeBrowserTests`,
+  `ReferenceDataCrudBrowserTests`, `SeasonsRoundsBrowserTests`, `PickersBrowserTests`) with shared helpers and profile
+  data in `BrowserRegressionTestBase.cs`. Seed data for picker tests lives in `PlaywrightSuiteFixture.TestData.cs`.
+- Seed rule: pickers and the venue list read `LookupCache` (30 s MaxAge, revalidated only on form open after 5 s), so
+  rows a test needs there must be seeded before the app starts (`SeedPickerDataAsync`, including 55 `PWPAGE nnn`
+  venues). Rows created at test time are only reliable on pages that read the database directly. Do not mutate
+  shared seed rows; delete helper rows that would pollute Home (see `Round_edit_only_enforces_minimum_date…`). Do not
+  `FillAsync("")` a picker with many options: the open dropdown can cover the submit button.
+- Verification: the Playwright project has 186 tests (31 theories x 6 profiles: 24 earlier + 4 date + 3 recovery);
+  latest full run 185/186, the one failure a WebKit text-commit race in
+  `Venue_country_picker_and_unicode_key_survive_create_edit` (hardened with Tab; passes solo). Mobile WebKit and desktop WebKit showed load-dependent timing flakes in
+  earlier runs; assertions after reload now use retrying `ToContainTextAsync`, and `SelectAutocompleteAsync` refills
+  once if the option list does not appear. Never pipe `dotnet test` into `select -first N` (leaves the process
+  running and locks the exe).
+  After the split, the round workflow (number entered with fill + Tab, which also fixes WebKit/iPhone/Firefox) passes
+  on all six profiles. Release warning-as-error build, CSharpier check, and all eight Node reconnect tests passed. The full
+  approved coverage matrix remains incomplete.
+- Device limitation: Pixel 10 Pro is a documented custom emulation (414x924 CSS viewport, matching screen size,
+  DPR 1280/414, touch/mobile, Android 16/Chrome 142 UA), not a verified exact Playwright descriptor. iPhone 16 Pro is
+  Playwright's emulation, not real-device certification. Browser tests cannot prove actual phone sleep/network behavior.
 - Existing known risk: connection loss after checkout can surface as a read error/circuit failure; no retry fix approved.
-- Open implementation fact: Pixel 10 Pro physical display metrics are supplied; browser CSS viewport/DPR still need verification.
-- No application code, dependencies, databases, tests, or production configuration changed by this planning task.

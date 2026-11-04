@@ -14,6 +14,7 @@
   <Folder Name="/Tests/">
     <Project Path="tests/Motorsports.ArchitectureTests/Motorsports.ArchitectureTests.csproj" />
     <Project Path="tests/Motorsports.CharacteristicsTests/Motorsports.CharacteristicsTests.csproj" />
+    <Project Path="tests/Motorsports.PlaywrightTests/Motorsports.PlaywrightTests.csproj" />
     <Project Path="tests/Motorsports.UnitTests/Motorsports.UnitTests.csproj" />
   </Folder>
   <Project Path="Motorsports.Auth/Motorsports.Auth.csproj" />
