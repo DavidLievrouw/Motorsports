@@ -38,12 +38,20 @@ else
     private readonly FormErrors _errors = new();
     private bool _saving;
     private bool _loading = true;
+    private int? _loadedSeasonId;
 
     [Parameter]
     public int SeasonId { get; set; }
 
     protected override async Task OnParametersSetAsync()
     {
+        // Parameters are re-applied on every parent render; reloading would wipe what the user typed.
+        if (_loadedSeasonId == SeasonId)
+        {
+            return;
+        }
+
+        _loadedSeasonId = SeasonId;
         _loading = true;
         _form = await Service.GetCreateFormAsync(SeasonId, Clock.Today);
         _loading = false;

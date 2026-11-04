@@ -40,7 +40,7 @@ public sealed class SeasonsRoundsBrowserTests(PlaywrightSuiteFixture fixture) : 
                 var date = page.GetByLabel("Date");
                 var number = page.GetByRole(AriaRole.Spinbutton, new() { Name = "Number" });
 
-                await date.FillAsync("2025-12-31");
+                await FillDateAsync(date, "2025-12-31");
                 await number.FillAsync("0");
                 await number.PressAsync("Tab");
                 await SelectAutocompleteAsync(page, "Venue", "Silverstone", "Silverstone", touchProfile);
@@ -48,7 +48,7 @@ public sealed class SeasonsRoundsBrowserTests(PlaywrightSuiteFixture fixture) : 
                 await ExpectTextAsync(page, "Date must be on or after 2026-01-01.");
 
                 await browser.NavigateInteractiveAsync($"{Fixture.BaseUrl}/seasons/{seasonId}/rounds/create");
-                await date.FillAsync("2027-01-10");
+                await FillDateAsync(date, "2027-01-10");
                 await PressButtonAsync(page, "Create", touchProfile);
                 await ExpectTextAsync(page, "Select a venue.");
 
@@ -79,7 +79,7 @@ public sealed class SeasonsRoundsBrowserTests(PlaywrightSuiteFixture fixture) : 
                 await browser.NavigateInteractiveAsync($"{Fixture.BaseUrl}/seasons/1/rounds/create");
 
                 var number = page.GetByRole(AriaRole.Spinbutton, new() { Name = "Number" });
-                await page.GetByLabel("Date").FillAsync("2027-03-01");
+                await FillDateAsync(page.GetByLabel("Date"), "2027-03-01");
                 await number.FillAsync("1");
                 await number.PressAsync("Tab");
                 await SelectAutocompleteAsync(page, "Venue", "Silverstone", "Silverstone", touchProfile);
@@ -113,11 +113,11 @@ public sealed class SeasonsRoundsBrowserTests(PlaywrightSuiteFixture fixture) : 
 
                 var date = page.GetByLabel("Date");
                 await Assertions.Expect(date).ToHaveValueAsync("2025-06-01");
-                await date.FillAsync("2025-06-02");
+                await FillDateAsync(date, "2025-06-02");
                 await PressButtonAsync(page, "Save", touchProfile);
                 await ExpectTextAsync(page, "Date must be on or after 2026-01-01.");
 
-                await date.FillAsync("2025-06-01");
+                await FillDateAsync(date, "2025-06-01");
                 await page.GetByLabel("Name", new() { Exact = true }).FillAsync("Legacy dated round, renamed");
                 await PressButtonAsync(page, "Save", touchProfile);
                 await WaitForUrlAsync(page, $"**/rounds/details/{roundId}");

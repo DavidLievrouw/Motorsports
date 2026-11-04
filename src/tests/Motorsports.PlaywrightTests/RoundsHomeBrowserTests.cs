@@ -27,7 +27,7 @@ public sealed class RoundsHomeBrowserTests(PlaywrightSuiteFixture fixture) : Bro
                 await browser.NavigateInteractiveAsync($"{Fixture.BaseUrl}/seasons/1/rounds/create");
                 var today = await browser.Page.EvaluateAsync<string>("() => new Date().toISOString().slice(0, 10)");
                 var date = browser.Page.GetByLabel("Date");
-                await date.FillAsync(today);
+                await FillDateAsync(date, today);
                 Assert.Equal(today, await date.InputValueAsync());
                 var number = browser.Page.GetByRole(AriaRole.Spinbutton, new() { Name = "Number" });
                 await number.FillAsync("0");

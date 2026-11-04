@@ -62,7 +62,7 @@ public sealed class MariaDbFixture : IAsyncLifetime
                     --no-data "$MARIADB_DATABASE" DataProtectionKeys >> "$backup"
                 mariadb --user="$MARIADB_USER" --execute="DROP DATABASE \`$MARIADB_DATABASE\`; CREATE DATABASE \`$MARIADB_DATABASE\`;"
                 mariadb --user="$MARIADB_USER" --default-character-set=utf8mb4 "$MARIADB_DATABASE" < "$backup"
-                """,
+                """.ReplaceLineEndings("\n"),
             ],
             cancellationToken
         );

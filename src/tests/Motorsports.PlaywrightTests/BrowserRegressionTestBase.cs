@@ -115,6 +115,15 @@ public abstract class BrowserRegressionTestBase(PlaywrightSuiteFixture fixture)
         }
     }
 
+    // Committing the picker text makes the server move focus back to the date input; wait for that
+    // so it cannot steal focus from (and redirect typing away from) the next field.
+    protected static async Task FillDateAsync(ILocator date, string value)
+    {
+        await date.FillAsync(value);
+        await date.BlurAsync();
+        await Assertions.Expect(date).ToBeFocusedAsync();
+    }
+
     protected static Task ActivateAsync(ILocator locator, bool touchProfile) =>
         touchProfile ? locator.TapAsync() : locator.ClickAsync();
 
