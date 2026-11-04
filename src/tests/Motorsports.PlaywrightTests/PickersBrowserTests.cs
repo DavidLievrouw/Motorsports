@@ -103,10 +103,7 @@ public sealed class PickersBrowserTests(PlaywrightSuiteFixture fixture) : Browse
                 {
                     await SelectAutocompleteAsync(page, label, $"Zed Picker{name}", $"Zed Picker{name}", touchProfile);
                     await Assertions.Expect(chips).ToHaveCountAsync(++picked);
-                    if (picked < 4)
-                    {
-                        await picker.ClearAsync();
-                    }
+                    await Assertions.Expect(picker).ToHaveValueAsync("");
                 }
 
                 await Assertions.Expect(chips).ToHaveCountAsync(4);
@@ -124,6 +121,7 @@ public sealed class PickersBrowserTests(PlaywrightSuiteFixture fixture) : Browse
 
                 await SelectAutocompleteAsync(page, label, "Zed Pickerepsilon", "Zed Pickerepsilon", touchProfile);
                 await Assertions.Expect(chips).ToHaveCountAsync(4);
+                await Assertions.Expect(picker).ToHaveValueAsync("");
                 await Assertions.Expect(picker).ToBeDisabledAsync();
                 browser.AssertNoBrowserErrors();
             }

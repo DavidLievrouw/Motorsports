@@ -2,6 +2,7 @@
 @using Motorsports.Common.Fuzzy
 
 <MudAutocomplete T="T"
+                 @ref="_autocomplete"
                  Value="_pending"
                  ValueChanged="Add"
                  Label="@Label"
@@ -49,6 +50,7 @@
     private IReadOnlyList<T>? _indexedItems;
     private FuzzyIndex<T> _index = null!;
     private T? _pending;
+    private MudAutocomplete<T>? _autocomplete;
 
     protected override void OnParametersSet()
     {
@@ -77,6 +79,10 @@
         }
 
         await ValuesChanged.InvokeAsync([.. Values, item]);
+        if (_autocomplete is not null)
+        {
+            await _autocomplete.ClearAsync();
+        }
     }
 
     private Task Remove(T item) => ValuesChanged.InvokeAsync([.. Values.Where(v => !ReferenceEquals(v, item))]);
